@@ -1,0 +1,10 @@
+# Supabase Project Configuration
+project_id = "sgi-ati"
+
+[functions.invite-user]
+enabled = true
+verify_jwt = false
+
+[functions.delete-user]
+enabled = true
+verify_jwt = false

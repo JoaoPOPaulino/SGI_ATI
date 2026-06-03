@@ -1,0 +1,146 @@
+import React, { useRef } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import { User, Mail, Shield, MapPin, Key, Clock, Camera } from 'lucide-react';
+
+const Perfil: React.FC = () => {
+  const { user, updatePhoto } = useAuth();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  if (!user) return null;
+
+  const handlePhotoClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const bitmap = await createImageBitmap(file);
+      const canvas = document.createElement('canvas');
+      const maxSize = 300;
+      let w = bitmap.width;
+      let h = bitmap.height;
+
+      if (w > h) {
+        if (w > maxSize) { h *= maxSize / w; w = maxSize; }
+      } else {
+        if (h > maxSize) { w *= maxSize / h; h = maxSize; }
+      }
+
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(bitmap, 0, 0, w, h);
+      }
+      const jpgBase64 = canvas.toDataURL('image/jpeg', 0.75);
+      updatePhoto(jpgBase64);
+      bitmap.close();
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    } catch {
+      // ignora erro de imagem inválida
+    }
+  };
+
+  return (
+    <div className="space-y-8 animate-fade-in font-body text-on-surface">
+      {/* Cabeçalho da Página */}
+      <div>
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary">Meu Perfil</h1>
+        <p className="text-xs text-outline font-semibold">Gerencie suas informações de conta e credenciais de acesso.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-[1fr_2fr] gap-8">
+        <div>
+          <div className="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/20 shadow-sm flex flex-col items-center text-center relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-24 bg-primary-container/20"></div>
+            
+            <div className="w-24 h-24 bg-primary text-white rounded-full flex items-center justify-center shadow-lg border-4 border-surface-container-lowest relative z-10 mb-4 mt-6 overflow-hidden group cursor-pointer" onClick={handlePhotoClick}>
+              {user.foto ? (
+                <img src={user.foto} alt="Foto de perfil" className="w-full h-full object-cover" />
+              ) : (
+                <User size={40} />
+              )}
+              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera size={20} className="text-white" />
+              </div>
+            </div>
+            <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} className="absolute w-0 h-0 opacity-0 pointer-events-none" />
+            
+            <h2 className="text-xl font-bold text-primary mb-1 truncate px-4">{user.nome}</h2>
+            <div className="inline-flex px-2 py-0.5 rounded uppercase tracking-widest font-black text-[10px] bg-primary/10 text-primary border border-primary/20 mb-6">
+              {user.perfil}
+            </div>
+            
+            <div className="w-full space-y-4 text-left">
+              <div className="flex items-center gap-3 text-sm">
+                <Mail size={16} className="text-outline" />
+                <span className="text-on-surface-variant truncate max-w-[220px]">{user.email}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <Shield size={16} className="text-outline" />
+                <span className="text-on-surface-variant">Nível de Acesso: {user.perfil}</span>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <MapPin size={16} className="text-outline" />
+                <span className="text-on-surface-variant truncate">Polo: {user.polo || 'Geral / Não Especificado'}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Informações Detalhadas e Configurações */}
+        <div className="space-y-6">
+          <div className="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/20 shadow-sm">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <Key size={18} className="text-primary" />
+              Segurança
+            </h3>
+            
+            <div className="space-y-4">
+              <div className="p-4 bg-surface rounded-xl border border-outline-variant/30 flex items-center justify-between">
+                <div>
+                  <h4 className="font-bold text-sm">Senha de Acesso</h4>
+                  <p className="text-xs text-on-surface-variant">Sua última alteração de senha foi há 30 dias.</p>
+                </div>
+                <button className="px-4 py-2 custom-gradient-btn text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all">
+                  Alterar Senha
+                </button>
+              </div>
+
+
+            </div>
+          </div>
+
+          <div className="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/20 shadow-sm">
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
+              <Clock size={18} className="text-primary" />
+              Sessões Recentes
+            </h3>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between py-2 border-b border-outline-variant/10">
+                <div className="text-sm">
+                  <span className="font-bold block">Windows / Chrome</span>
+                  <span className="text-xs text-on-surface-variant">Palmas, TO - IP 192.168.1.100</span>
+                </div>
+                <div className="text-xs font-semibold text-emerald-500">Agora (Ativa)</div>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <div className="text-sm">
+                  <span className="font-bold block">Android / Safari</span>
+                  <span className="text-xs text-on-surface-variant">Araguaína, TO - IP 172.16.0.45</span>
+                </div>
+                <div className="text-xs font-semibold text-outline">Ontem, 14:32</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Perfil;
