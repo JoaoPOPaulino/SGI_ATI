@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PatriMove | Enterprise Logistics Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed": "#ffdbcb",
+                        "secondary-fixed": "#d5e3fc",
+                        "surface-container": "#e6eeff",
+                        "surface-container-low": "#eff4ff",
+                        "inverse-primary": "#b6c4ff",
+                        "on-tertiary-fixed-variant": "#773205",
+                        "error-container": "#ffdad6",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "surface-tint": "#4059aa",
+                        "outline-variant": "#c5c5d3",
+                        "surface-variant": "#d5e3fc",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "tertiary-container": "#6e2c00",
+                        "on-tertiary-container": "#f39461",
+                        "surface-dim": "#ccdbf3",
+                        "on-primary-container": "#90a8ff",
+                        "on-primary": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "on-surface": "#0d1c2e",
+                        "error": "#ba1a1a",
+                        "surface-container-lowest": "#ffffff",
+                        "primary-fixed": "#dce1ff",
+                        "tertiary": "#4b1c00",
+                        "surface-container-highest": "#d5e3fc",
+                        "outline": "#757682",
+                        "surface-bright": "#f8f9ff",
+                        "on-primary-fixed": "#00164e",
+                        "inverse-surface": "#233144",
+                        "on-tertiary-fixed": "#341100",
+                        "surface": "#f8f9ff",
+                        "on-surface-variant": "#444651",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "primary-container": "#1e3a8a",
+                        "secondary": "#515f74",
+                        "surface-container-high": "#dce9ff",
+                        "on-secondary-container": "#57657a",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "primary": "#00236f",
+                        "secondary-container": "#d5e3fc",
+                        "on-error": "#ffffff",
+                        "on-background": "#0d1c2e",
+                        "background": "#f8f9ff",
+                        "on-primary-fixed-variant": "#264191"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-glass {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(16px);
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+<!-- Desktop Side Navigation -->
+<aside class="hidden lg:flex flex-col h-screen w-64 fixed left-0 top-0 border-r border-outline-variant/20 bg-slate-50 p-4 gap-2 z-50">
+<div class="flex items-center gap-3 px-2 py-4 mb-6">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+</div>
+<div>
+<h1 class="text-lg font-black text-blue-950 tracking-tight">PatriMove</h1>
+<p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Enterprise Logistics</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2.5 bg-blue-100 text-blue-900 rounded-lg transition-all duration-200 ease-in-out font-medium text-sm" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 hover:bg-slate-200/50 rounded-lg transition-all duration-200 ease-in-out font-medium text-sm" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Inventory</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 hover:bg-slate-200/50 rounded-lg transition-all duration-200 ease-in-out font-medium text-sm" href="#">
+<span class="material-symbols-outlined">local_shipping</span>
+<span>Shipments</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 hover:bg-slate-200/50 rounded-lg transition-all duration-200 ease-in-out font-medium text-sm" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 hover:bg-slate-200/50 rounded-lg transition-all duration-200 ease-in-out font-medium text-sm" href="#">
+<span class="material-symbols-outlined">group</span>
+<span>Team</span>
+</a>
+</nav>
+<button class="mt-4 mb-8 w-full py-3 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-semibold text-sm shadow-md hover:shadow-lg transition-all active:scale-95 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">add</span>
+<span>New Shipment</span>
+</button>
+<div class="space-y-1 border-t border-slate-200 pt-4">
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 hover:bg-slate-200/50 rounded-lg transition-all duration-200 ease-in-out font-medium text-sm" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Support</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 text-slate-600 hover:bg-slate-200/50 rounded-lg transition-all duration-200 ease-in-out font-medium text-sm" href="#">
+<span class="material-symbols-outlined text-error">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="lg:pl-64 min-h-screen pb-24 lg:pb-8">
+<!-- Top App Bar -->
+<header class="fixed top-0 right-0 left-0 lg:left-64 z-40 bg-white/80 backdrop-blur-md shadow-sm">
+<div class="flex items-center justify-between px-6 py-4">
+<div class="flex items-center gap-4 flex-1">
+<div class="lg:hidden flex items-center gap-2 mr-2">
+<span class="material-symbols-outlined text-primary font-bold">local_shipping</span>
+<span class="font-bold text-primary tracking-tight">PatriMove</span>
+</div>
+<div class="relative max-w-md w-full hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xl">search</span>
+<input class="w-full pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Search tracking, assets, or teams..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 text-slate-500 hover:bg-blue-50 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-blue-50 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="h-8 w-px bg-slate-200 mx-1 hidden sm:block"></div>
+<div class="flex items-center gap-2 pl-2">
+<img alt="User profile" class="w-8 h-8 rounded-full border border-slate-200" data-alt="portrait of a professional logistics manager in a blue office environment, clean professional lighting, focused look" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAjw3WAOKH5RJM9RagIU6icz6Vd_MY7_AabjUiY07x4scQXti9pK6mPhJboGE_Vc5pRGOTrRIrGCblDnrJUQBvKJZyBW9F8gafZhmnxu98V46PmbXjIhlTLQ9RPKfLAe_iAe8WG7TgNZC56OIM4yk1YmQRP1cqUVlwznk6qpKsVFQlWVPVfVGIyRblekuHTBhn6YImDZ4IPga8n7dm2Rgz_omN7Uy1XzrfSdsptYxqdSo74rOzl6ym5HWmPrOTrj5-4M1_szIM8BXI"/>
+</div>
+</div>
+</div>
+<div class="bg-slate-100/50 h-px w-full"></div>
+</header>
+<div class="mt-20 px-6 space-y-8">
+<!-- Hero Section / Capacity Banner -->
+<section class="relative overflow-hidden rounded-3xl bg-primary-container text-white p-8 lg:p-12 shadow-2xl">
+<div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+<div class="space-y-4 max-w-xl">
+<span class="inline-block px-3 py-1 bg-white/10 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-widest text-on-primary-container">System Alert</span>
+<h2 class="text-3xl lg:text-4xl font-black tracking-tight leading-tight">Warehouse Alpha Capacity Reached 92%</h2>
+<p class="text-on-primary-container text-lg font-light leading-relaxed">System suggests rerouting incoming Shipments #TR-882 and #TR-991 to Sector Delta to avoid bottlenecking.</p>
+<div class="flex flex-wrap gap-4 pt-4">
+<button class="px-6 py-3 bg-white text-primary rounded-xl font-bold text-sm hover:bg-surface-container transition-colors shadow-lg shadow-black/10">Reroute Now</button>
+<button class="px-6 py-3 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-xl font-bold text-sm hover:bg-white/20 transition-colors">Dismiss Alert</button>
+</div>
+</div>
+<div class="hidden lg:block relative">
+<div class="w-48 h-48 rounded-full border-[12px] border-white/5 flex items-center justify-center">
+<div class="text-center">
+<span class="block text-5xl font-black">92%</span>
+<span class="text-[10px] uppercase font-bold tracking-widest opacity-60">Capacity</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Decorative element -->
+<div class="absolute -right-20 -bottom-20 w-96 h-96 bg-white/5 rounded-full blur-3xl"></div>
+</section>
+<!-- Operational Pulse Cards (Bento Grid Style) -->
+<section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+<div class="p-6 bg-surface-container-lowest rounded-3xl border-l-4 border-primary shadow-sm hover:shadow-md transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-surface-container rounded-2xl group-hover:bg-primary-container group-hover:text-white transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">package_2</span>
+</div>
+<span class="text-xs font-bold text-slate-400">TOTAL</span>
+</div>
+<p class="text-slate-500 text-sm font-medium mb-1">Total Assets</p>
+<h3 class="text-3xl font-black text-on-surface tracking-tighter">12,842</h3>
+</div>
+<div class="p-6 bg-surface-container-lowest rounded-3xl border-l-4 border-emerald-500 shadow-sm hover:shadow-md transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl group-hover:bg-emerald-500 group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">sync_alt</span>
+</div>
+<span class="text-xs font-bold text-slate-400">ACTIVE</span>
+</div>
+<p class="text-slate-500 text-sm font-medium mb-1">In Use</p>
+<h3 class="text-3xl font-black text-on-surface tracking-tighter">8,110</h3>
+</div>
+<div class="p-6 bg-surface-container-lowest rounded-3xl border-l-4 border-amber-500 shadow-sm hover:shadow-md transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-amber-50 text-amber-600 rounded-2xl group-hover:bg-amber-500 group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">build</span>
+</div>
+<span class="text-xs font-bold text-slate-400">FIX</span>
+</div>
+<p class="text-slate-500 text-sm font-medium mb-1">Maintenance</p>
+<h3 class="text-3xl font-black text-on-surface tracking-tighter">142</h3>
+</div>
+<div class="p-6 bg-surface-container-lowest rounded-3xl border-l-4 border-error shadow-sm hover:shadow-md transition-all group">
+<div class="flex justify-between items-start mb-4">
+<div class="p-3 bg-error-container text-error rounded-2xl group-hover:bg-error group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">warning</span>
+</div>
+<span class="text-xs font-bold text-slate-400">URGENT</span>
+</div>
+<p class="text-slate-500 text-sm font-medium mb-1">Low Stock</p>
+<h3 class="text-3xl font-black text-on-surface tracking-tighter">14</h3>
+</div>
+</section>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Recent Movements -->
+<div class="lg:col-span-2 space-y-4">
+<div class="flex items-center justify-between px-2">
+<h4 class="text-xl font-bold tracking-tight text-on-surface">Recent Movements</h4>
+<button class="text-sm font-semibold text-primary hover:underline">View All</button>
+</div>
+<div class="space-y-3">
+<!-- Movement Item 1 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-2xl hover:bg-white shadow-sm transition-all group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">local_shipping</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Asset #TRK-9002-B</p>
+<p class="text-xs text-slate-400 font-medium">Outbound to Berlin Terminal</p>
+</div>
+</div>
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+<span class="px-3 py-1 bg-emerald-100 text-emerald-700 text-[10px] font-black rounded-full uppercase">In Transit</span>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-on-surface">2m ago</p>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<!-- Movement Item 2 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-2xl hover:bg-white shadow-sm transition-all group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">dock</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Cargo Unit #CON-42</p>
+<p class="text-xs text-slate-400 font-medium">Docking at Warehouse Alpha</p>
+</div>
+</div>
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+<span class="px-3 py-1 bg-blue-100 text-blue-700 text-[10px] font-black rounded-full uppercase">Docked</span>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-on-surface">14m ago</p>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+<!-- Movement Item 3 -->
+<div class="flex items-center justify-between p-4 bg-surface-container-lowest rounded-2xl hover:bg-white shadow-sm transition-all group">
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">forklift</span>
+</div>
+<div>
+<p class="font-bold text-on-surface">Internal Transfer #IT-11</p>
+<p class="text-xs text-slate-400 font-medium">Moving from Row 4 to Row 12</p>
+</div>
+</div>
+<div class="text-right hidden sm:block">
+<p class="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Status</p>
+<span class="px-3 py-1 bg-slate-100 text-slate-700 text-[10px] font-black rounded-full uppercase">Internal</span>
+</div>
+<div class="text-right">
+<p class="text-sm font-bold text-on-surface">42m ago</p>
+<span class="material-symbols-outlined text-slate-300 group-hover:text-primary transition-colors">chevron_right</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions Grid -->
+<div class="space-y-4">
+<h4 class="text-xl font-bold tracking-tight text-on-surface px-2">Quick Actions</h4>
+<div class="grid grid-cols-2 gap-3">
+<button class="flex flex-col items-center justify-center gap-3 p-6 bg-white rounded-3xl shadow-sm hover:shadow-md hover:bg-blue-50 transition-all border border-slate-100 group">
+<span class="material-symbols-outlined text-primary text-3xl group-hover:scale-110 transition-transform">qr_code_scanner</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-600">Scan Asset</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-3 p-6 bg-white rounded-3xl shadow-sm hover:shadow-md hover:bg-blue-50 transition-all border border-slate-100 group">
+<span class="material-symbols-outlined text-primary text-3xl group-hover:scale-110 transition-transform">inventory</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-600">Stock Take</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-3 p-6 bg-white rounded-3xl shadow-sm hover:shadow-md hover:bg-blue-50 transition-all border border-slate-100 group">
+<span class="material-symbols-outlined text-primary text-3xl group-hover:scale-110 transition-transform">location_on</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-600">Track All</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-3 p-6 bg-white rounded-3xl shadow-sm hover:shadow-md hover:bg-blue-50 transition-all border border-slate-100 group">
+<span class="material-symbols-outlined text-primary text-3xl group-hover:scale-110 transition-transform">description</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-600">Reports</span>
+</button>
+</div>
+<!-- Warehouse Map Peek -->
+<div class="mt-6 overflow-hidden rounded-3xl h-48 relative shadow-lg group">
+<img alt="Warehouse Floor Map" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Modern architectural 3D rendering of a large logistics warehouse floor plan with colored heat zones indicating high traffic areas" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAXBNu5UMG1jkRLmTss9JwPYJFw-W3ivxgRQt03al8VIlDjsunfBw8tfI522dbx8lpZsOI9r_hDKJvEP9fqR3xQh31Ldx1AohB1LVgzXEKa80WeWdIRL4DzqScuYWFXijeQhjx2mqBODHJ2rsbfJwfANZHh7uoZnAws1yCUfnoE9vJ1xr04uOcAwTO-AwkPeRFksu_MfvmPJhpEwRZaa5thjzlxMo6xBPclwMBmR3NxSHFAFsed_bApsQPahPMCF3vUV2UCV8JH0M"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-6">
+<div>
+<h5 class="text-white font-bold text-lg">Floor Heatmap</h5>
+<p class="text-white/70 text-xs">Real-time congestion tracking active</p>
+</div>
+</div>
+<div class="absolute top-4 right-4 bg-primary text-white px-3 py-1 rounded-full text-[10px] font-black uppercase">Live</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile Bottom Navigation -->
+<nav class="lg:hidden fixed bottom-0 w-full z-50 bg-white/90 backdrop-blur-xl border-t border-slate-100 flex justify-around items-center px-4 py-3 pb-safe shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center bg-blue-600 text-white rounded-xl px-3 py-1.5 transition-transform active:scale-110" href="#">
+<span class="material-symbols-outlined text-xl" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-0.5">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 hover:text-primary transition-transform active:scale-110" href="#">
+<span class="material-symbols-outlined text-xl">sync_alt</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-0.5">Moves</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 hover:text-primary transition-transform active:scale-110" href="#">
+<span class="material-symbols-outlined text-xl">notifications</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-0.5">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 hover:text-primary transition-transform active:scale-110" href="#">
+<span class="material-symbols-outlined text-xl">person</span>
+<span class="text-[10px] font-bold uppercase tracking-wider mt-0.5">Profile</span>
+</a>
+</nav>
+</body></html>

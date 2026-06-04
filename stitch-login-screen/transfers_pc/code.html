@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PatriMove - Asset Transfers</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "secondary-fixed-dim": "#adcbda",
+                        "surface-container-low": "#f2f4f6",
+                        "inverse-on-surface": "#eff1f3",
+                        "primary-fixed": "#d6e3ff",
+                        "on-secondary-fixed-variant": "#2e4b57",
+                        "primary-fixed-dim": "#a9c7ff",
+                        "inverse-surface": "#2d3133",
+                        "on-primary": "#ffffff",
+                        "on-secondary-fixed": "#001f2a",
+                        "on-tertiary-container": "#84d67f",
+                        "on-background": "#191c1e",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#254778",
+                        "on-error-container": "#93000a",
+                        "on-surface": "#191c1e",
+                        "on-error": "#ffffff",
+                        "surface": "#f7f9fb",
+                        "secondary-fixed": "#c9e7f7",
+                        "on-tertiary": "#ffffff",
+                        "tertiary": "#00440d",
+                        "surface-container-highest": "#e0e3e5",
+                        "outline": "#737780",
+                        "secondary-container": "#c6e4f4",
+                        "tertiary-fixed": "#a3f69c",
+                        "surface-bright": "#f7f9fb",
+                        "inverse-primary": "#a9c7ff",
+                        "surface-container": "#eceef0",
+                        "primary-container": "#315183",
+                        "surface-tint": "#3f5f92",
+                        "surface-container-high": "#e6e8ea",
+                        "tertiary-fixed-dim": "#88d982",
+                        "tertiary-container": "#035e17",
+                        "background": "#f7f9fb",
+                        "error-container": "#ffdad6",
+                        "error": "#ba1a1a",
+                        "surface-variant": "#e0e3e5",
+                        "surface-dim": "#d8dadc",
+                        "on-tertiary-fixed": "#002204",
+                        "outline-variant": "#c3c6d0",
+                        "on-tertiary-fixed-variant": "#005312",
+                        "on-surface-variant": "#43474f",
+                        "on-secondary": "#ffffff",
+                        "primary": "#153a6b",
+                        "on-primary-fixed": "#001b3d",
+                        "secondary": "#466270",
+                        "on-primary-container": "#a5c5fe",
+                        "on-secondary-container": "#4a6774"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface overflow-x-hidden">
+<!-- SideNavBar -->
+<nav class="h-screen w-64 fixed left-0 top-0 flex flex-col bg-[#153a6b] dark:bg-slate-950 font-['Inter'] antialiased tracking-tight py-6">
+<div class="px-6 mb-10">
+<span class="text-xl font-black tracking-tighter text-white dark:text-slate-100">PatriMove</span>
+<p class="text-[10px] uppercase tracking-widest text-blue-200/50 mt-1 font-bold">Enterprise Asset Management</p>
+</div>
+<div class="flex-1 space-y-1">
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="text-sm font-medium">Inventory</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-sm font-medium">Analytics</span>
+</a>
+<!-- Active Tab: Transfers -->
+<a class="bg-[#315183] text-white rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="swap_horiz">swap_horiz</span>
+<span class="text-sm font-medium">Transfers</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="text-sm font-medium">Audit</span>
+</a>
+</div>
+<div class="mt-auto space-y-1">
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen">
+<!-- TopAppBar -->
+<header class="h-16 sticky top-0 z-10 w-full flex items-center justify-between px-8 bg-[#f7f9fb] dark:bg-slate-900 shadow-sm shadow-slate-200/50">
+<div class="flex items-center gap-6 w-1/2">
+<div class="relative w-full max-w-md focus-within:ring-2 focus-within:ring-[#315183]/20 rounded-xl transition-all">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg" data-icon="search">search</span>
+<input class="w-full bg-surface-container-lowest border-none rounded-xl pl-10 py-2 text-sm focus:ring-0 placeholder:text-slate-400" placeholder="Search transfer ID (e.g. TRF-90231)..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors">
+<span class="material-symbols-outlined" data-icon="help_outline">help_outline</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden ml-2 ring-2 ring-surface-container-highest">
+<img alt="User Profile" class="h-full w-full object-cover" data-alt="professional portrait of a corporate executive in a suit with a clean office background and soft lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBYZblzjvaIHTETKt7JkxZrrgVcareXiPm-mjHapT7gXb6oA7NdyKmI0gaKJjVayJ6H18yBfUh3194-mn2mJ1Z8XktSfqvXf5W1ns7CyHwqUYrdZMh4y8FfRTC-sxEUguUYjUx12JQvzuexhuZzJ66NXeVNC_OPXJJwd4d27pw6F3C01aEHVGUIPLMknHIMx9Ts2-5WUVW8_rcQ4mtAcSgfXOkJAgmDQEI-HtQxzbEVc26IR-HBWVdgVvPBfRyUtEMoHYNJOia4yy0"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="p-10">
+<div class="flex items-end justify-between mb-8">
+<div>
+<h1 class="text-3xl font-black tracking-tight text-primary headline-lg">Asset Transfers</h1>
+<p class="text-on-surface-variant body-sm mt-1">Manage and track movements across global facilities.</p>
+</div>
+<div class="flex gap-2">
+<button class="px-6 py-2.5 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-md font-semibold text-sm shadow-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm" data-icon="add">add</span>
+                        Initiate Transfer
+                    </button>
+</div>
+</div>
+<!-- Filter Tabs -->
+<div class="flex items-center gap-8 border-b border-outline-variant/20 mb-10 overflow-x-auto pb-px">
+<button class="pb-4 text-sm font-bold border-b-2 border-primary text-primary whitespace-nowrap">All Transfers</button>
+<button class="pb-4 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Pending Approval</button>
+<button class="pb-4 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">In Transit</button>
+<button class="pb-4 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Completed</button>
+<button class="pb-4 text-sm font-medium text-on-surface-variant hover:text-primary transition-colors whitespace-nowrap">Flagged</button>
+</div>
+<!-- Bento Grid of Transfers -->
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+<!-- Transfer Card 1: In Transit -->
+<div class="bg-surface-container-lowest rounded-xl p-6 transition-all hover:bg-surface-bright flex flex-col justify-between h-full group">
+<div class="flex justify-between items-start mb-6">
+<div>
+<span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant label-md">ID: TRF-90231</span>
+<h3 class="text-lg font-bold text-primary mt-1">High-Density Server Rack</h3>
+</div>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="local_shipping">local_shipping</span>
+                            In Transit
+                        </span>
+</div>
+<div class="grid grid-cols-7 items-center gap-4 mb-8 bg-surface-container-low/50 rounded-xl p-4">
+<div class="col-span-3">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
+<span class="text-[10px] font-bold uppercase">Origin</span>
+</div>
+<p class="text-sm font-semibold text-on-surface leading-tight">North Virginia Data Center (NV-01)</p>
+</div>
+<div class="col-span-1 flex justify-center">
+<span class="material-symbols-outlined text-outline-variant" data-icon="trending_flat">trending_flat</span>
+</div>
+<div class="col-span-3">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="domain">domain</span>
+<span class="text-[10px] font-bold uppercase">Destination</span>
+</div>
+<p class="text-sm font-semibold text-on-surface leading-tight">Frankfurt Hub (EU-W1)</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest overflow-hidden">
+<img alt="Team Member" class="w-full h-full object-cover" data-alt="portrait of a focused male logistics manager in a blue shirt with a modern office setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB3d0KgaNPkBpiZJmFQ7TuhnQNtLnwtvHDH5lHuF3ocQTzksI1Yowkdq3_XtLqnBcGKKJ8qV9QvwIjp0XRhM_TMC4mRm_NXQqQHArf4q7pVKoOgjtIAo0ez_XubGOYGyhQq4oTE9381vZB7Ekq8LgQYk_BRzWVmQm6WTtXB_5eePJ2gnBgT-dI4Wuyj5SIpAhXyhqTeWVwt_ejRdHUtSmghIo0EORDnStcLcZbnnqx4-mcN9nIJZh-OpDB-_YQLFKCkuTZTo8t96Mo"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest bg-surface-container-highest flex items-center justify-center text-[10px] font-bold">
+                                +2
+                            </div>
+</div>
+<button class="px-5 py-2 text-sm font-bold text-primary hover:bg-primary/5 rounded-md transition-all flex items-center gap-2">
+                            Track Shipment
+                            <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Transfer Card 2: Pending Approval -->
+<div class="bg-surface-container-lowest rounded-xl p-6 transition-all hover:bg-surface-bright flex flex-col justify-between h-full group">
+<div class="flex justify-between items-start mb-6">
+<div>
+<span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant label-md">ID: TRF-88412</span>
+<h3 class="text-lg font-bold text-primary mt-1">Medical MRI Scanner Unit</h3>
+</div>
+<span class="px-3 py-1 bg-error-container text-on-error-container rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="pending_actions">pending_actions</span>
+                            Pending Approval
+                        </span>
+</div>
+<div class="grid grid-cols-7 items-center gap-4 mb-8 bg-surface-container-low/50 rounded-xl p-4">
+<div class="col-span-3">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
+<span class="text-[10px] font-bold uppercase">Origin</span>
+</div>
+<p class="text-sm font-semibold text-on-surface leading-tight">Central Logistics Park (CLP-04)</p>
+</div>
+<div class="col-span-1 flex justify-center">
+<span class="material-symbols-outlined text-outline-variant" data-icon="trending_flat">trending_flat</span>
+</div>
+<div class="col-span-3">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="domain">domain</span>
+<span class="text-[10px] font-bold uppercase">Destination</span>
+</div>
+<p class="text-sm font-semibold text-on-surface leading-tight">St. Mary's General Hospital</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="text-[10px] font-bold uppercase">Requested 2h ago</span>
+</div>
+<button class="px-5 py-2 bg-gradient-to-br from-primary to-primary-container text-on-primary rounded-md font-bold text-sm shadow-sm">
+                            Approve Move
+                        </button>
+</div>
+</div>
+<!-- Transfer Card 3: Completed -->
+<div class="bg-surface-container-lowest rounded-xl p-6 transition-all hover:bg-surface-bright flex flex-col justify-between h-full group">
+<div class="flex justify-between items-start mb-6">
+<div>
+<span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant label-md">ID: TRF-77309</span>
+<h3 class="text-lg font-bold text-primary mt-1">Industrial Lathe - Model X4</h3>
+</div>
+<span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="check_circle">check_circle</span>
+                            Completed
+                        </span>
+</div>
+<div class="grid grid-cols-7 items-center gap-4 mb-8 bg-surface-container-low/50 rounded-xl p-4">
+<div class="col-span-3">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
+<span class="text-[10px] font-bold uppercase">Origin</span>
+</div>
+<p class="text-sm font-semibold text-on-surface leading-tight">Manufacturing Plant B</p>
+</div>
+<div class="col-span-1 flex justify-center">
+<span class="material-symbols-outlined text-outline-variant" data-icon="trending_flat">trending_flat</span>
+</div>
+<div class="col-span-3">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="domain">domain</span>
+<span class="text-[10px] font-bold uppercase">Destination</span>
+</div>
+<p class="text-sm font-semibold text-on-surface leading-tight">Regional Distribution Center</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4">
+<div class="flex items-center gap-2 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm" data-icon="history">history</span>
+<span class="text-[10px] font-bold uppercase">Finalized Oct 24, 2023</span>
+</div>
+<button class="px-5 py-2 text-sm font-bold text-on-surface-variant hover:text-primary rounded-md transition-all flex items-center gap-2">
+                            View Receipt
+                        </button>
+</div>
+</div>
+<!-- Transfer Card 4: In Transit -->
+<div class="bg-surface-container-lowest rounded-xl p-6 transition-all hover:bg-surface-bright flex flex-col justify-between h-full group">
+<div class="flex justify-between items-start mb-6">
+<div>
+<span class="text-[10px] font-black uppercase tracking-widest text-on-surface-variant label-md">ID: TRF-91104</span>
+<h3 class="text-lg font-bold text-primary mt-1">Autonomous Delivery Fleet (x4)</h3>
+</div>
+<span class="px-3 py-1 bg-secondary-container text-on-secondary-container rounded-full text-[10px] font-bold uppercase tracking-wider flex items-center gap-1">
+<span class="material-symbols-outlined text-xs" data-icon="local_shipping">local_shipping</span>
+                            In Transit
+                        </span>
+</div>
+<div class="grid grid-cols-7 items-center gap-4 mb-8 bg-surface-container-low/50 rounded-xl p-4">
+<div class="col-span-3">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="location_on">location_on</span>
+<span class="text-[10px] font-bold uppercase">Origin</span>
+</div>
+<p class="text-sm font-semibold text-on-surface leading-tight">Tech R&amp;D Center (Tokyo)</p>
+</div>
+<div class="col-span-1 flex justify-center">
+<span class="material-symbols-outlined text-outline-variant" data-icon="trending_flat">trending_flat</span>
+</div>
+<div class="col-span-3">
+<div class="flex items-center gap-2 text-on-surface-variant mb-1">
+<span class="material-symbols-outlined text-sm" data-icon="domain">domain</span>
+<span class="text-[10px] font-bold uppercase">Destination</span>
+</div>
+<p class="text-sm font-semibold text-on-surface leading-tight">San Francisco Port Hub</p>
+</div>
+</div>
+<div class="flex items-center justify-between pt-4">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface-container-lowest overflow-hidden">
+<img alt="Team Member" class="w-full h-full object-cover" data-alt="close-up of a female engineer with glasses looking at a screen in a bright technical environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5QyVHFQ8BXf9Jucj_1AS-TrQV9YkdmUhxNUpH30Bc8euWerOVicK5c0pvsbBOPVE5tZbvzLarK_N298OAxdfuEajtAiFaeFTiaiYEtpeF7Ac4fDZgEQEp7gg-y7Bl-1yW6e_rEsMSjrARA60bXdgMjVlSZhxO4QGmeqRQ_EA4n2VrLDCb8l7NIDHtTboKtToKOS5TBGjLcqMuXglMQMc7WQwk_M7LBw16GQ-aVZQmksqFcJTITFKyF42q8egugeI8S4gr-BJ5nBk"/>
+</div>
+</div>
+<button class="px-5 py-2 text-sm font-bold text-primary hover:bg-primary/5 rounded-md transition-all flex items-center gap-2">
+                            Track Shipment
+                            <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

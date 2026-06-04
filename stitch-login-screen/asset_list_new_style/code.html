@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PatriMove - Asset Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary": "#466270",
+              "error-container": "#ffdad6",
+              "on-error-container": "#93000a",
+              "on-tertiary-fixed-variant": "#005312",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed": "#001b3d",
+              "primary": "#153a6b",
+              "surface-container-highest": "#e0e3e5",
+              "tertiary-fixed-dim": "#88d982",
+              "on-background": "#191c1e",
+              "outline-variant": "#c3c6d0",
+              "outline": "#737780",
+              "tertiary-fixed": "#a3f69c",
+              "surface-dim": "#d8dadc",
+              "surface-variant": "#e0e3e5",
+              "on-secondary-fixed-variant": "#2e4b57",
+              "primary-fixed": "#d6e3ff",
+              "surface-container-high": "#e6e8ea",
+              "surface-tint": "#3f5f92",
+              "surface-container-low": "#f2f4f6",
+              "on-error": "#ffffff",
+              "secondary-container": "#c6e4f4",
+              "inverse-primary": "#a9c7ff",
+              "inverse-surface": "#2d3133",
+              "surface": "#f7f9fb",
+              "inverse-on-surface": "#eff1f3",
+              "error": "#ba1a1a",
+              "on-surface-variant": "#43474f",
+              "primary-fixed-dim": "#a9c7ff",
+              "on-secondary-container": "#4a6774",
+              "tertiary": "#00440d",
+              "on-primary-fixed-variant": "#254778",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#191c1e",
+              "tertiary-container": "#035e17",
+              "on-secondary": "#ffffff",
+              "secondary-fixed": "#c9e7f7",
+              "background": "#f7f9fb",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed": "#002204",
+              "on-primary-container": "#a5c5fe",
+              "primary-container": "#315183",
+              "surface-bright": "#f7f9fb",
+              "on-tertiary-container": "#84d67f",
+              "secondary-fixed-dim": "#adcbda",
+              "surface-container": "#eceef0",
+              "on-secondary-fixed": "#001f2a"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-effect {
+        backdrop-filter: blur(20px);
+        background-color: rgba(224, 227, 229, 0.8);
+      }
+      .custom-gradient-btn {
+        background: linear-gradient(135deg, #153a6b 0%, #315183 100%);
+      }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f7f9fb;
+        color: #191c1e;
+      }
+      .tonal-depth {
+        box-shadow: 20px 0 50px -15px rgba(21, 58, 107, 0.1);
+      }
+    </style>
+</head>
+<body class="flex min-h-screen">
+<!-- SideNavBar (Authority Source: JSON) -->
+<aside class="hidden md:flex h-screen w-64 fixed left-0 top-0 overflow-y-auto bg-[#153a6b] dark:bg-slate-950 flex flex-col h-full py-6 z-50 tonal-depth">
+<div class="px-6 mb-10">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-white rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="text-lg font-black text-white tracking-widest uppercase">PatriMove</h1>
+<p class="text-[10px] text-blue-200/60 font-medium tracking-wide">Enterprise Asset Management</p>
+</div>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="text-blue-100/70 hover:text-white mx-2 px-4 py-3 flex items-center gap-3 hover:bg-[#315183]/50 transition-all rounded-md font-medium text-sm" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="bg-[#315183] text-white rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-all font-medium text-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span>Inventory</span>
+</a>
+<a class="text-blue-100/70 hover:text-white mx-2 px-4 py-3 flex items-center gap-3 hover:bg-[#315183]/50 transition-all rounded-md font-medium text-sm" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Analytics</span>
+</a>
+<a class="text-blue-100/70 hover:text-white mx-2 px-4 py-3 flex items-center gap-3 hover:bg-[#315183]/50 transition-all rounded-md font-medium text-sm" href="#">
+<span class="material-symbols-outlined">move_up</span>
+<span>Transfers</span>
+</a>
+<a class="text-blue-100/70 hover:text-white mx-2 px-4 py-3 flex items-center gap-3 hover:bg-[#315183]/50 transition-all rounded-md font-medium text-sm" href="#">
+<span class="material-symbols-outlined">verified_user</span>
+<span>Audit</span>
+</a>
+</nav>
+<div class="px-4 mt-6">
+<button class="w-full custom-gradient-btn text-white py-3 rounded-xl font-semibold text-sm shadow-lg flex items-center justify-center gap-2 active:scale-95 duration-150">
+<span class="material-symbols-outlined text-sm">add</span>
+                New Asset
+            </button>
+</div>
+<div class="mt-auto border-t border-white/10 pt-4 space-y-1">
+<a class="text-blue-100/70 hover:text-white mx-2 px-4 py-3 flex items-center gap-3 hover:bg-[#315183]/50 transition-all rounded-md font-medium text-sm" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Help</span>
+</a>
+<a class="text-blue-100/70 hover:text-white mx-2 px-4 py-3 flex items-center gap-3 hover:bg-[#315183]/50 transition-all rounded-md font-medium text-sm" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Canvas -->
+<main class="flex-1 md:ml-64 min-h-screen flex flex-col pb-24 md:pb-0">
+<!-- TopAppBar (Authority Source: JSON) -->
+<header class="w-full sticky top-0 z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none flex items-center justify-between px-6 py-3 w-full">
+<div class="flex items-center gap-4">
+<span class="md:hidden material-symbols-outlined text-primary">menu</span>
+<h2 class="font-headline text-xl font-bold tracking-tighter text-blue-900 dark:text-white">Assets</h2>
+</div>
+<div class="flex items-center gap-6">
+<div class="hidden lg:flex items-center bg-surface-container-low px-4 py-2 rounded-full w-96">
+<span class="material-symbols-outlined text-on-surface-variant text-sm">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-sm w-full placeholder:text-on-surface-variant/60" placeholder="Search global registry..." type="text"/>
+</div>
+<div class="flex items-center gap-3">
+<button class="p-2 rounded-full hover:bg-slate-100 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">notifications</span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-100 transition-colors active:scale-95 duration-150">
+<span class="material-symbols-outlined text-primary">settings</span>
+</button>
+<div class="h-8 w-8 rounded-full overflow-hidden border-2 border-primary-fixed ml-2">
+<img alt="User profile avatar" data-alt="Professional headshot of a corporate executive in a suit, clean studio background, neutral lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBcB-6jKoEXP61ntgR9uhLlg2BAyfqs3KxvS6yqGKR6UXp2QKIi4ucsreTWeOaHcpagGxrAOajyy6yS2XSzkN0ubPpko25PXolsDA4FaAG3BidF9PPNVODFS44YpPc8Y12oCknnBA6YWcnkG75gSbp2CLXYRgHGl362phInAI-M87mcwJ6JQw6TbpT7zqwPVqcLvPcloVuxZc3denldYnVnSC_kIgwC7hQxuRSpA3C6-zcK2t5bVaa9Dq8HR_wrDPNjNU8oZRv1Ssc"/>
+</div>
+</div>
+</div>
+</header>
+<!-- Content Area -->
+<div class="p-6 md:p-10 space-y-8">
+<!-- Bento-style Stats Header -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<div class="col-span-1 md:col-span-2 bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between relative overflow-hidden group">
+<div class="relative z-10">
+<p class="text-label-md text-on-surface-variant font-bold uppercase tracking-wider mb-2">Total Managed Assets</p>
+<h3 class="text-4xl font-black text-primary tracking-tight">14,822</h3>
+<p class="text-xs text-tertiary font-bold mt-2 flex items-center gap-1">
+<span class="material-symbols-outlined text-xs">trending_up</span>
+                            +12% from last quarter
+                        </p>
+</div>
+<div class="absolute right-0 top-0 h-full w-1/3 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-[120px] absolute -right-4 -top-4">inventory</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between border-l-4 border-tertiary">
+<p class="text-label-md text-on-surface-variant font-bold uppercase tracking-wider mb-2">Ativo</p>
+<h3 class="text-3xl font-black text-primary">13,010</h3>
+<div class="w-full bg-surface-container-low h-1 rounded-full mt-4">
+<div class="bg-tertiary h-1 rounded-full w-[88%]"></div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl flex flex-col justify-between border-l-4 border-error">
+<p class="text-label-md text-on-surface-variant font-bold uppercase tracking-wider mb-2">In Maintenance</p>
+<h3 class="text-3xl font-black text-primary">412</h3>
+<div class="w-full bg-surface-container-low h-1 rounded-full mt-4">
+<div class="bg-error h-1 rounded-full w-[12%]"></div>
+</div>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="flex flex-col md:flex-row gap-4 items-center justify-between bg-surface-container-low p-4 rounded-xl">
+<div class="flex flex-wrap gap-2 w-full md:w-auto">
+<button class="bg-surface-container-lowest px-4 py-2 rounded-md text-sm font-semibold border border-outline-variant/20 flex items-center gap-2 hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined text-sm">filter_list</span>
+                        All Categories
+                    </button>
+<button class="bg-surface-container-lowest px-4 py-2 rounded-md text-sm font-semibold border border-outline-variant/20 flex items-center gap-2 hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined text-sm">location_on</span>
+                        Site: Headquarters
+                    </button>
+<button class="bg-surface-container-lowest px-4 py-2 rounded-md text-sm font-semibold border border-outline-variant/20 flex items-center gap-2 hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined text-sm">calendar_month</span>
+                        Acquisition Date
+                    </button>
+</div>
+<div class="flex items-center gap-2 w-full md:w-auto">
+<p class="text-xs text-on-surface-variant font-medium mr-2">Displaying 50 of 14,822</p>
+<button class="p-2 rounded-md hover:bg-surface-container-high">
+<span class="material-symbols-outlined text-primary">grid_view</span>
+</button>
+<button class="p-2 rounded-md bg-primary-container text-white">
+<span class="material-symbols-outlined">list</span>
+</button>
+</div>
+</div>
+<!-- Asset Table Container -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm overflow-hidden">
+<table class="w-full border-collapse">
+<thead>
+<tr class="bg-surface-container-low/50">
+<th class="px-6 py-4 text-left text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Asset Name</th>
+<th class="px-6 py-4 text-left text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Category</th>
+<th class="px-6 py-4 text-left text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Location</th>
+<th class="px-6 py-4 text-left text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Value</th>
+<th class="px-6 py-4 text-left text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Status</th>
+<th class="px-6 py-4 text-right"></th>
+</tr>
+</thead>
+<tbody class="divide-y divide-surface-container-low">
+<!-- Row 1 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed-dim flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">laptop_mac</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">MacBook Pro M2 Max - 16"</p>
+<p class="text-[10px] text-on-surface-variant">SN: PM-2023-448291</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium text-secondary bg-secondary-container/30 px-3 py-1 rounded-full">IT Infrastructure</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-on-surface-variant">location_on</span>
+<span class="text-xs text-on-surface-variant">São Paulo - Office A</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-semibold text-primary">R$ 24.500,00</p>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-tertiary-container text-on-tertiary-container">Ativo</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 -->
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-secondary-fixed flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">precision_manufacturing</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Industrial Lathe - Model X1</p>
+<p class="text-[10px] text-on-surface-variant">SN: PM-2021-0012</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium text-secondary bg-secondary-container/30 px-3 py-1 rounded-full">Machinery</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-on-surface-variant">location_on</span>
+<span class="text-xs text-on-surface-variant">Curitiba Plant</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-semibold text-primary">R$ 185.000,00</p>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-tertiary-container text-on-tertiary-container">Ativo</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 -->
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-error-container flex items-center justify-center text-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">directions_car</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Volvo XC60 - Logistics Fleet</p>
+<p class="text-[10px] text-on-surface-variant">VIN: 4V1BS2DK0M</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium text-secondary bg-secondary-container/30 px-3 py-1 rounded-full">Fleet</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-on-surface-variant">location_on</span>
+<span class="text-xs text-on-surface-variant">Logistics Hub East</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-semibold text-primary">R$ 310.000,00</p>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-error-container text-on-error-container">Maintenance</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary">more_vert</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 -->
+<tr class="bg-surface-container-low/20 hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-lg bg-primary-fixed flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">table_restaurant</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Ergonomic Desk - Walnut</p>
+<p class="text-[10px] text-on-surface-variant">SN: PM-2023-F-099</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium text-secondary bg-secondary-container/30 px-3 py-1 rounded-full">Furniture</span>
+</td>
+<td class="px-6 py-5">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-xs text-on-surface-variant">location_on</span>
+<span class="text-xs text-on-surface-variant">São Paulo - Office B</span>
+</div>
+</td>
+<td class="px-6 py-5">
+<p class="text-sm font-semibold text-primary">R$ 4.200,00</p>
+</td>
+<td class="px-6 py-5">
+<span class="px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-tertiary-container text-on-tertiary-container">Ativo</span>
+</td>
+<td class="px-6 py-5 text-right">
+<button class="p-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary">more_vert</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+<!-- Pagination -->
+<div class="px-6 py-4 flex items-center justify-between border-t border-surface-container-low">
+<button class="px-4 py-2 text-sm font-semibold text-primary hover:bg-surface-container-low rounded-md transition-colors flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+                        Previous
+                    </button>
+<div class="flex items-center gap-2">
+<button class="w-8 h-8 rounded-md bg-primary text-white text-xs font-bold">1</button>
+<button class="w-8 h-8 rounded-md hover:bg-surface-container-low text-xs font-bold">2</button>
+<button class="w-8 h-8 rounded-md hover:bg-surface-container-low text-xs font-bold">3</button>
+<span class="mx-1 text-on-surface-variant">...</span>
+<button class="w-8 h-8 rounded-md hover:bg-surface-container-low text-xs font-bold">297</button>
+</div>
+<button class="px-4 py-2 text-sm font-semibold text-primary hover:bg-surface-container-low rounded-md transition-colors flex items-center gap-2">
+                        Next
+                        <span class="material-symbols-outlined text-sm">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Authority Source: JSON) - Mobile Only -->
+<nav class="md:hidden fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-safe pt-2 bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 z-50 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-transparent py-2" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-inter text-[10px] font-bold uppercase tracking-wider">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#153a6b] dark:text-blue-300 bg-blue-50 dark:bg-blue-900/30 rounded-xl px-3 py-1 tap-highlight-transparent" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">list_alt</span>
+<span class="font-inter text-[10px] font-bold uppercase tracking-wider">Assets</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-transparent py-2" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-inter text-[10px] font-bold uppercase tracking-wider">Search</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-transparent py-2" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="font-inter text-[10px] font-bold uppercase tracking-wider">Profile</span>
+</a>
+</nav>
+</body></html>

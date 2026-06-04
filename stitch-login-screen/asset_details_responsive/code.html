@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PatriMove | Asset Details</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary-fixed": "#ffdbcb",
+              "on-surface-variant": "#444651",
+              "primary-fixed-dim": "#b6c4ff",
+              "on-secondary": "#ffffff",
+              "on-primary-container": "#90a8ff",
+              "background": "#f8f9ff",
+              "primary": "#00236f",
+              "outline-variant": "#c5c5d3",
+              "secondary-container": "#d5e3fc",
+              "on-background": "#0d1c2e",
+              "inverse-on-surface": "#eaf1ff",
+              "on-error-container": "#93000a",
+              "error-container": "#ffdad6",
+              "on-tertiary-fixed": "#341100",
+              "inverse-primary": "#b6c4ff",
+              "outline": "#757682",
+              "on-secondary-container": "#57657a",
+              "on-error": "#ffffff",
+              "surface-container-low": "#eff4ff",
+              "surface-variant": "#d5e3fc",
+              "on-secondary-fixed": "#0d1c2e",
+              "secondary-fixed-dim": "#b9c7df",
+              "tertiary-fixed-dim": "#ffb691",
+              "secondary-fixed": "#d5e3fc",
+              "error": "#ba1a1a",
+              "secondary": "#515f74",
+              "surface": "#f8f9ff",
+              "on-primary": "#ffffff",
+              "on-tertiary-fixed-variant": "#773205",
+              "tertiary": "#4b1c00",
+              "inverse-surface": "#233144",
+              "surface-dim": "#ccdbf3",
+              "primary-fixed": "#dce1ff",
+              "primary-container": "#1e3a8a",
+              "surface-container-lowest": "#ffffff",
+              "on-primary-fixed-variant": "#264191",
+              "on-surface": "#0d1c2e",
+              "surface-tint": "#4059aa",
+              "tertiary-container": "#6e2c00",
+              "surface-container-high": "#dce9ff",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed": "#00164e",
+              "surface-container-highest": "#d5e3fc",
+              "surface-bright": "#f8f9ff",
+              "surface-container": "#e6eeff",
+              "on-secondary-fixed-variant": "#3a485b",
+              "on-tertiary-container": "#f39461"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .tonal-shift-bg {
+            background: linear-gradient(to bottom, #eff4ff 0%, #f8f9ff 100%);
+        }
+        .glass-header {
+            background: rgba(239, 244, 255, 0.8);
+            backdrop-filter: blur(16px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #c5c5d3;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<!-- Desktop Side Navigation -->
+<aside class="fixed left-0 top-0 h-full p-4 space-y-4 h-screen w-64 hidden md:flex flex-col border-r-0 bg-slate-100 dark:bg-slate-950 font-inter text-sm font-medium z-50">
+<div class="flex items-center gap-3 px-2 py-4">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white shadow-lg">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+</div>
+<div>
+<h1 class="text-lg font-black text-blue-900 dark:text-white leading-tight">PatriMove</h1>
+<p class="text-[10px] uppercase tracking-widest text-slate-500">Enterprise Logistics</p>
+</div>
+</div>
+<nav class="flex-1 flex flex-col gap-1 mt-6">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 bg-white dark:bg-slate-900 text-blue-700 dark:text-blue-300 shadow-sm rounded-lg transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span>Assets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="local_shipping">local_shipping</span>
+<span>Movements</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span>Reports</span>
+</a>
+</nav>
+<div class="pt-4 border-t border-slate-200/50 flex flex-col gap-1">
+<button class="w-full py-3 px-4 mb-4 bg-gradient-to-br from-primary to-primary-container text-white rounded-xl font-bold shadow-md hover:shadow-lg transition-all active:scale-95">
+                Register Movement
+            </button>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-blue-800" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-2 text-slate-500 hover:text-error" href="#">
+<span class="material-symbols-outlined" data-icon="logout">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="md:ml-64 min-h-screen bg-surface-container-low pb-20 md:pb-10">
+<!-- Top App Bar (Mobile Visibility & Desktop Title) -->
+<header class="fixed top-0 right-0 left-0 md:left-64 z-40 glass-header h-16 flex items-center justify-between px-6 md:px-10">
+<div class="flex items-center gap-4">
+<button class="md:hidden p-2 text-primary">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<div class="flex items-center gap-2 text-primary">
+<span class="material-symbols-outlined text-sm">arrow_back</span>
+<span class="font-bold tracking-tight text-on-surface">Asset PM-9042-X</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden md:flex items-center bg-surface-container-highest px-3 py-1.5 rounded-full text-xs font-semibold text-primary">
+<span class="w-2 h-2 rounded-full bg-tertiary-container mr-2"></span>
+                    IN TRANSIT
+                </div>
+<button class="p-2 text-slate-500 hover:bg-slate-200/50 rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-slate-200 overflow-hidden">
+<img alt="User profile" data-alt="professional portrait of a warehouse manager in a bright office setting with soft natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDxgglcq99VXjwgpZO-IvTmLVO8RLP3NruBSELrb57CvpgOLXa55Ouv3QaobAQFVC8shcAgyMWUzIff12DaTeQDIsfDR_GwS255q6IA3n7yYzBUiRvngZKciJP6o8Fm6o_r_pgYFNnJGQfntw6iy1iWxCtfCOvXjBds1q64o5NfHFpq51OSKxtIPo460b6pmGiqT046cFtEmZSnN4wWDwi6FwThsbtrtygx-4fx2HKrnliu5snFztBglWiluCZP_V70sCfP9nXTcxU"/>
+</div>
+</div>
+</header>
+<!-- Content Canvas -->
+<div class="pt-16 px-6 md:px-10 max-w-7xl mx-auto">
+<!-- Hero Asset Section -->
+<div class="mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+<!-- Left Column: Image and Actions -->
+<div class="lg:col-span-7 space-y-6">
+<div class="relative group rounded-3xl overflow-hidden shadow-sm bg-surface-container-lowest">
+<img alt="Logistics asset" class="w-full h-[400px] object-cover" data-alt="Modern heavy-duty industrial shipping container with metallic texture in a clean warehouse environment, soft blue atmospheric lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAFQ8nTNRfS-IszUbtkbOlF_Vw1ZPib7P3Kt9FVTuot5InphZ-Y13h9bOgX-I9nIDIVFM-uiRO9-4Qy3iEfs4A0jViHgCFYLlXvpFI_IA3Iyq75GeiSRsG2duwhrukrL_-kCfbY2LZFKL2PX5IOXAfuC6sc8qufVButrnmIeKcmpPkwaCA3TN-aTBvneDFWa5JpdBequvWieasTWDMJUwWsp1sYwMryLrPCVOY2sZ_2bePsOvcW1Bf7Ts3N39Mb2YvcnKbEcG9DTT0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+<div class="absolute bottom-6 left-6 text-white">
+<h2 class="text-3xl font-black tracking-tight mb-1">Industrial Power Unit</h2>
+<p class="text-white/80 font-medium">Model: XR-900 High Capacity</p>
+</div>
+<button class="absolute top-6 right-6 p-3 bg-white/20 backdrop-blur-md rounded-2xl text-white hover:bg-white/40 transition-colors">
+<span class="material-symbols-outlined">fullscreen</span>
+</button>
+</div>
+<div class="flex flex-wrap gap-4">
+<button class="flex-1 min-w-[200px] py-4 px-6 bg-gradient-to-br from-primary to-primary-container text-white rounded-2xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-primary/20 active:scale-95 transition-transform">
+<span class="material-symbols-outlined">swap_horiz</span>
+                            Register Movement
+                        </button>
+<button class="flex-1 min-w-[200px] py-4 px-6 bg-surface-container-high text-primary rounded-2xl font-bold flex items-center justify-center gap-3 hover:bg-surface-container-highest transition-colors active:scale-95">
+<span class="material-symbols-outlined">engineering</span>
+                            Schedule Maintenance
+                        </button>
+</div>
+<!-- Details Bento Grid -->
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+<div class="bg-surface-container-lowest p-5 rounded-3xl shadow-sm border border-outline-variant/10">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Category</p>
+<p class="text-on-surface font-bold text-lg">Heavy Mach.</p>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-3xl shadow-sm border border-outline-variant/10">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Asset ID</p>
+<p class="text-on-surface font-bold text-lg">PM-9042</p>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-3xl shadow-sm border border-outline-variant/10">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Serial</p>
+<p class="text-on-surface font-bold text-lg">SN-0021-X</p>
+</div>
+<div class="bg-surface-container-lowest p-5 rounded-3xl shadow-sm border border-outline-variant/10">
+<p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">Current Holder</p>
+<p class="text-on-surface font-bold text-lg">Ops Team A</p>
+</div>
+</div>
+</div>
+<!-- Right Column: Map and Timeline -->
+<div class="lg:col-span-5 space-y-6">
+<!-- Location Card -->
+<div class="bg-surface-container-lowest rounded-3xl shadow-sm overflow-hidden border border-outline-variant/10 flex flex-col h-[320px]">
+<div class="px-6 py-4 flex items-center justify-between">
+<div>
+<h3 class="font-bold text-on-surface">Current Location</h3>
+<p class="text-xs text-on-surface-variant">Zone 4, Distribution Center North</p>
+</div>
+<span class="material-symbols-outlined text-primary">location_on</span>
+</div>
+<div class="flex-1 bg-slate-200 relative group cursor-pointer">
+<img alt="Map view" class="w-full h-full object-cover" data-alt="Clean minimalist digital map interface showing a warehouse district with a blue location pin and soft gray tones" data-location="Chicago" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAgHUV_4JDRLy_F2RGmPqSBgYeP0mdYnNZqJ3Pxi3l5LrCfwG2Z-hPgdyjgdNNF2vN9h1fW6zB2iuCwz1YKeVOSrXv53RLr4jQzltJQmLafnKVusf6mriP6bSORKSpUv9VaQ4Cn2CS6waOFcGCrhsI71r5kei8fd6-3Bm3IhfF0ZOfgMmS5kYF4DXKZ9KYnIv5uPU3Jmpw_NqbebPboCrSvGGjSDN9mN5rLR-wCbBZ307Csm4yf6AdIjMWBq8rjOqY0gI7pdb-w6Pg"/>
+<div class="absolute inset-0 bg-primary/10 group-hover:bg-transparent transition-colors"></div>
+</div>
+</div>
+<!-- Movement History Timeline -->
+<div class="bg-surface-container-lowest rounded-3xl shadow-sm border border-outline-variant/10 flex flex-col max-h-[460px]">
+<div class="px-6 py-5 border-b border-surface-container flex items-center justify-between">
+<h3 class="font-bold text-on-surface">Movement History</h3>
+<button class="text-xs font-bold text-primary uppercase tracking-widest">View Full</button>
+</div>
+<div class="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-6">
+<!-- Timeline Item 1 -->
+<div class="flex gap-4 group">
+<div class="relative flex flex-col items-center">
+<div class="w-10 h-10 rounded-xl bg-blue-50 text-primary flex items-center justify-center relative z-10 group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">local_shipping</span>
+</div>
+<div class="w-0.5 h-full bg-surface-container mt-2"></div>
+</div>
+<div class="pt-1">
+<p class="text-on-surface font-bold text-sm">Departure from Site Alpha</p>
+<p class="text-xs text-on-surface-variant mb-2">Today, 09:12 AM • Logged by Marcus</p>
+<div class="inline-flex items-center bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                        In Transit
+                                    </div>
+</div>
+</div>
+<!-- Timeline Item 2 -->
+<div class="flex gap-4 group">
+<div class="relative flex flex-col items-center">
+<div class="w-10 h-10 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center relative z-10 group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-lg">inventory_2</span>
+</div>
+<div class="w-0.5 h-full bg-surface-container mt-2"></div>
+</div>
+<div class="pt-1">
+<p class="text-on-surface font-bold text-sm">Maintenance Inspection</p>
+<p class="text-xs text-on-surface-variant mb-2">Oct 24, 02:45 PM • Logged by Tech-04</p>
+<div class="inline-flex items-center bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                        Completed
+                                    </div>
+</div>
+</div>
+<!-- Timeline Item 3 -->
+<div class="flex gap-4 group">
+<div class="relative flex flex-col items-center">
+<div class="w-10 h-10 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center relative z-10 group-hover:bg-primary group-hover:text-white transition-colors">
+<span class="material-symbols-outlined text-lg">check_circle</span>
+</div>
+</div>
+<div class="pt-1">
+<p class="text-on-surface font-bold text-sm">Received at Hub Central</p>
+<p class="text-xs text-on-surface-variant mb-2">Oct 21, 11:30 AM • Logged by Sarah</p>
+<div class="inline-flex items-center bg-slate-100 text-slate-600 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                                        Stored
+                                    </div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Additional Documentation Section (Editorial Spacing) -->
+<div class="mt-12 mb-20">
+<h3 class="text-2xl font-black text-on-surface tracking-tight mb-6">Technical Specifications</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<div class="bg-surface-container p-6 rounded-3xl border border-outline-variant/20">
+<h4 class="font-bold text-primary mb-2">Dimensions</h4>
+<div class="space-y-2">
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Height</span>
+<span class="font-bold">120cm</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Width</span>
+<span class="font-bold">85cm</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Depth</span>
+<span class="font-bold">210cm</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container p-6 rounded-3xl border border-outline-variant/20">
+<h4 class="font-bold text-primary mb-2">Compliance</h4>
+<div class="space-y-2">
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Safety Rating</span>
+<span class="font-bold text-on-tertiary-fixed-variant">Class A</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Last Audit</span>
+<span class="font-bold">15 Sep 2023</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Next Audit</span>
+<span class="font-bold">15 Mar 2024</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container p-6 rounded-3xl border border-outline-variant/20">
+<h4 class="font-bold text-primary mb-2">Manuals</h4>
+<div class="space-y-3">
+<a class="flex items-center gap-2 text-sm font-bold text-primary hover:underline" href="#">
+<span class="material-symbols-outlined text-base">picture_as_pdf</span>
+                                Installation_Guide.pdf
+                            </a>
+<a class="flex items-center gap-2 text-sm font-bold text-primary hover:underline" href="#">
+<span class="material-symbols-outlined text-base">picture_as_pdf</span>
+                                Maintenance_Manual_v2.pdf
+                            </a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- Mobile Navigation Bar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl md:hidden rounded-t-3xl shadow-[0_-4px_20px_rgba(0,0,0,0.05)] border-t border-slate-100 dark:border-slate-800">
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-none scale-90 active:scale-100 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl px-3 py-1 tap-highlight-none scale-90 active:scale-100 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2" style="font-variation-settings: 'FILL' 1;">inventory_2</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Assets</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-none scale-90 active:scale-100 transition-transform" href="#">
+<span class="material-symbols-outlined text-3xl" data-icon="add_circle">add_circle</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Move</span>
+</a>
+<a class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-none scale-90 active:scale-100 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

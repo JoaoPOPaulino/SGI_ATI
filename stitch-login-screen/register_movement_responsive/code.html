@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Register Movement - PatriMove</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary-fixed": "#ffdbcb",
+                        "on-surface-variant": "#444651",
+                        "primary-fixed-dim": "#b6c4ff",
+                        "on-secondary": "#ffffff",
+                        "on-primary-container": "#90a8ff",
+                        "background": "#f8f9ff",
+                        "primary": "#00236f",
+                        "outline-variant": "#c5c5d3",
+                        "secondary-container": "#d5e3fc",
+                        "on-background": "#0d1c2e",
+                        "inverse-on-surface": "#eaf1ff",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#341100",
+                        "inverse-primary": "#b6c4ff",
+                        "outline": "#757682",
+                        "on-secondary-container": "#57657a",
+                        "on-error": "#ffffff",
+                        "surface-container-low": "#eff4ff",
+                        "surface-variant": "#d5e3fc",
+                        "on-secondary-fixed": "#0d1c2e",
+                        "secondary-fixed-dim": "#b9c7df",
+                        "tertiary-fixed-dim": "#ffb691",
+                        "secondary-fixed": "#d5e3fc",
+                        "error": "#ba1a1a",
+                        "secondary": "#515f74",
+                        "surface": "#f8f9ff",
+                        "on-primary": "#ffffff",
+                        "on-tertiary-fixed-variant": "#773205",
+                        "tertiary": "#4b1c00",
+                        "inverse-surface": "#233144",
+                        "surface-dim": "#ccdbf3",
+                        "primary-fixed": "#dce1ff",
+                        "primary-container": "#1e3a8a",
+                        "surface-container-lowest": "#ffffff",
+                        "on-primary-fixed-variant": "#264191",
+                        "on-surface": "#0d1c2e",
+                        "surface-tint": "#4059aa",
+                        "tertiary-container": "#6e2c00",
+                        "surface-container-high": "#dce9ff",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed": "#00164e",
+                        "surface-bright": "#f8f9ff",
+                        "surface-container": "#e6eeff",
+                        "on-secondary-fixed-variant": "#3a485b",
+                        "on-tertiary-container": "#f39461"
+                    },
+                    fontFamily: {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8f9ff;
+        }
+        .tonal-shift-bg {
+            background-color: #f1f5f9; /* Fallback for tonal shift */
+        }
+        .tap-highlight-none {
+            -webkit-tap-highlight-color: transparent;
+        }
+    </style>
+</head>
+<body class="text-on-background selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Desktop SideNavBar -->
+<aside class="fixed left-0 top-0 h-full p-4 space-y-4 bg-slate-100 dark:bg-slate-950 h-screen w-64 hidden md:flex flex-col border-r-0 z-50">
+<div class="flex items-center gap-3 px-2 mb-6">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-black text-xl">P</div>
+<div>
+<h1 class="text-lg font-black text-blue-900 dark:text-white leading-tight">PatriMove</h1>
+<p class="text-xs text-slate-500 font-medium">Enterprise Logistics</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all duration-200 ease-in-out font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all duration-200 ease-in-out font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span>Assets</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all duration-200 ease-in-out font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined">local_shipping</span>
+<span>Movements</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all duration-200 ease-in-out font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined">analytics</span>
+<span>Reports</span>
+</a>
+</nav>
+<div class="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-1">
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined">help</span>
+<span>Help</span>
+</a>
+<a class="flex items-center gap-3 px-4 py-3 text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-200 transition-all duration-200 font-inter text-sm font-medium" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span>Logout</span>
+</a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="md:ml-64 min-h-screen pb-24 md:pb-12">
+<!-- TopAppBar (Small/Mobile Style for reference, but keeping layout consistent) -->
+<header class="flex items-center justify-between px-6 h-16 w-full fixed top-0 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm z-40 md:relative md:bg-transparent md:shadow-none md:backdrop-blur-none">
+<h2 class="text-xl font-bold text-blue-950 dark:text-white md:hidden">PatriMove</h2>
+<div class="hidden md:flex flex-col">
+<span class="text-sm font-medium text-slate-500">Logistics Workflow</span>
+<h2 class="text-2xl font-extrabold tracking-tight text-on-surface">Register Movement</h2>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-slate-200/50 transition-colors">
+<span class="material-symbols-outlined text-slate-600">notifications</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden bg-slate-200">
+<img alt="User Profile" data-alt="professional headshot of a logistics manager in a clean office setting, soft daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARanNiIWU8IWgv6lz8uEiUCgEp8T1SL7koO6gvONIgH_AivnKclaXlXfep856jCZuiXL5JeppVkz7lexbVvjFt4Nju5J3fDnHidQatpVYz9Luy-kcNVoyRCknn_zKKzSKL9dNL1toxKOJDUV5ObDpQl5BW-B1zRfQJsAsOlzDlNQJVGD28vhKxz3K7oRAgH6m5FI4J5o-IMfvosiqTyEtKB0qHYQ90QbdqxXEfIbZFWhti1drBSsaAhqYOc56U56gN9eikftCANcU"/>
+</div>
+</div>
+</header>
+<div class="max-w-5xl mx-auto px-6 pt-24 md:pt-10 space-y-8">
+<!-- Movement Type Selection (Horizontal Bento Pattern) -->
+<section class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<label class="relative group cursor-pointer">
+<input checked="" class="peer sr-only" name="movement_type" type="radio"/>
+<div class="h-full p-6 rounded-xl bg-surface-container-lowest border-l-4 border-transparent peer-checked:border-primary peer-checked:bg-primary-fixed/20 transition-all duration-300 shadow-sm group-hover:shadow-md">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary text-3xl">login</span>
+<div class="w-4 h-4 rounded-full border-2 border-outline peer-checked:bg-primary peer-checked:border-primary"></div>
+</div>
+<h3 class="text-lg font-bold text-on-surface mb-1">Check-in</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Incoming assets to the inventory system.</p>
+</div>
+</label>
+<label class="relative group cursor-pointer">
+<input class="peer sr-only" name="movement_type" type="radio"/>
+<div class="h-full p-6 rounded-xl bg-surface-container-lowest border-l-4 border-transparent peer-checked:border-primary peer-checked:bg-primary-fixed/20 transition-all duration-300 shadow-sm group-hover:shadow-md">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary text-3xl">logout</span>
+<div class="w-4 h-4 rounded-full border-2 border-outline"></div>
+</div>
+<h3 class="text-lg font-bold text-on-surface mb-1">Check-out</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Departure of assets for external use.</p>
+</div>
+</label>
+<label class="relative group cursor-pointer">
+<input class="peer sr-only" name="movement_type" type="radio"/>
+<div class="h-full p-6 rounded-xl bg-surface-container-lowest border-l-4 border-transparent peer-checked:border-primary peer-checked:bg-primary-fixed/20 transition-all duration-300 shadow-sm group-hover:shadow-md">
+<div class="flex justify-between items-start mb-4">
+<span class="material-symbols-outlined text-primary text-3xl">swap_horiz</span>
+<div class="w-4 h-4 rounded-full border-2 border-outline"></div>
+</div>
+<h3 class="text-lg font-bold text-on-surface mb-1">Transfer</h3>
+<p class="text-sm text-on-surface-variant leading-relaxed">Internal relocation between departments.</p>
+</div>
+</label>
+</section>
+<!-- Main Form Card -->
+<div class="bg-surface-container-lowest rounded-2xl p-8 shadow-sm">
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+<!-- Form Fields -->
+<div class="lg:col-span-7 space-y-8">
+<!-- Asset Search Section -->
+<div class="space-y-3">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">Asset Search</label>
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-low rounded-xl border-none focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-lowest transition-all placeholder:text-outline" placeholder="Search by ID, Serial, or Name..." type="text"/>
+</div>
+<div class="flex flex-wrap gap-2 pt-2">
+<span class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-xs font-medium flex items-center gap-1">
+                                    SKU-9021 <span class="material-symbols-outlined text-sm cursor-pointer">close</span>
+</span>
+</div>
+</div>
+<!-- Destination & Condition Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="space-y-3">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">Destination/Holder</label>
+<select class="w-full px-4 py-4 bg-surface-container-low rounded-xl border-none focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-lowest transition-all appearance-none cursor-pointer">
+<option>Select Destination</option>
+<option>Main Warehouse (A1)</option>
+<option>Tech Hub South</option>
+<option>Individual: John Doe</option>
+</select>
+</div>
+<div class="space-y-3">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">Asset Condition</label>
+<div class="flex items-center gap-2 p-1 bg-surface-container-low rounded-xl">
+<button class="flex-1 py-3 px-2 rounded-lg text-xs font-bold bg-white shadow-sm text-primary">GOOD</button>
+<button class="flex-1 py-3 px-2 rounded-lg text-xs font-bold text-on-surface-variant hover:bg-white/50 transition-colors">DAMAGED</button>
+<button class="flex-1 py-3 px-2 rounded-lg text-xs font-bold text-on-surface-variant hover:bg-white/50 transition-colors">CLEANING</button>
+</div>
+</div>
+</div>
+<!-- Notes Area -->
+<div class="space-y-3">
+<label class="block text-xs font-bold uppercase tracking-widest text-on-surface-variant">Movement Notes</label>
+<textarea class="w-full p-4 bg-surface-container-low rounded-xl border-none focus:ring-2 focus:ring-primary/40 focus:bg-surface-container-lowest transition-all resize-none" placeholder="Optional comments regarding asset status or movement reasons..." rows="4"></textarea>
+</div>
+</div>
+<!-- Side Info & Policy -->
+<div class="lg:col-span-5 space-y-6">
+<div class="bg-surface-container-low rounded-2xl p-6 border-l-4 border-primary/20">
+<h4 class="text-sm font-bold text-on-surface mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">verified_user</span>
+                                Operational Policy
+                            </h4>
+<ul class="space-y-3">
+<li class="flex gap-3 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+<span>All movements are logged with UTC timestamps and user ID.</span>
+</li>
+<li class="flex gap-3 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+<span>Damaged assets require mandatory photo upload (Step 2).</span>
+</li>
+<li class="flex gap-3 text-sm text-on-surface-variant">
+<span class="material-symbols-outlined text-primary text-lg">check_circle</span>
+<span>Transfers over $5,000 value require supervisor approval.</span>
+</li>
+</ul>
+</div>
+<div class="relative rounded-2xl overflow-hidden h-48 bg-slate-200 group">
+<img alt="Warehouse logistics" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" data-alt="high-angle wide shot of a clean modern warehouse with organized shelving and logistics robots moving through aisles" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA8FpMJuFPHQqpZesLESH0AEgOxe6PxOKfA2qzjDKNlN2iHoMYA2YXPnQv5SR94a1fJuXFjw-QLXg53U5TzO_ICrovTx-lb4avJSg9PZGerTdIS09wMuehLuVjhMHFbslv8s0WYkYKkksluR6KzLRmNX8ZXB-wyzBM-sYFU43gSAyxHhmlYhzd-CItKidURdfXmKisCUDwYZOJ8qFDOht89tHTUNHgJ6T-s-x-ZYAMA-htWGLhMbv876ZYINPo_o9ArvDZiE9jp1wM"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent flex items-end p-6">
+<p class="text-white text-xs font-medium">Real-time inventory synchronization active.</p>
+</div>
+</div>
+<!-- Summary Display -->
+<div class="space-y-2 pt-4">
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Items Selected</span>
+<span class="font-bold">1</span>
+</div>
+<div class="flex justify-between text-sm">
+<span class="text-on-surface-variant">Movement Priority</span>
+<span class="text-tertiary font-bold">Standard</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Footer Actions -->
+<div class="mt-12 pt-8 border-t border-surface-container flex flex-col md:flex-row gap-4 justify-end">
+<button class="px-8 py-4 rounded-xl text-primary font-bold hover:bg-surface-container-high transition-colors text-sm">
+                        Cancel Movement
+                    </button>
+<button class="px-10 py-4 bg-gradient-to-r from-primary to-primary-container text-white font-bold rounded-xl shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                        Confirm Movement
+                        <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar (Mobile Only) -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xl md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)] rounded-t-3xl">
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-none scale-90 active:scale-100 transition-transform">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-none scale-90 active:scale-100 transition-transform">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Assets</span>
+</div>
+<div class="flex flex-col items-center justify-center bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-xl px-3 py-1 tap-highlight-none scale-90 active:scale-100 transition-transform">
+<span class="material-symbols-outlined">add_circle</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Move</span>
+</div>
+<div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500 tap-highlight-none scale-90 active:scale-100 transition-transform">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-bold uppercase tracking-widest mt-1">Profile</span>
+</div>
+</nav>
+</body></html>

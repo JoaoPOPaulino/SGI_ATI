@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>PatriMove - Enterprise Asset Management</title>
+<!-- Google Fonts: Inter -->
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed-dim": "#adcbda",
+              "surface-container-low": "#f2f4f6",
+              "inverse-on-surface": "#eff1f3",
+              "primary-fixed": "#d6e3ff",
+              "on-secondary-fixed-variant": "#2e4b57",
+              "primary-fixed-dim": "#a9c7ff",
+              "inverse-surface": "#2d3133",
+              "on-primary": "#ffffff",
+              "on-secondary-fixed": "#001f2a",
+              "on-tertiary-container": "#84d67f",
+              "on-background": "#191c1e",
+              "surface-container-lowest": "#ffffff",
+              "on-primary-fixed-variant": "#254778",
+              "on-error-container": "#93000a",
+              "on-surface": "#191c1e",
+              "on-error": "#ffffff",
+              "surface": "#f7f9fb",
+              "secondary-fixed": "#c9e7f7",
+              "on-tertiary": "#ffffff",
+              "tertiary": "#00440d",
+              "surface-container-highest": "#e0e3e5",
+              "outline": "#737780",
+              "secondary-container": "#c6e4f4",
+              "tertiary-fixed": "#a3f69c",
+              "surface-bright": "#f7f9fb",
+              "inverse-primary": "#a9c7ff",
+              "surface-container": "#eceef0",
+              "primary-container": "#315183",
+              "surface-tint": "#3f5f92",
+              "surface-container-high": "#e6e8ea",
+              "tertiary-fixed-dim": "#88d982",
+              "tertiary-container": "#035e17",
+              "background": "#f7f9fb",
+              "error-container": "#ffdad6",
+              "error": "#ba1a1a",
+              "surface-variant": "#e0e3e5",
+              "surface-dim": "#d8dadc",
+              "on-tertiary-fixed": "#002204",
+              "outline-variant": "#c3c6d0",
+              "on-tertiary-fixed-variant": "#005312",
+              "on-surface-variant": "#43474f",
+              "on-secondary": "#ffffff",
+              "primary": "#153a6b",
+              "on-primary-fixed": "#001b3d",
+              "secondary": "#466270",
+              "on-primary-container": "#a5c5fe",
+              "on-secondary-container": "#4a6774"
+            },
+            fontFamily: {
+              "headline": ["Inter"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .zebra-striping div:nth-child(even) {
+            background-color: #f2f4f6;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface antialiased">
+<!-- SideNavBar (from JSON) -->
+<nav class="h-screen w-64 fixed left-0 top-0 flex flex-col bg-[#153a6b] dark:bg-slate-950 font-['Inter'] antialiased tracking-tight py-6">
+<div class="px-6 mb-10">
+<h1 class="text-xl font-black tracking-tighter text-white dark:text-slate-100">PatriMove</h1>
+<p class="text-[10px] uppercase tracking-[0.2em] text-blue-200/50 font-bold mt-1">Enterprise Asset Management</p>
+</div>
+<div class="flex-1 space-y-1">
+<!-- Active Tab: Dashboard -->
+<a class="bg-[#315183] text-white rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors scale-98 active:opacity-90" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors scale-98 active:opacity-90" href="#">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="text-sm font-medium">Inventory</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors scale-98 active:opacity-90" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-sm font-medium">Analytics</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors scale-98 active:opacity-90" href="#">
+<span class="material-symbols-outlined" data-icon="swap_horiz">swap_horiz</span>
+<span class="text-sm font-medium">Transfers</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors scale-98 active:opacity-90" href="#">
+<span class="material-symbols-outlined" data-icon="fact_check">fact_check</span>
+<span class="text-sm font-medium">Audit</span>
+</a>
+</div>
+<div class="mt-auto pt-6 space-y-1">
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+<a class="text-blue-100/70 hover:bg-[#315183]/50 rounded-md mx-2 px-4 py-3 flex items-center gap-3 transition-colors" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="text-sm font-medium">Support</span>
+</a>
+</div>
+</nav>
+<!-- Main Content Canvas -->
+<main class="ml-64 min-h-screen flex flex-col">
+<!-- TopAppBar (from JSON) -->
+<header class="h-16 sticky top-0 z-10 w-full flex items-center justify-between px-8 bg-[#f7f9fb] dark:bg-slate-900 shadow-sm shadow-slate-200/50 dark:shadow-none">
+<div class="flex items-center gap-6 flex-1">
+<div class="relative w-full max-w-md">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-lg">search</span>
+<input class="w-full bg-surface-container-lowest border-none rounded-xl py-2 pl-10 pr-4 text-sm focus:ring-2 focus:ring-[#315183]/20 transition-all placeholder:text-outline-variant" placeholder="Search assets, locations, or users..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors relative">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="notifications">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full border-2 border-surface"></span>
+</button>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="help_outline">help_outline</span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant/30 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs font-bold text-on-surface">Alex Thompson</p>
+<p class="text-[10px] text-on-surface-variant">Fleet Manager</p>
+</div>
+<img alt="User Profile" class="h-10 w-10 rounded-full border-2 border-surface-container-highest object-cover" data-alt="close-up portrait of a professional man in a business casual outfit with a friendly expression in a modern office environment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBXCMsRPbqyySDtf6vA1Qco2hvidc51sNC0IQQ_jzWDytjezB94OwNDwxQJ8HzPpsFtWJ5TH0viz4Ud3wJdXePDY63Di6suRLBD_MJyIZRvVUuCVvva1y4Vignzq9fq6nMavnqk3z_Que1tQyrviru0CSHPv9_M0YePPfsJD12C8XRlWe6kk2k7jMxeNj_Kw4MC4qI-AbEsmDhXz4IUyKWRgEc0zjD07ltYDMDrnKrpjfkn4oKQ8yjGIqbHKHf-XuFvvB_3WZcY4gY"/>
+</div>
+</div>
+</header>
+<!-- Dashboard Canvas -->
+<div class="p-10 space-y-10">
+<!-- Welcome Header -->
+<div class="flex items-end justify-between">
+<div>
+<h2 class="text-[2rem] font-extrabold tracking-tight text-primary font-headline leading-tight">Dashboard Overview</h2>
+<p class="text-on-surface-variant mt-1 font-medium italic opacity-80">System-wide operational status as of today.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 bg-surface-container-lowest text-primary text-sm font-semibold rounded-md shadow-sm border border-outline-variant/10 hover:bg-surface-bright transition-all">
+<span class="material-symbols-outlined text-lg mr-1">download</span> Export Report
+                    </button>
+<button class="px-6 py-2 bg-gradient-to-br from-primary to-primary-container text-on-primary text-sm font-bold rounded-md shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all">
+                        + Register Asset
+                    </button>
+</div>
+</div>
+<!-- Bento Grid KPI Section -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+<!-- Total Assets Card -->
+<div class="bg-surface-container-lowest p-6 rounded-xl relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-6xl" data-icon="inventory">inventory</span>
+</div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Total Assets</p>
+<h3 class="text-4xl font-black text-primary mt-2">1,284</h3>
+<div class="mt-4 flex items-center text-[11px] font-bold text-tertiary">
+<span class="material-symbols-outlined text-sm mr-1">trending_up</span>
+<span>+12% from last month</span>
+</div>
+</div>
+<!-- In Transit Card -->
+<div class="bg-surface-container-lowest p-6 rounded-xl relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-6xl" data-icon="local_shipping">local_shipping</span>
+</div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">In Transit</p>
+<h3 class="text-4xl font-black text-[#e67e22] mt-2">42</h3>
+<div class="mt-4 flex items-center text-[11px] font-bold text-on-surface-variant">
+<span class="material-symbols-outlined text-sm mr-1">schedule</span>
+<span>8 arriving within 24h</span>
+</div>
+</div>
+<!-- Maintenance Card -->
+<div class="bg-surface-container-lowest p-6 rounded-xl relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-6xl" data-icon="build">build</span>
+</div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Maintenance</p>
+<h3 class="text-4xl font-black text-error mt-2">15</h3>
+<div class="mt-4 flex items-center text-[11px] font-bold text-error">
+<span class="material-symbols-outlined text-sm mr-1">warning</span>
+<span>3 critical issues pending</span>
+</div>
+</div>
+<!-- Available Assets Card -->
+<div class="bg-surface-container-lowest p-6 rounded-xl relative overflow-hidden group">
+<div class="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-6xl" data-icon="check_circle">check_circle</span>
+</div>
+<p class="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Available Assets</p>
+<h3 class="text-4xl font-black text-tertiary mt-2">912</h3>
+<div class="mt-4 flex items-center text-[11px] font-bold text-on-surface-variant">
+<span class="material-symbols-outlined text-sm mr-1">sync</span>
+<span>71.2% Utilization rate</span>
+</div>
+</div>
+</div>
+<!-- Middle Section: Asymmetric Layout (Chart & Quick Stats) -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Bar Chart Section -->
+<div class="lg:col-span-2 bg-surface-container-lowest p-8 rounded-xl">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h4 class="text-lg font-bold text-on-surface tracking-tight">Recent Movements</h4>
+<p class="text-xs text-on-surface-variant">Volume of asset transfers across logistics hubs.</p>
+</div>
+<select class="text-xs font-bold bg-surface border-none rounded-lg focus:ring-0 cursor-pointer">
+<option>Last 7 Days</option>
+<option>Last 30 Days</option>
+</select>
+</div>
+<div class="h-64 flex items-end justify-between gap-4 px-2">
+<!-- Bar Item -->
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-primary-container/20 rounded-t-lg relative group h-[40%]">
+<div class="absolute inset-0 bg-primary-container rounded-t-lg transition-all duration-500 scale-y-100 origin-bottom group-hover:bg-primary"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">124</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Mon</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-primary-container/20 rounded-t-lg relative group h-[65%]">
+<div class="absolute inset-0 bg-primary-container rounded-t-lg transition-all duration-500 scale-y-100 origin-bottom group-hover:bg-primary"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">185</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Tue</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-primary-container/20 rounded-t-lg relative group h-[90%]">
+<div class="absolute inset-0 bg-primary-container rounded-t-lg transition-all duration-500 scale-y-100 origin-bottom group-hover:bg-primary"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">256</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Wed</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-primary-container/20 rounded-t-lg relative group h-[55%]">
+<div class="absolute inset-0 bg-primary-container rounded-t-lg transition-all duration-500 scale-y-100 origin-bottom group-hover:bg-primary"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">142</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Thu</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-primary-container/20 rounded-t-lg relative group h-[75%]">
+<div class="absolute inset-0 bg-primary-container rounded-t-lg transition-all duration-500 scale-y-100 origin-bottom group-hover:bg-primary"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">210</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Fri</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-primary-container/20 rounded-t-lg relative group h-[30%]">
+<div class="absolute inset-0 bg-primary-container rounded-t-lg transition-all duration-500 scale-y-100 origin-bottom group-hover:bg-primary"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">88</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Sat</span>
+</div>
+<div class="flex-1 flex flex-col items-center gap-3">
+<div class="w-full bg-primary-container/20 rounded-t-lg relative group h-[20%]">
+<div class="absolute inset-0 bg-primary-container rounded-t-lg transition-all duration-500 scale-y-100 origin-bottom group-hover:bg-primary"></div>
+<div class="absolute -top-8 left-1/2 -translate-x-1/2 text-[10px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">65</div>
+</div>
+<span class="text-[10px] font-bold text-on-surface-variant uppercase">Sun</span>
+</div>
+</div>
+</div>
+<!-- Glassmorphism Stats Card -->
+<div class="bg-surface-container-highest/80 backdrop-blur-xl p-8 rounded-xl border border-white/20 flex flex-col justify-between">
+<div>
+<h4 class="text-lg font-bold text-primary mb-2">Regional Insights</h4>
+<p class="text-xs text-on-surface-variant/80 leading-relaxed">Most active hub is currently <span class="font-bold text-on-surface">São Paulo Central</span> with 450+ assets registered this quarter.</p>
+</div>
+<div class="space-y-6 mt-8">
+<div>
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-2">
+<span>Storage Capacity</span>
+<span>82%</span>
+</div>
+<div class="h-2 w-full bg-on-surface/5 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[82%] rounded-full"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-bold uppercase tracking-wider mb-2">
+<span>Fleet Health</span>
+<span>94%</span>
+</div>
+<div class="h-2 w-full bg-on-surface/5 rounded-full overflow-hidden">
+<div class="h-full bg-tertiary w-[94%] rounded-full"></div>
+</div>
+</div>
+</div>
+<div class="mt-8 bg-surface-container-lowest p-4 rounded-lg flex items-center gap-4">
+<div class="bg-primary/10 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary" data-icon="hub">hub</span>
+</div>
+<div>
+<p class="text-[10px] font-bold uppercase text-on-surface-variant">Active Nodes</p>
+<p class="text-sm font-bold">12 Logistics Hubs</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Active Inventory Table Section -->
+<div class="bg-surface-container-lowest rounded-xl overflow-hidden shadow-sm border border-outline-variant/5">
+<div class="p-8 flex items-center justify-between">
+<div>
+<h4 class="text-lg font-bold text-on-surface tracking-tight">Active Inventory</h4>
+<p class="text-xs text-on-surface-variant">Real-time status of high-value enterprise assets.</p>
+</div>
+<div class="flex gap-2">
+<button class="p-2 hover:bg-surface rounded-lg transition-colors"><span class="material-symbols-outlined text-lg">filter_list</span></button>
+<button class="p-2 hover:bg-surface rounded-lg transition-colors"><span class="material-symbols-outlined text-lg">sort</span></button>
+</div>
+</div>
+<!-- Table Content -->
+<div class="w-full">
+<!-- Table Header -->
+<div class="grid grid-cols-6 px-8 py-3 bg-surface-container-low text-[10px] font-black uppercase tracking-widest text-on-surface-variant">
+<div>Asset ID</div>
+<div>Name</div>
+<div>Category</div>
+<div>Status</div>
+<div>Location</div>
+<div class="text-right">Action</div>
+</div>
+<!-- Table Rows -->
+<div class="zebra-striping">
+<div class="grid grid-cols-6 px-8 py-4 items-center text-sm border-b border-outline-variant/5 hover:bg-surface-bright transition-colors cursor-default">
+<div class="font-mono text-xs font-bold text-primary">#PM-08221</div>
+<div class="font-semibold">Excavator 300G</div>
+<div class="text-on-surface-variant">Heavy Machinery</div>
+<div>
+<span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container text-[10px] font-bold rounded-full uppercase">Ativo</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">location_on</span> Hub Sul - PR
+                            </div>
+<div class="flex justify-end gap-2">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">edit</span></button>
+</div>
+</div>
+<div class="grid grid-cols-6 px-8 py-4 items-center text-sm border-b border-outline-variant/5 hover:bg-surface-bright transition-colors cursor-default">
+<div class="font-mono text-xs font-bold text-primary">#PM-08245</div>
+<div class="font-semibold">Delivery Drone V4</div>
+<div class="text-on-surface-variant">Fleet / Air</div>
+<div>
+<span class="px-3 py-1 bg-primary-container/20 text-primary text-[10px] font-bold rounded-full uppercase">Transit</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">local_shipping</span> En Route
+                            </div>
+<div class="flex justify-end gap-2">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">edit</span></button>
+</div>
+</div>
+<div class="grid grid-cols-6 px-8 py-4 items-center text-sm border-b border-outline-variant/5 hover:bg-surface-bright transition-colors cursor-default">
+<div class="font-mono text-xs font-bold text-primary">#PM-08311</div>
+<div class="font-semibold">IT Server Rack X2</div>
+<div class="text-on-surface-variant">IT Infrastructure</div>
+<div>
+<span class="px-3 py-1 bg-error-container text-error text-[10px] font-bold rounded-full uppercase">Maintenance</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">dns</span> Data Center A
+                            </div>
+<div class="flex justify-end gap-2">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">edit</span></button>
+</div>
+</div>
+<div class="grid grid-cols-6 px-8 py-4 items-center text-sm border-b border-outline-variant/5 hover:bg-surface-bright transition-colors cursor-default">
+<div class="font-mono text-xs font-bold text-primary">#PM-08359</div>
+<div class="font-semibold">Solar Panel Grid</div>
+<div class="text-on-surface-variant">Utilities</div>
+<div>
+<span class="px-3 py-1 bg-tertiary-container text-on-tertiary-container text-[10px] font-bold rounded-full uppercase">Ativo</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">solar_power</span> Northern Farm
+                            </div>
+<div class="flex justify-end gap-2">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">edit</span></button>
+</div>
+</div>
+<div class="grid grid-cols-6 px-8 py-4 items-center text-sm hover:bg-surface-bright transition-colors cursor-default">
+<div class="font-mono text-xs font-bold text-primary">#PM-09102</div>
+<div class="font-semibold">Cargo Truck (Heavy)</div>
+<div class="text-on-surface-variant">Fleet / Ground</div>
+<div>
+<span class="px-3 py-1 bg-surface-container-highest text-on-surface-variant text-[10px] font-bold rounded-full uppercase">Offline</span>
+</div>
+<div class="flex items-center gap-1 text-on-surface-variant">
+<span class="material-symbols-outlined text-sm">warehouse</span> Main Warehouse
+                            </div>
+<div class="flex justify-end gap-2">
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">visibility</span></button>
+<button class="p-1 hover:text-primary transition-colors"><span class="material-symbols-outlined text-xl">edit</span></button>
+</div>
+</div>
+</div>
+</div>
+<div class="px-8 py-4 bg-surface-container-lowest border-t border-outline-variant/10 flex items-center justify-between">
+<p class="text-xs text-on-surface-variant">Showing 5 of 1,284 assets</p>
+<div class="flex items-center gap-4">
+<button class="text-xs font-bold text-on-surface-variant hover:text-primary transition-colors cursor-not-allowed opacity-50">Previous</button>
+<div class="flex gap-1">
+<span class="w-6 h-6 flex items-center justify-center bg-primary text-on-primary text-[10px] font-bold rounded">1</span>
+<span class="w-6 h-6 flex items-center justify-center hover:bg-surface text-[10px] font-bold rounded cursor-pointer">2</span>
+<span class="w-6 h-6 flex items-center justify-center hover:bg-surface text-[10px] font-bold rounded cursor-pointer">3</span>
+</div>
+<button class="text-xs font-bold text-primary hover:underline transition-colors">Next</button>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
