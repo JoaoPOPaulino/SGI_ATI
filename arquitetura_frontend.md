@@ -3,11 +3,11 @@
 O Frontend do SGI-ATI é uma Single Page Application (SPA) focada em performance, escalabilidade e produtividade.
 
 ## 1. Stack Tecnológico
-- **Core:** React 18+ (Functional Components).
+- **Core:** React 19+ (Functional Components).
 - **Linguagem:** TypeScript (Strict Mode).
 - **Estilização:** TailwindCSS (Utility-first CSS).
 - **Roteamento:** React Router DOM.
-- **Client de Dados:** `@supabase/supabase-js` combinado com React Query (`@tanstack/react-query`) para cache local e sincronização de dados eficiente.
+- **Client de Dados:** `@supabase/supabase-js` para acesso direto ao banco PostgreSQL.
 - **Formulários:** React Hook Form + Zod (Validação de Schemas).
 
 ## 2. Estrutura de Pastas
@@ -16,17 +16,9 @@ O Frontend do SGI-ATI é uma Single Page Application (SPA) focada em performance
 /src
   /assets        # Imagens, Ícones, Fontes locais
   /components    # Componentes reutilizáveis (Botoes, Modais, Tabelas)
-    /ui          # Componentes base (shadcn/ui ou similar)
   /contexts      # AuthContext, NotificationContext
-  /hooks         # Custom Hooks (ex: useItens, useMovimentacoes)
   /pages         # Componentes de visão por Rota
-    /Inventario
-    /Movimentacoes
-    /Aprovacoes
-    /Admin
   /services      # Funções de chamada à API do Supabase
-  /types         # Interfaces e Types TS globais (espelho do Banco)
-  /utils         # Funções auxiliares (formatters, date utils)
 ```
 
 ## 3. Padrão de Componentização

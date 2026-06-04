@@ -1,73 +1,36 @@
-# React + TypeScript + Vite
+# SGI-ATI — Sistema de Gestão de Inventário da ATI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+## Visão Geral
+O **SGI-ATI** é um sistema web corporativo projetado para o controle rigoroso de inventário e gestão de ativos (patrimoniados e não patrimoniados). O objetivo central do SGI-ATI é prover governança, rastreabilidade e eficiência na administração dos equipamentos e acessórios da ATI.
 
-Currently, two official plugins are available:
+O escopo abrange o ciclo de vida completo dos ativos, desde sua entrada (cadastro) até sua saída (baixa), incluindo toda a cadeia de custódia intermediária (movimentações, manutenções, empréstimos e alocação para eventos).
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Stack Tecnológico
+- **Core:** React 19 + TypeScript (Strict Mode)
+- **Build:** Vite
+- **Estilização:** TailwindCSS v4
+- **Roteamento:** React Router DOM
+- **Backend/Dados:** Supabase (PostgreSQL)
+- **Formulários:** React Hook Form + Zod
+- **Ícones:** Lucide React
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Scripts
+```bash
+npm run dev       # Inicia servidor de desenvolvimento
+npm run build     # Build de produção (tsc + vite)
+npm run preview   # Preview do build de produção
+npm run lint      # ESLint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
-
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Estrutura do Projeto
 ```
+/src
+  /assets        # Imagens, ícones, fontes
+  /components    # Componentes reutilizáveis (botões, modais, tabelas)
+  /contexts      # AuthContext, NotificationContext
+  /pages         # Páginas por rota (Inventario, Movimentacoes, etc.)
+  /services      # Chamadas à API do Supabase (supabase.ts, mockDb.ts)
+```
+
+## Deploy
+A aplicação é hospedada via **Vercel**.
