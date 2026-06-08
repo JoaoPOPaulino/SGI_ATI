@@ -64,7 +64,6 @@ const ChangePassword: React.FC = () => {
       // Sucesso
       alert('Senha alterada com sucesso!');
       navigate('/', { replace: true });
-      window.location.reload(); // Força o recarregamento para o state atualizar
 
     } catch (err: any) {
       setError(err.message || 'Erro ao alterar a senha.');

@@ -104,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         {!isCollapsed ? (
           <Link to="/perfil" onClick={handleNav} className="px-4 py-2 text-xs text-blue-100/70 flex items-center gap-2 hover:text-white hover:bg-primary-container/40 rounded-lg transition-colors cursor-pointer">
             <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></div>
-            <span className="font-semibold truncate">{user?.nome.split(' ')[0]} ({user?.perfil})</span>
+            <span className="font-semibold truncate">{(user?.nome || 'Usuário').split(' ')[0]} ({user?.perfil})</span>
           </Link>
         ) : (
           <Link to="/perfil" onClick={handleNav} className="py-2 flex items-center justify-center hover:bg-primary-container/40 rounded-lg transition-colors" title={`${user?.nome} (${user?.perfil}) - Ver Perfil`}>

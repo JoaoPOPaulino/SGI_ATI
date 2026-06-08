@@ -185,7 +185,7 @@ const INITIAL_LOANS: Loan[] = [];
 export const initDb = () => {
   const storedVersion = localStorage.getItem(KEYS.DB_VERSION);
   if (storedVersion !== CURRENT_DB_VERSION) {
-    localStorage.clear();
+    Object.values(KEYS).forEach(key => localStorage.removeItem(key));
     localStorage.setItem(KEYS.DB_VERSION, CURRENT_DB_VERSION);
   }
   if (!localStorage.getItem(KEYS.USUARIOS)) {
@@ -294,7 +294,7 @@ export const addAuditLog = (log: Omit<AuditLog, 'id' | 'timestamp'>) => {
   const logs = getAuditLogs();
   const newLog: AuditLog = {
     ...log,
-    id: `audit-${Date.now()}`,
+    id: crypto.randomUUID(),
     timestamp: new Date().toISOString()
   };
   saveAuditLogs([newLog, ...logs]);

@@ -232,7 +232,7 @@ export async function inviteUser(payload: {
         ativo: true,
         polo: payload.polo || null,
         primeiro_acesso: true,
-        senha: '123456'
+        senha: crypto.randomUUID().replace(/-/g, '').slice(0, 16)
       })
       .select()
       .single();

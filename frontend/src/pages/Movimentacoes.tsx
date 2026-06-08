@@ -141,7 +141,7 @@ const Movimentacoes: React.FC = () => {
       data_movimentacao: now,
       observacao: formObs,
       tipo_documento: formTipoDoc,
-      signature_token: `sha256-${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`
+      signature_token: `sha256-${crypto.randomUUID()}${crypto.randomUUID()}`
     };
 
     await createMovimentacao(newMov);

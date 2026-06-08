@@ -59,11 +59,39 @@ const Emprestimos: React.FC = () => {
     
     const expiredEventos = currentEventos.filter(evt => new Date(evt.data_fim) < today && evt.itens_alocados.length > 0);
     if (expiredEventos.length > 0) {
-      for (const evt of expiredEventos) {
-        for (const itemId of evt.itens_alocados) {
-          await updateItem(itemId, { status: 'GUARDADO', localizacao_atual: 'Almoxarifado Central (Evento Encerrado)', updated_at: new Date().toISOString() });
+      try {
+        for (const evt of expiredEventos) {
+          const rollbackSnapshots: { itemId: string; oldStatus: string; oldLocal: string }[] = [];
+          for (const itemId of evt.itens_alocados) {
+            const allItens = await fetchItens();
+            const it = allItens.find(i => i.id === itemId);
+            if (it) {
+              rollbackSnapshots.push({ itemId: it.id, oldStatus: it.status, oldLocal: it.localizacao_atual });
+            }
+          }
+          for (const itemId of evt.itens_alocados) {
+            try {
+              await updateItem(itemId, { status: 'GUARDADO', localizacao_atual: 'Almoxarifado Central (Evento Encerrado)', updated_at: new Date().toISOString() });
+            } catch {
+              const snap = rollbackSnapshots.find(s => s.itemId === itemId);
+              if (snap) {
+                await updateItem(itemId, { status: snap.oldStatus as any, localizacao_atual: snap.oldLocal });
+              }
+              throw new Error('Rollback: falha ao atualizar item');
+            }
+          }
+          try {
+            await updateEvento(evt.id, { itens_alocados: [] });
+          } catch {
+            // Reverte todos os itens ao estado original
+            for (const snap of rollbackSnapshots) {
+              await updateItem(snap.itemId, { status: snap.oldStatus as any, localizacao_atual: snap.oldLocal }).catch(() => {});
+            }
+            throw new Error('Rollback: falha ao atualizar evento');
+          }
         }
-        await updateEvento(evt.id, { itens_alocados: [] });
+      } catch (err) {
+        console.warn('Limpeza de eventos expirados incompleta:', err);
       }
       changed = true;
     }
@@ -276,7 +304,7 @@ const Emprestimos: React.FC = () => {
     : [];
 
   const loansAtivos = useMemo(() => loans.filter(l => l.status === 'ATIVO'), [loans]);
-  const today = useMemo(() => new Date(), []);
+  const today = new Date();
   const isOverdue = (dateStr: string) => new Date(dateStr) < today;
 
   return (

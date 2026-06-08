@@ -60,7 +60,11 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ type, value }) => {
           </span>
         );
       default:
-        return null;
+        return (
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-neutral-950/50 border border-neutral-500/30 text-neutral-400">
+            {status}
+          </span>
+        );
     }
   } else {
     const condicao = value as CondicaoItem;
@@ -96,7 +100,11 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ type, value }) => {
           </span>
         );
       default:
-        return null;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 text-2xs font-medium rounded bg-neutral-950/40 border border-neutral-500/20 text-neutral-300">
+            {condicao}
+          </span>
+        );
     }
   }
 };

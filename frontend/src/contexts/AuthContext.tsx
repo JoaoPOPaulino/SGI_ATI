@@ -26,7 +26,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         const handleSupabaseResult = ({ data, error }: { data: any; error: any }) => {
           if (!error && data && data.ativo) {
-            setUser(data);
+            const mappedUser: Usuario = {
+              id: data.id,
+              nome: data.nome,
+              email: data.email,
+              cpf: data.cpf,
+              perfil: data.perfil,
+              ativo: data.ativo ?? true,
+              polo: data.polo || undefined,
+              foto: data.foto || undefined,
+            };
+            setUser(mappedUser);
           } else {
             const localUsers = getUsuarios();
             const localUser = localUsers.find(u => u.id === parsedUser.id && u.ativo);
@@ -80,8 +90,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (data.senha && data.senha !== senha) {
           return { success: false, error: 'Senha incorreta.' };
         }
-        setUser(data);
-        localStorage.setItem('sgi_ati_session', JSON.stringify(data));
+        const mappedUser: Usuario = {
+          id: data.id,
+          nome: data.nome,
+          email: data.email,
+          cpf: data.cpf,
+          perfil: data.perfil,
+          ativo: data.ativo ?? true,
+          polo: data.polo || undefined,
+          foto: data.foto || undefined,
+        };
+        setUser(mappedUser);
+        localStorage.setItem('sgi_ati_session', JSON.stringify(mappedUser));
         return { 
           success: true, 
           requirePasswordChange: data.primeiro_acesso || false

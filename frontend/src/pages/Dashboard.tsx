@@ -56,14 +56,18 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      const [itensData, movsData, loansData] = await Promise.all([
-        fetchItens(),
-        fetchMovimentacoes(),
-        fetchLoans(),
-      ]);
-      setItens(itensData);
-      setMovs(movsData);
-      setLoans(loansData);
+      try {
+        const [itensData, movsData, loansData] = await Promise.all([
+          fetchItens(),
+          fetchMovimentacoes(),
+          fetchLoans(),
+        ]);
+        setItens(itensData);
+        setMovs(movsData);
+        setLoans(loansData);
+      } catch (err) {
+        console.error('Dashboard: falha ao carregar dados', err);
+      }
     };
     loadData();
   }, []);

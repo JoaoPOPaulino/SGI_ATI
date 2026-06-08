@@ -220,7 +220,7 @@ const Admin: React.FC = () => {
     await loadUsuarios();
   };
 
-  const toggleUserStatus = (id: string, currentStatus: boolean) => {
+  const requestToggleStatus = (id: string, currentStatus: boolean) => {
     if (id === currentUser?.id) {
       alert("Você não pode desativar sua própria conta.");
       return;
@@ -338,7 +338,7 @@ const Admin: React.FC = () => {
     await loadUsuarios();
   };
 
-  const deleteUser = (id: string) => {
+  const requestDeleteUser = (id: string) => {
     if (id === currentUser?.id) {
       alert("Você não pode excluir sua própria conta.");
       return;
@@ -693,7 +693,7 @@ const Admin: React.FC = () => {
                               <Eye size={15} />
                             </button>
                             <button
-                              onClick={() => toggleUserStatus(u.id, u.ativo)}
+                              onClick={() => requestToggleStatus(u.id, u.ativo)}
                               disabled={u.id === currentUser?.id}
                               className={`p-1.5 rounded-lg transition-all ${
                                 u.id === currentUser?.id
@@ -707,7 +707,7 @@ const Admin: React.FC = () => {
                               {u.ativo ? <UserX size={15} /> : <RotateCcw size={15} />}
                             </button>
                             <button
-                              onClick={() => deleteUser(u.id)}
+                              onClick={() => requestDeleteUser(u.id)}
                               disabled={u.id === currentUser?.id}
                               className={`p-1.5 rounded-lg transition-all ${
                                 u.id === currentUser?.id

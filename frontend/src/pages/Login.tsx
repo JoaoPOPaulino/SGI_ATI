@@ -38,17 +38,21 @@ const Login: React.FC = () => {
     setLoading(true);
     setError('');
 
-    const { success, error: loginError, requirePasswordChange } = await login(cpf, senha);
+    try {
+      const { success, error: loginError, requirePasswordChange } = await login(cpf, senha);
 
-    if (success) {
-      if (requirePasswordChange) {
-        // Redirecionar para tela de trocar senha (criaremos depois)
-        navigate('/trocar-senha', { replace: true });
+      if (success) {
+        if (requirePasswordChange) {
+          navigate('/trocar-senha', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
       } else {
-        navigate('/', { replace: true });
+        setError(loginError || 'Erro ao autenticar.');
+        setLoading(false);
       }
-    } else {
-      setError(loginError || 'Erro ao autenticar.');
+    } catch (err) {
+      setError('Erro inesperado ao tentar autenticar. Tente novamente.');
       setLoading(false);
     }
   };
