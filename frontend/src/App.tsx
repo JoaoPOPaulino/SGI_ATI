@@ -1,5 +1,5 @@
 import React, { Suspense } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
@@ -14,6 +14,7 @@ const Perfil = React.lazy(() => import('./pages/Perfil'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const Emprestimos = React.lazy(() => import('./pages/Emprestimos'));
 const ChangePassword = React.lazy(() => import('./pages/ChangePassword'));
+const NotFound = React.lazy(() => import('./pages/NotFound'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">
@@ -74,7 +75,7 @@ const App: React.FC = () => {
               </ProtectedRoute>
             } />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
       </BrowserRouter>
