@@ -1,10 +1,18 @@
+// @ts-ignore Deno remote import
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+// @ts-ignore Deno remote import
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+declare const Deno: {
+  env: {
+    get(key: string): string | undefined;
+  };
+};
 
 const serviceClient = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-  { auth: { autoRefreshToken: false, persistSession: false } }
+  { auth: { autoRefreshToken: false, persistSession: false } },
 );
 
 function corsHeaders() {
@@ -32,10 +40,10 @@ serve(async (req: Request) => {
     const { userId } = body;
 
     if (!userId) {
-      return new Response(
-        JSON.stringify({ error: "userId e obrigatorio" }),
-        { status: 400, headers: { ...corsHeaders(), "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "userId e obrigatorio" }), {
+        status: 400,
+        headers: { ...corsHeaders(), "Content-Type": "application/json" },
+      });
     }
 
     const { error } = await serviceClient
@@ -47,19 +55,22 @@ serve(async (req: Request) => {
       console.error("delete error:", JSON.stringify(error));
       return new Response(
         JSON.stringify({ error: "Erro ao excluir usuario" }),
-        { status: 500, headers: { ...corsHeaders(), "Content-Type": "application/json" } }
+        {
+          status: 500,
+          headers: { ...corsHeaders(), "Content-Type": "application/json" },
+        },
       );
     }
 
-    return new Response(
-      JSON.stringify({ success: true }),
-      { status: 200, headers: { ...corsHeaders(), "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { ...corsHeaders(), "Content-Type": "application/json" },
+    });
   } catch (err) {
     console.error("unexpected error:", err);
-    return new Response(
-      JSON.stringify({ error: "Erro interno do servidor" }),
-      { status: 500, headers: { ...corsHeaders(), "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: "Erro interno do servidor" }), {
+      status: 500,
+      headers: { ...corsHeaders(), "Content-Type": "application/json" },
+    });
   }
 });
