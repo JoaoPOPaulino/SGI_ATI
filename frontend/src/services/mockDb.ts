@@ -162,7 +162,7 @@ const INITIAL_USUARIOS: Usuario[] = [
   { id: 'usr-1', nome: 'João Silva', email: 'joao@ati.com', cpf: '11111111111', perfil: 'ESTAGIARIO', ativo: true, polo: 'GSM' },
   { id: 'usr-2', nome: 'Pedro Santos', email: 'pedro@ati.com', cpf: '22222222222', perfil: 'TECNICO', ativo: true, polo: 'GSM' },
   { id: 'usr-3', nome: 'Maria Oliveira', email: 'maria@ati.com', cpf: '33333333333', perfil: 'SUPERIOR', ativo: true, polo: 'Laboratório' },
-  { id: 'usr-4', nome: 'Ricardo Lima', email: 'admin@ati.com', cpf: '00000000000', perfil: 'ADMIN', ativo: true, polo: 'GSM' }
+  { id: 'usr-4', nome: 'adm00', email: 'admin@ati.com', cpf: '00000000000', perfil: 'ADMIN', ativo: true, polo: 'GSM' }
 ];
 
 const INITIAL_ITENS: Item[] = [];
