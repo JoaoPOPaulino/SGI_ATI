@@ -3,6 +3,7 @@ import {
   getUsuarios, saveUsuarios, addAuditLog, getAuditLogsByUser,
   Usuario
 } from './mockDb';
+import { hashPasswordWithNewSalt } from './passwordUtils';
 
 export interface SupabaseUsuario {
   id: string;
@@ -221,6 +222,8 @@ export async function inviteUser(payload: {
     }
 
     const newId = crypto.randomUUID();
+    const senhaTemporaria = payload.cpf.replace(/\D/g, '').slice(0, 3) + '@ati';
+    const { hash, salt } = await hashPasswordWithNewSalt(senhaTemporaria);
     const { data, error } = await supabase
       .from('usuarios')
       .insert({
@@ -232,7 +235,8 @@ export async function inviteUser(payload: {
         ativo: true,
         polo: payload.polo || null,
         primeiro_acesso: true,
-        senha: crypto.randomUUID().replace(/-/g, '').slice(0, 16)
+        senha: hash,
+        salt,
       })
       .select()
       .single();

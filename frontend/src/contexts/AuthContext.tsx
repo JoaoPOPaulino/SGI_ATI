@@ -87,8 +87,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
 
       if (!error && data) {
-        if (data.senha && data.senha !== senha) {
-          return { success: false, error: 'Senha incorreta.' };
+        if (data.senha) {
+          if (data.salt) {
+            const { verifyPassword } = await import('../services/passwordUtils');
+            const valid = await verifyPassword(senha || '', data.salt, data.senha);
+            if (!valid) {
+              return { success: false, error: 'Senha incorreta.' };
+            }
+          } else {
+            if (data.senha !== senha) {
+              return { success: false, error: 'Senha incorreta.' };
+            }
+          }
         }
         const mappedUser: Usuario = {
           id: data.id,

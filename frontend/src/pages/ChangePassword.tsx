@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Lock, CheckCircle2, Save } from 'lucide-react';
 import { supabase } from '../services/supabase';
+import { hashPasswordWithNewSalt } from '../services/passwordUtils';
 
 const ChangePassword: React.FC = () => {
   const { user } = useAuth();
@@ -21,11 +22,10 @@ const ChangePassword: React.FC = () => {
 
   const validarSenha = (senha: string) => {
     const minLength = senha.length >= 8;
-    const hasLetter = /[a-zA-Z]/.test(senha);
     const hasNumber = /[0-9]/.test(senha);
     const hasSpecial = /[^a-zA-Z0-9]/.test(senha);
     
-    return minLength && hasLetter && hasNumber && hasSpecial;
+    return minLength && hasNumber && hasSpecial;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -41,7 +41,7 @@ const ChangePassword: React.FC = () => {
     }
 
     if (!validarSenha(senhaNova)) {
-      setError('A senha deve ter pelo menos 8 caracteres, incluindo letras, números e caracteres especiais.');
+      setError('A senha deve ter pelo menos 8 caracteres, incluindo números e caracteres especiais.');
       return;
     }
 
@@ -49,10 +49,13 @@ const ChangePassword: React.FC = () => {
     setError('');
 
     try {
+      const { hash, salt } = await hashPasswordWithNewSalt(senhaNova);
+
       const { error: updateError } = await supabase
         .from('usuarios')
         .update({ 
-          senha: senhaNova,
+          senha: hash,
+          salt,
           primeiro_acesso: false 
         })
         .eq('id', user?.id);
@@ -124,10 +127,6 @@ const ChangePassword: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <CheckCircle2 size={14} className={senhaNova.length >= 8 ? "text-green-500" : "text-gray-300"} />
               <span>Mínimo de 8 caracteres</span>
-            </div>
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <CheckCircle2 size={14} className={/[a-zA-Z]/.test(senhaNova) ? "text-green-500" : "text-gray-300"} />
-              <span>Pelo menos uma letra</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <CheckCircle2 size={14} className={/[0-9]/.test(senhaNova) ? "text-green-500" : "text-gray-300"} />

@@ -70,6 +70,20 @@ serve(async (req: Request) => {
     const senhaTemporaria = `${cleanCpf.slice(0, 3)}@ati`;
     const newId = crypto.randomUUID();
 
+    // Gera salt e hash SHA-256 da senha temporaria
+    const saltBytes = new Uint8Array(16);
+    crypto.getRandomValues(saltBytes);
+    const salt = btoa(String.fromCharCode(...Array.from(saltBytes)))
+      .replace(/\+/g, '_')
+      .replace(/\//g, '-')
+      .replace(/=+$/, '');
+    const encoder = new TextEncoder();
+    const hashData = encoder.encode(`sgi_${salt}:${senhaTemporaria}`);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", hashData);
+    const senhaHash = Array.from(new Uint8Array(hashBuffer))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
     const { data: newUser, error: insertError } = await serviceClient
       .from("usuarios")
       .insert({
@@ -81,7 +95,8 @@ serve(async (req: Request) => {
         ativo: true,
         polo: polo || null,
         primeiro_acesso: true,
-        senha: senhaTemporaria,
+        senha: senhaHash,
+        salt,
       })
       .select()
       .single();
