@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import {
   Movimentacao, Item, TipoMovimentacao, StatusItem
-} from '../services/mockDb';
+} from '../services/bancoMock';
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { ArrowLeftRight, Check, X, FileText, Printer, ShieldCheck, Wrench, Download } from 'lucide-react';

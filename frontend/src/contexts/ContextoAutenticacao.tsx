@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { Usuario, PerfilUsuario, getUsuarios } from '../services/mockDb';
+import { Usuario, PerfilUsuario, getUsuarios } from '../services/bancoMock';
 
 interface AuthContextType {
   user: Usuario | null;
@@ -89,7 +89,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!error && data) {
         if (data.senha) {
           if (data.salt) {
-            const { verifyPassword } = await import('../services/passwordUtils');
+            const { verifyPassword } = await import('../services/utilidadesSenha');
             const valid = await verifyPassword(senha || '', data.salt, data.senha);
             if (!valid) {
               return { success: false, error: 'Senha incorreta.' };

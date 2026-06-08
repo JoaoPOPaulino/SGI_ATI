@@ -1,8 +1,8 @@
 import React from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import { Link } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
-import { PerfilUsuario } from '../services/mockDb';
+import { PerfilUsuario } from '../services/bancoMock';
 
 const Header: React.FC = () => {
   const { user, logout } = useAuth();

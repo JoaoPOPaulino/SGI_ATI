@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import { User, Mail, Shield, MapPin, Key, Clock, Camera } from 'lucide-react';
 
 const Perfil: React.FC = () => {

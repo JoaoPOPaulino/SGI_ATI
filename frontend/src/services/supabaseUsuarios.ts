@@ -2,8 +2,8 @@ import { supabase } from './supabase';
 import {
   getUsuarios, saveUsuarios, addAuditLog, getAuditLogsByUser,
   Usuario
-} from './mockDb';
-import { hashPasswordWithNewSalt } from './passwordUtils';
+} from './bancoMock';
+import { hashPasswordWithNewSalt } from './utilidadesSenha';
 
 export interface SupabaseUsuario {
   id: string;

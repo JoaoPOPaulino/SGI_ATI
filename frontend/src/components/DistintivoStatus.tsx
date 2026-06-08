@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusItem, CondicaoItem } from '../services/mockDb';
+import { StatusItem, CondicaoItem } from '../services/bancoMock';
 
 interface StatusBadgeProps {
   type: 'status' | 'condicao';

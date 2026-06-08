@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Item, StatusItem, Movimentacao } from '../services/mockDb';
+import { useAuth } from '../contexts/ContextoAutenticacao';
+import { Item, StatusItem, Movimentacao } from '../services/bancoMock';
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
-import StatusBadge from '../components/StatusBadge';
+import StatusBadge from '../components/DistintivoStatus';
 
 const Manutencao: React.FC = () => {
   const { user, hasPermission } = useAuth();

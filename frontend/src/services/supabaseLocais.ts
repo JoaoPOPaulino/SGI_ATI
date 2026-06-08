@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Local } from './mockDb';
+import type { Local } from './bancoMock';
 
 export async function fetchLocais(): Promise<Local[]> {
   try {

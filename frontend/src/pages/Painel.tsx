@@ -1,9 +1,9 @@
 import React, { useMemo, useEffect, useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { Item, Movimentacao, Loan } from '../services/mockDb';
+import { useAuth } from '../contexts/ContextoAutenticacao';
+import { Item, Movimentacao, Loan } from '../services/bancoMock';
 import { fetchItens } from '../services/supabaseItens';
 import { fetchMovimentacoes } from '../services/supabaseMovimentacoes';
-import { fetchLoans } from '../services/supabaseLoans';
+import { fetchLoans } from '../services/supabaseEmprestimos';
 import { 
   Package, Wrench, ArrowLeftRight,
   AlertTriangle, CheckCircle,

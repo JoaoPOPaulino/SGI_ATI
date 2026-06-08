@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import {
   Item, TipoItem, CategoriaItem, CondicaoItem, StatusItem,
   Movimentacao, Local, LaudoTecnico
-} from '../services/mockDb';
+} from '../services/bancoMock';
 import { fetchItens, createItem, updateItem, deleteItem as deleteSupabaseItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLocais } from '../services/supabaseLocais';
 import { fetchLaudos } from '../services/supabaseLaudos';
-import StatusBadge from '../components/StatusBadge';
+import StatusBadge from '../components/DistintivoStatus';
 import {
   Search, Plus, Table, LayoutGrid, Edit2, Trash2,
   Folder, MapPin, Info, Eye, History, ArrowRightLeft, Download

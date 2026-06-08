@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import { useNavigate } from 'react-router-dom';
 import { AlertCircle, Lock, CheckCircle2, Save } from 'lucide-react';
 import { supabase } from '../services/supabase';
-import { hashPasswordWithNewSalt } from '../services/passwordUtils';
+import { hashPasswordWithNewSalt } from '../services/utilidadesSenha';
 
 const ChangePassword: React.FC = () => {
   const { user } = useAuth();

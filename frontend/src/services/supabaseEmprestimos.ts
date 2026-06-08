@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Loan } from './mockDb';
+import type { Loan } from './bancoMock';
 
 export async function fetchLoans(): Promise<Loan[]> {
   try {

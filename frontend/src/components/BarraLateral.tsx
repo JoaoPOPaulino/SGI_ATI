@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
   LayoutGrid, Package, ArrowLeftRight, CalendarRange, 
   Wrench, ShieldAlert, LogOut, PenTool, User
