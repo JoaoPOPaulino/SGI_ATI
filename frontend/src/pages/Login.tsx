@@ -4,16 +4,12 @@ import { useNavigate } from 'react-router-dom';
 import { AlertCircle, LogIn, Lock, User } from 'lucide-react';
 
 const Login: React.FC = () => {
-  const { user, login } = useAuth();
+  const { login } = useAuth();
   const [cpf, setCpf] = useState('');
   const [senha, setSenha] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-
-  React.useEffect(() => {
-    if (user) navigate('/', { replace: true });
-  }, [user, navigate]);
 
   const formatCpf = (value: string) => {
     return value
