@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import Sidebar from './Sidebar';
-import { useAuth } from '../contexts/AuthContext';
+import Sidebar from './BarraLateral';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import { Menu, X, LogOut, User } from 'lucide-react';
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {

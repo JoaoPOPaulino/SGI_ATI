@@ -1,11 +1,11 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
+import { AuthProvider } from './contexts/ContextoAutenticacao';
+import ProtectedRoute from './components/RotaProtegida';
 import Layout from './components/Layout';
 
 const Login = React.lazy(() => import('./pages/Login'));
-const Dashboard = React.lazy(() => import('./pages/Dashboard'));
+const Dashboard = React.lazy(() => import('./pages/Painel'));
 const Inventario = React.lazy(() => import('./pages/Inventario'));
 const Movimentacoes = React.lazy(() => import('./pages/Movimentacoes'));
 const Manutencao = React.lazy(() => import('./pages/Manutencao'));
@@ -13,8 +13,8 @@ const Labin = React.lazy(() => import('./pages/Labin'));
 const Perfil = React.lazy(() => import('./pages/Perfil'));
 const Admin = React.lazy(() => import('./pages/Admin'));
 const Emprestimos = React.lazy(() => import('./pages/Emprestimos'));
-const ChangePassword = React.lazy(() => import('./pages/ChangePassword'));
-const NotFound = React.lazy(() => import('./pages/NotFound'));
+const ChangePassword = React.lazy(() => import('./pages/TrocarSenha'));
+const NotFound = React.lazy(() => import('./pages/NaoEncontrado'));
 
 const PageLoader = () => (
   <div className="flex items-center justify-center min-h-[60vh]">

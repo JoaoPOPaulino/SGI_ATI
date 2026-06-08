@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Item } from './mockDb';
+import type { Item } from './bancoMock';
 
 export async function fetchItens(): Promise<Item[]> {
   try {

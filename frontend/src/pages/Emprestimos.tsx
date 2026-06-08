@@ -1,17 +1,17 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import {
   Item, Evento, CondicaoItem, Loan, Movimentacao
-} from '../services/mockDb';
+} from '../services/bancoMock';
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchEventos, createEvento, updateEvento } from '../services/supabaseEventos';
-import { fetchLoans, createLoan, updateLoan } from '../services/supabaseLoans';
+import { fetchLoans, createLoan, updateLoan } from '../services/supabaseEmprestimos';
 import {
   CalendarRange, RotateCcw, Plus, UserCheck, MapPin,
   X, Monitor, Check, Package, AlertTriangle, Users
 } from 'lucide-react';
-import ConfirmDialog from '../components/ConfirmDialog';
+import ConfirmDialog from '../components/DialogoConfirmacao';
 
 const Emprestimos: React.FC = () => {
   const { user, hasPermission } = useAuth();

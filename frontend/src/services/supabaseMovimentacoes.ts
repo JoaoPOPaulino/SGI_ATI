@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Movimentacao } from './mockDb';
+import type { Movimentacao } from './bancoMock';
 
 export async function fetchMovimentacoes(): Promise<Movimentacao[]> {
   try {

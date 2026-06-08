@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
   LaudoTecnico, Item, Movimentacao
-} from '../services/mockDb';
+} from '../services/bancoMock';
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos, createLaudo } from '../services/supabaseLaudos';

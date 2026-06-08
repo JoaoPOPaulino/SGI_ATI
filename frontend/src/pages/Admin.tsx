@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { PerfilUsuario } from '../services/mockDb';
+import { useAuth } from '../contexts/ContextoAutenticacao';
+import { PerfilUsuario } from '../services/bancoMock';
 import {
   fetchUsuarios, toggleUserStatus, updateUserRole, updateUserPolo,
   deleteUser, fetchAuditLogsByUser, insertAuditLog, inviteUser,
   SupabaseUsuario, AuditLogRecord
-} from '../services/supabaseUsers';
+} from '../services/supabaseUsuarios';
 import {
   Users, UserPlus, Shield, UserCheck, UserX,
   AlertCircle, Check, RotateCcw, MapPin,
@@ -13,8 +13,8 @@ import {
   Eye, Trash2, Loader2
 } from 'lucide-react';
 import { z } from 'zod';
-import ConfirmDialog from '../components/ConfirmDialog';
-import UserDetailModal from '../components/UserDetailModal';
+import ConfirmDialog from '../components/DialogoConfirmacao';
+import UserDetailModal from '../components/ModalDetalhesUsuario';
 
 const isValidCpf = (cpf: string): boolean => {
   const digits = cpf.replace(/\D/g, '');
