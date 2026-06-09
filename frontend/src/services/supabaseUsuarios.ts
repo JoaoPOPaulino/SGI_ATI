@@ -33,6 +33,8 @@ export interface AuditLogRecord {
 }
 
 export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
+  let supabaseUsers: SupabaseUsuario[] = [];
+
   try {
     const { data, error } = await supabase
       .from("usuarios")
@@ -40,19 +42,25 @@ export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
       .order("created_at", { ascending: false });
 
     if (!error && data && data.length > 0) {
-      return data as SupabaseUsuario[];
+      supabaseUsers = data as SupabaseUsuario[];
     }
   } catch {}
 
+  // Sempre inclui usuários do localStorage que não existem no Supabase
   const localUsers = getUsuarios();
+  const supabaseCpfs = new Set(supabaseUsers.map(u => u.cpf.replace(/\D/g, '')));
 
-  return localUsers.map((u) => ({
-    ...u,
-    auth_id: null,
-    foto: u.foto || null,
-    primeiro_acesso: false,
-    created_at: new Date().toISOString(),
-  })) as SupabaseUsuario[];
+  const localOnly = localUsers
+    .filter(u => !supabaseCpfs.has(u.cpf.replace(/\D/g, '')))
+    .map((u) => ({
+      ...u,
+      auth_id: null,
+      foto: u.foto || null,
+      primeiro_acesso: false,
+      created_at: new Date().toISOString(),
+    })) as SupabaseUsuario[];
+
+  return [...supabaseUsers, ...localOnly];
 }
 
 function updateLocalUser(userId: string, updates: Partial<Usuario>) {
@@ -211,10 +219,11 @@ export async function inviteUser(payload: {
   perfil: "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
   polo?: string;
 }): Promise<{ success: boolean; error?: string; user?: { id: string } }> {
-  try {
-    const cleanCpf = payload.cpf.replace(/\D/g, "");
-    const cleanEmail = payload.email.trim().toLowerCase();
+  const cleanCpf = payload.cpf.replace(/\D/g, "");
+  const cleanEmail = payload.email.trim().toLowerCase();
 
+  // Tentar via Edge Function primeiro
+  try {
     const { data, error } = await supabase.functions.invoke("invite-user", {
       body: {
         ...payload,
@@ -223,28 +232,39 @@ export async function inviteUser(payload: {
       },
     });
 
-    if (error) {
-      return {
-        success: false,
-        error: data?.error || error.message || "Erro ao criar usuário.",
-      };
+    if (!error && data?.success) {
+      return { success: true, user: data.user };
     }
+  } catch {}
 
-    if (!data?.success) {
-      return {
-        success: false,
-        error: data?.error || "Erro ao criar usuário.",
-      };
-    }
+  // Fallback: criar usuário no localStorage
+  const usuarios = getUsuarios();
 
-    return {
-      success: true,
-      user: data.user,
-    };
-  } catch (err: any) {
-    return {
-      success: false,
-      error: err.message || "Erro ao criar usuário.",
-    };
+  const cpfExistente = usuarios.find(
+    (u) => u.cpf.replace(/\D/g, "") === cleanCpf
+  );
+  if (cpfExistente) {
+    return { success: false, error: "CPF já cadastrado." };
   }
+
+  const emailExistente = usuarios.find(
+    (u) => u.email.trim().toLowerCase() === cleanEmail
+  );
+  if (emailExistente) {
+    return { success: false, error: "E-mail já cadastrado." };
+  }
+
+  const newUser: Usuario = {
+    id: `usr-${Date.now()}`,
+    nome: payload.nome.trim(),
+    email: cleanEmail,
+    cpf: cleanCpf,
+    perfil: payload.perfil,
+    ativo: true,
+    polo: payload.polo || undefined,
+  };
+
+  saveUsuarios([...usuarios, newUser]);
+
+  return { success: true, user: { id: newUser.id } };
 }

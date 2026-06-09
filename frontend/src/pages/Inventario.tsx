@@ -11,7 +11,7 @@ import { fetchLaudos } from '../services/supabaseLaudos';
 import StatusBadge from '../components/DistintivoStatus';
 import {
   Search, Plus, Table, LayoutGrid, Edit2, Trash2,
-  Folder, MapPin, Info, Eye, History, ArrowRightLeft, Download
+  Folder, MapPin, Info, Eye, History, ArrowRightLeft, Download, X
 } from 'lucide-react';
 
 const Inventario: React.FC = () => {
@@ -778,9 +778,10 @@ const Inventario: React.FC = () => {
               </div>
               <button 
                 onClick={() => setSelectedDetailsItem(null)} 
-                className="p-1.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs"
+                className="p-1.5 hover:bg-surface-container-high rounded-full text-outline hover:text-on-surface transition-colors"
+                title="Fechar"
               >
-                [ Fechar ]
+                <X size={18} />
               </button>
             </div>
 
@@ -951,9 +952,10 @@ const Inventario: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs"
+                className="p-1.5 hover:bg-surface-container-high rounded-full text-outline hover:text-on-surface transition-colors"
+                title="Fechar"
               >
-                [ Fechar ]
+                <X size={18} />
               </button>
             </div>
             <form onSubmit={handleSave} className="space-y-5">

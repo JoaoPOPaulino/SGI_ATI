@@ -589,9 +589,10 @@ const Movimentacoes: React.FC = () => {
               </div>
               <button
                 onClick={() => setActiveGuia(null)}
-                className="p-1 hover:bg-slate-100 rounded-lg text-slate-500 font-bold text-xs print:hidden"
+                className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-700 transition-colors print:hidden"
+                title="Fechar"
               >
-                [ FECHAR ]
+                <X size={18} />
               </button>
             </div>
 
