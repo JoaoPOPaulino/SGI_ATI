@@ -1,18 +1,9 @@
 import { supabase } from "./supabase";
 import {
-<<<<<<< HEAD:frontend/src/services/supabaseUsers.ts
-  getUsuarios,
-  saveUsuarios,
-  addAuditLog,
-  getAuditLogsByUser,
-  Usuario,
-} from "./mockDb";
-=======
   getUsuarios, saveUsuarios, addAuditLog, getAuditLogsByUser,
   Usuario
 } from './bancoMock';
 import { hashPasswordWithNewSalt } from './utilidadesSenha';
->>>>>>> de164c85f77a1760fba0c2519a2515c805e245c0:frontend/src/services/supabaseUsuarios.ts
 
 export interface SupabaseUsuario {
   id: string;

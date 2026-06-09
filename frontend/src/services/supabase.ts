@@ -9,4 +9,30 @@ if (!supabaseUrl || !supabaseAnonKey) {
   );
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+function getAuthHeaders(): Record<string, string> {
+  try {
+    const raw = localStorage.getItem("sgi_ati_session");
+    if (!raw) return { "x-user-perfil": "ESTAGIARIO", "x-user-id": "" };
+    const session = JSON.parse(raw);
+    return {
+      "x-user-perfil": session.perfil || "ESTAGIARIO",
+      "x-user-id": session.id || "",
+    };
+  } catch {
+    return { "x-user-perfil": "ESTAGIARIO", "x-user-id": "" };
+  }
+}
+
+const customFetch: typeof fetch = async (input, init) => {
+  const headers = new Headers(init?.headers);
+  const authHeaders = getAuthHeaders();
+  headers.set("x-user-perfil", authHeaders["x-user-perfil"]);
+  headers.set("x-user-id", authHeaders["x-user-id"]);
+  return fetch(input, { ...init, headers });
+};
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: {
+    fetch: customFetch,
+  },
+});
