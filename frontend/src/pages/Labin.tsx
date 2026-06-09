@@ -20,7 +20,6 @@ const Labin: React.FC = () => {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState('');
   const [formDescricao, setFormDescricao] = useState('');
-  const [formDiagnostico, setFormDiagnostico] = useState('');
   const [formAcao, setFormAcao] = useState('');
   const [formPecas, setFormPecas] = useState('');
   const [formStatusServico, setFormStatusServico] = useState<'EM_ANALISE' | 'AGUARDANDO_PECA' | 'EM_REPARO' | 'FINALIZADO'>('EM_ANALISE');
@@ -47,7 +46,6 @@ const Labin: React.FC = () => {
   const filteredLaudos = useMemo(() => {
     return laudos.filter(l => 
       l.item_nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.diagnostico.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.tecnico_nome.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [laudos, searchQuery]);
@@ -70,10 +68,6 @@ const Labin: React.FC = () => {
       setFormError('Descreva o problema constatado.');
       return;
     }
-    if (!formDiagnostico.trim()) {
-      setFormError('Informe o diagnóstico técnico.');
-      return;
-    }
     if (formStatusServico === 'FINALIZADO' && !formAcao.trim()) {
       setFormError('Para finalizar o reparo, descreva as ações corretivas realizadas.');
       return;
@@ -90,7 +84,7 @@ const Labin: React.FC = () => {
       tecnico_id: user?.id || 'tecnico-anon',
       tecnico_nome: user?.nome || 'Técnico Anônimo',
       descricao_problema: formDescricao,
-      diagnostico: formDiagnostico,
+      diagnostico: '',
       acao_realizada: formAcao,
       pecas_utilizadas: formPecas,
       status_servico: formStatusServico,
@@ -126,7 +120,6 @@ const Labin: React.FC = () => {
     }
 
     setFormDescricao('');
-    setFormDiagnostico('');
     setFormAcao('');
     setFormPecas('');
     setSelectedItemId('');
@@ -304,18 +297,6 @@ const Labin: React.FC = () => {
                 />
               </div>
 
-              {/* Diagnóstico */}
-              <div>
-                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Diagnóstico Técnico</label>
-                <textarea
-                  rows={2}
-                  value={formDiagnostico}
-                  onChange={(e) => setFormDiagnostico(e.target.value)}
-                  placeholder="Análise de causa raiz da quebra do ativo..."
-                  className="w-full px-4 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface focus:ring-1"
-                />
-              </div>
-
               {/* Ação Realizada */}
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Ações Corretivas Realizadas</label>
@@ -413,15 +394,11 @@ const Labin: React.FC = () => {
               </div>
 
               <div>
-                <h3 className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">Relato do Problema e Diagnóstico</h3>
+                <h3 className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">Relato do Problema</h3>
                 <div className="space-y-3">
                   <div>
                     <span className="text-[10px] text-outline font-semibold block mb-0.5">Descrição Técnica da Falha:</span>
                     <p className="bg-slate-50 p-2.5 border rounded-lg italic font-medium break-words">"{activeLaudoPrint.descricao_problema}"</p>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-outline font-semibold block mb-0.5">Diagnóstico Clínico:</span>
-                    <p className="bg-slate-50 p-2.5 border rounded-lg italic font-medium break-words">"{activeLaudoPrint.diagnostico}"</p>
                   </div>
                 </div>
               </div>
