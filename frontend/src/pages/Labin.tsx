@@ -6,7 +6,7 @@ import {
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos, createLaudo } from '../services/supabaseLaudos';
-import { Wrench, Plus, Info, Printer, PenTool, Search } from 'lucide-react';
+import { Wrench, Plus, Info, Printer, PenTool, Search, X } from 'lucide-react';
 
 const Labin: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -246,9 +246,10 @@ const Labin: React.FC = () => {
               </h2>
               <button
                 onClick={() => setIsFormOpen(false)}
-                className="p-1 hover:bg-surface-container-high rounded-lg text-outline"
+                className="p-1.5 hover:bg-surface-container-high rounded-full text-outline hover:text-on-surface transition-colors"
+                title="Fechar"
               >
-                [ Fechar ]
+                <X size={18} />
               </button>
             </div>
 
@@ -358,9 +359,10 @@ const Labin: React.FC = () => {
               </div>
               <button
                 onClick={() => setActiveLaudoPrint(null)}
-                className="p-1 hover:bg-slate-100 rounded-lg text-outline font-bold text-xs"
+                className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-700 transition-colors print:hidden"
+                title="Fechar"
               >
-                [ FECHAR ]
+                <X size={18} />
               </button>
             </div>
 
