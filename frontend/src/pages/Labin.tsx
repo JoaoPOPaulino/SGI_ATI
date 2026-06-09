@@ -198,7 +198,6 @@ const Labin: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/50">
-                  <th className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Código</th>
                   <th className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Equipamento</th>
                   <th className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Técnico</th>
                   <th className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Status</th>
@@ -209,7 +208,6 @@ const Labin: React.FC = () => {
               <tbody className="text-xs">
                 {filteredLaudos.map((laudo) => (
                   <tr key={laudo.id} className="border-b border-surface-container-low hover:bg-surface-bright transition-colors group">
-                    <td className="px-8 py-4 font-mono font-bold text-primary max-w-[160px] truncate">{laudo.id.toUpperCase()}</td>
                     <td className="px-8 py-4 font-bold max-w-[220px] truncate">{laudo.item_nome}</td>
                     <td className="px-8 py-4 font-semibold text-on-surface-variant max-w-[160px] truncate">{laudo.tecnico_nome}</td>
                     <td className="px-8 py-4">
