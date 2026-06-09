@@ -1,9 +1,11 @@
 import { supabase } from "./supabase";
 import {
-  getUsuarios, saveUsuarios, addAuditLog, getAuditLogsByUser,
-  Usuario
-} from './bancoMock';
-import { hashPasswordWithNewSalt } from './utilidadesSenha';
+  getUsuarios,
+  saveUsuarios,
+  addAuditLog,
+  getAuditLogsByUser,
+  Usuario,
+} from "./bancoMock";
 
 export interface SupabaseUsuario {
   id: string;
@@ -42,8 +44,8 @@ export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
     }
   } catch {}
 
-  // Fallback localStorage
   const localUsers = getUsuarios();
+
   return localUsers.map((u) => ({
     ...u,
     auth_id: null,
@@ -58,11 +60,14 @@ function updateLocalUser(userId: string, updates: Partial<Usuario>) {
   const updated = users.map((u) =>
     u.id === userId ? { ...u, ...updates } : u,
   );
+
   saveUsuarios(updated);
-  // Atualiza sessão se for o mesmo usuário
+
   const session = localStorage.getItem("sgi_ati_session");
+
   if (session) {
     const sessionUser = JSON.parse(session) as Usuario;
+
     if (sessionUser.id === userId) {
       localStorage.setItem(
         "sgi_ati_session",
@@ -142,6 +147,7 @@ export async function deleteUser(userId: string): Promise<boolean> {
 
   const users = getUsuarios();
   saveUsuarios(users.filter((u) => u.id !== userId));
+
   return true;
 }
 
@@ -161,6 +167,7 @@ export async function fetchAuditLogsByUser(
   } catch {}
 
   const logs = getAuditLogsByUser(userId);
+
   return logs.map((l) => ({
     id: l.id,
     admin_id: l.adminId,
