@@ -549,7 +549,7 @@ const Inventario: React.FC = () => {
             >
               <option value="TODOS">Status</option>
               <option value="ATIVO">Ativo</option>
-              <option value="GUARDADO">Guardado</option>
+              <option value="GUARDADO">Pronto</option>
               <option value="EMPRESTADO">Emprestado</option>
               <option value="EM_EVENTO">Em Evento</option>
               <option value="EM_MANUTENCAO">Manutenção</option>
@@ -1170,7 +1170,7 @@ const Inventario: React.FC = () => {
                       className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                     >
                       <option value="ATIVO">Ativo</option>
-                      <option value="GUARDADO">Guardado</option>
+                      <option value="GUARDADO">Pronto</option>
                     </select>
                   )}
                 </div>

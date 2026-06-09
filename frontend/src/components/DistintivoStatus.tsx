@@ -42,7 +42,7 @@ const StatusBadge: React.FC<StatusBadgeProps> = ({ type, value }) => {
         return (
           <span className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold rounded-full bg-sky-950/50 border border-sky-500/30 text-sky-400">
             <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
-            Guardado
+            Pronto
           </span>
         );
       case 'EMPRESTADO':
