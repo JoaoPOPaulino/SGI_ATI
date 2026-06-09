@@ -12,13 +12,14 @@ declare const Deno: {
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "authorization, x-client-info, apikey, content-type, x-user-id, x-user-perfil", // ✅ Adicionei x-user-perfil
+  "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
 };
 
 type PerfilUsuario = "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
 
 serve(async (req: Request) => {
+  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -30,7 +31,7 @@ serve(async (req: Request) => {
         error: "Method not allowed",
       }),
       {
-        status: 200,
+        status: 405, // ✅ Mudar para 405 Method Not Allowed
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
@@ -134,7 +135,7 @@ serve(async (req: Request) => {
         email: cleanEmail,
         password: senhaPadrao,
         options: {
-          emailRedirectTo: `${req.headers.get("Origin") || ""}/login`,
+          emailRedirectTo: `https://sgi-ati.vercel.app/login`, // ✅ URL fixa
           data: {
             nome: cleanNome,
             cpf: cleanCpf,
@@ -166,6 +167,7 @@ serve(async (req: Request) => {
       .single();
 
     if (insertError) {
+      // Limpeza: deletar o usuário do auth se falhou no banco
       await supabaseAdmin.auth.admin.deleteUser(signUpData.user.id);
       throw insertError;
     }
@@ -182,6 +184,7 @@ serve(async (req: Request) => {
       },
     );
   } catch (err: any) {
+    console.error("Error:", err); // ✅ Log do erro
     return new Response(
       JSON.stringify({
         success: false,
