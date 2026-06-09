@@ -175,23 +175,6 @@ const Manutencao: React.FC = () => {
         });
       }
 
-      // Cria movimentação final de baixa
-      await createMovimentacao({
-        id: crypto.randomUUID(),
-        item_id: item.id,
-        item_nome: item.nome,
-        tipo: 'BAIXA',
-        origem: item.localizacao_atual,
-        destino: 'Baixado / Descartado Definitivamente',
-        solicitante_id: user?.id || 'usr-anon',
-        solicitante_nome: user?.nome || 'Anônimo',
-        aprovador_id: user?.id,
-        aprovador_nome: user?.nome,
-        status_aprovacao: 'APROVADO',
-        data_movimentacao: now,
-        observacao: 'Baixa definitiva homologada e executada.'
-      });
-
       await loadData();
       alert('Baixa patrimonial do ativo concluída com sucesso!');
     }

@@ -72,7 +72,12 @@ const Dashboard: React.FC = () => {
     loadData();
   }, []);
 
-  const today = useMemo(() => new Date(), []);
+  const [today, setToday] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setToday(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const stats = useMemo(() => {
     const nonBixado = itens.filter(i => i.status !== 'BAIXADO');

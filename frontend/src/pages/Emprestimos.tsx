@@ -276,6 +276,8 @@ const Emprestimos: React.FC = () => {
     const item = allItens.find(i => i.id === activeReturnLoan.item_id);
     if (!item) return;
 
+    const localAnterior = item.localizacao_atual;
+
     await updateItem(item.id, {
       condicao: returnCondicao,
       status: 'GUARDADO',
@@ -287,7 +289,7 @@ const Emprestimos: React.FC = () => {
 
     await createMovimentacao({
       id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome,
-      tipo: 'CHECK_IN', origem: item.localizacao_atual, destino: 'Almoxarifado Central',
+      tipo: 'CHECK_IN', origem: localAnterior, destino: 'Almoxarifado Central',
       solicitante_id: user?.id || '', solicitante_nome: user?.nome || '',
       status_aprovacao: 'APROVADO', data_movimentacao: new Date().toISOString(),
       observacao: `Retorno de Empréstimo. Condição: ${returnCondicao}`

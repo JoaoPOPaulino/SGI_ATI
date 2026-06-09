@@ -193,19 +193,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         };
       }
     } catch {
-      // Supabase offline, tenta localStorage
+      return { success: false, error: 'Serviço de autenticação indisponível. Tente novamente.' };
     }
 
-    const localUsers = getUsuarios();
-    const localUser = localUsers.find(u => u.cpf === cleanCpf && u.ativo);
-    
-    if (!localUser) {
-      return { success: false, error: 'Usuário não encontrado ou inativo.' };
-    }
-
-    setUser(localUser);
-    localStorage.setItem('sgi_ati_session', JSON.stringify(localUser));
-    return { success: true };
+    return { success: false, error: 'Usuário não encontrado ou inativo.' };
   };
 
   const logout = async () => {
