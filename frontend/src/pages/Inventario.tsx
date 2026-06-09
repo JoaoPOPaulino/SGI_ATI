@@ -35,6 +35,7 @@ const Inventario: React.FC = () => {
   // Estado do Modal de Cadastro/Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Campos do Formulário de Cadastro (Issue #8)
   const [formNome, setFormNome] = useState('');
@@ -185,6 +186,9 @@ const Inventario: React.FC = () => {
   // Submissão do Formulário (Cadastro / Edição)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
     if (!formNome.trim()) {
       setFormError('O nome do item é obrigatório.');
       return;
@@ -278,7 +282,6 @@ const Inventario: React.FC = () => {
       };
       await createItem(newItem);
 
-      // Gera silenciosamente a primeira movimentação de CHECK_IN (Regras Comportamentais)
       await createMovimentacao({
         id: crypto.randomUUID(),
         item_id: newItem.id,
@@ -299,6 +302,9 @@ const Inventario: React.FC = () => {
 
     setIsModalOpen(false);
     await loadItens();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Exibição de Detalhes (Issue #7)
@@ -392,7 +398,11 @@ const Inventario: React.FC = () => {
       return;
     }
     if (confirm('Tem certeza que deseja remover este item permanentemente do inventário?')) {
-      await deleteSupabaseItem(id);
+      const result = await deleteSupabaseItem(id);
+      if (!result.success) {
+        alert('Falha ao excluir o item: ' + (result.error || 'Erro desconhecido. Verifique se há movimentações vinculadas ou se você possui permissão suficiente.'));
+        return;
+      }
       await loadItens();
     }
   };
@@ -1183,9 +1193,10 @@ const Inventario: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95"
+                  disabled={isSaving}
+                  className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Salvar Registro
+                  {isSaving ? 'Salvando...' : 'Salvar Registro'}
                 </button>
               </div>
             </form>
