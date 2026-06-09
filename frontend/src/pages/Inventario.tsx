@@ -40,7 +40,7 @@ const Inventario: React.FC = () => {
   // Campos do Formulário de Cadastro (Issue #8)
   const [formNome, setFormNome] = useState('');
   const [formTipo, setFormTipo] = useState<TipoItem>('PATRIMONIADO');
-  const [formCategoria, setFormCategoria] = useState<CategoriaItem>('NOTEBOOK');
+  const [formCategoria, setFormCategoria] = useState<string>('NOTEBOOK');
   const [formCondicao, setFormCondicao] = useState<CondicaoItem>('NOVO');
   const [formStatus, setFormStatus] = useState<StatusItem>('ATIVO');
   const [formPatrimonio, setFormPatrimonio] = useState('');
@@ -524,20 +524,23 @@ const Inventario: React.FC = () => {
 
           {/* Categoria */}
           <div>
-            <select
-              value={filterCategoria}
-              onChange={(e) => setFilterCategoria(e.target.value)}
+            <input
+              type="text"
+              list="filtro-categorias"
+              value={filterCategoria === 'TODAS' ? '' : filterCategoria}
+              onChange={(e) => setFilterCategoria(e.target.value || 'TODAS')}
+              placeholder="Categoria"
               className="w-full bg-surface border border-outline rounded-lg px-2 py-1.5 text-xs text-on-surface"
-            >
-              <option value="TODAS">Categorias</option>
-              <option value="NOTEBOOK">Notebooks</option>
-              <option value="COMPUTADOR">Computadores</option>
-              <option value="MONITOR">Monitores</option>
-              <option value="IMPRESSORA">Impressoras</option>
-              <option value="FERRAMENTA">Ferramentas</option>
-              <option value="ACESSORIO">Acessórios</option>
-              <option value="OUTROS">Outros</option>
-            </select>
+            />
+            <datalist id="filtro-categorias">
+              <option value="NOTEBOOK" />
+              <option value="COMPUTADOR" />
+              <option value="MONITOR" />
+              <option value="IMPRESSORA" />
+              <option value="FERRAMENTA" />
+              <option value="ACESSORIO" />
+              <option value="OUTROS" />
+            </datalist>
           </div>
 
           {/* Status */}
@@ -996,19 +999,23 @@ const Inventario: React.FC = () => {
                   <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
                     Categoria *
                   </label>
-                  <select
+                  <input
+                    type="text"
+                    list="categoria-opcoes"
                     value={formCategoria}
-                    onChange={(e) => setFormCategoria(e.target.value as CategoriaItem)}
+                    onChange={(e) => setFormCategoria(e.target.value)}
+                    placeholder="Digite ou selecione..."
                     className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
-                  >
-                    <option value="NOTEBOOK">Notebook</option>
-                    <option value="COMPUTADOR">Computador</option>
-                    <option value="MONITOR">Monitor</option>
-                    <option value="IMPRESSORA">Impressora</option>
-                    <option value="FERRAMENTA">Ferramenta</option>
-                    <option value="ACESSORIO">Acessório</option>
-                    <option value="OUTROS">Outros</option>
-                  </select>
+                  />
+                  <datalist id="categoria-opcoes">
+                    <option value="NOTEBOOK" />
+                    <option value="COMPUTADOR" />
+                    <option value="MONITOR" />
+                    <option value="IMPRESSORA" />
+                    <option value="FERRAMENTA" />
+                    <option value="ACESSORIO" />
+                    <option value="OUTROS" />
+                  </datalist>
                 </div>
               </div>
 
