@@ -3,7 +3,8 @@ import { useAuth } from '../contexts/ContextoAutenticacao';
 import { Item, StatusItem, Movimentacao } from '../services/bancoMock';
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
-import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle } from 'lucide-react';
+import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer } from 'lucide-react';
+import { CondicaoItem } from '../services/bancoMock';
 import StatusBadge from '../components/DistintivoStatus';
 
 const Manutencao: React.FC = () => {
@@ -20,6 +21,10 @@ const Manutencao: React.FC = () => {
   const [formMotivoBaixa, setFormMotivoBaixa] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
+
+  // Estados do modal de conclusão de reparo
+  const [repairTarget, setRepairTarget] = useState<Item | null>(null);
+  const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('BOM');
 
   const loadData = async () => {
     const allItens = await fetchItens();
@@ -192,6 +197,40 @@ const Manutencao: React.FC = () => {
     }
   };
 
+  // Concluir Reparo (RF12) — retorna item como GUARDADO, pronto para retirada
+  const handleCompleteRepair = async () => {
+    if (!repairTarget || !canModify) return;
+
+    const now = new Date().toISOString();
+    await updateItem(repairTarget.id, {
+      status: 'GUARDADO',
+      condicao: repairCondicao,
+      localizacao_atual: 'Almoxarifado Central (Manutenção Concluída)',
+      updated_at: now
+    });
+
+    await createMovimentacao({
+      id: crypto.randomUUID(),
+      item_id: repairTarget.id,
+      item_nome: repairTarget.nome,
+      tipo: 'CHECK_IN',
+      origem: 'Oficina / Laboratório',
+      destino: 'Almoxarifado Central (Manutenção Concluída)',
+      solicitante_id: user?.id || 'usr-anon',
+      solicitante_nome: user?.nome || 'Anônimo',
+      aprovador_id: user?.id,
+      aprovador_nome: user?.nome,
+      status_aprovacao: 'APROVADO',
+      data_movimentacao: now,
+      observacao: `Reparo concluído. Condição pós-reparo: ${repairCondicao}. Item disponível para retirada.`,
+      tipo_documento: 'CONTROLE_ENTRADA_SAIDA',
+      signature_token: `sha256-${Math.random().toString(36).substring(2, 15)}`
+    });
+
+    setRepairTarget(null);
+    await loadData();
+  };
+
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
       {/* Page Header */}
@@ -234,9 +273,22 @@ const Manutencao: React.FC = () => {
                       <StatusBadge type="condicao" value={item.condicao} />
                     </div>
                   </div>
-                  <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-3 py-1.5 rounded-lg">
-                    Em Reparo — LABIN
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {canModify ? (
+                      <button
+                        onClick={() => { setRepairTarget(item); setRepairCondicao(item.condicao); }}
+                        className="flex items-center gap-1 px-5 py-2 bg-primary hover:bg-primary-dark text-white font-bold text-xs rounded-xl transition-all active:scale-95 shadow-sm"
+                      >
+                        <Hammer size={14} />
+                        Concluir Reparo
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-3 py-1.5 rounded-lg">
+                        Em Reparo — LABIN
+                      </span>
+                    )}
+                    <StatusBadge type="condicao" value={item.condicao} />
+                  </div>
                 </div>
               ))}
             </div>
@@ -369,6 +421,54 @@ const Manutencao: React.FC = () => {
         </div>
 
       </div>
+
+      {/* Modal: Concluir Reparo */}
+      {repairTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRepairTarget(null)} />
+          <div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-md w-full animate-slide-up p-6">
+            <h3 className="text-lg font-bold text-on-surface mb-2">Concluir Reparo</h3>
+            <p className="text-sm text-on-surface-variant mb-6">
+              Equipamento: <strong>{repairTarget.nome}</strong>
+              {repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}
+            </p>
+
+            <label className="block text-xs font-bold text-outline uppercase tracking-wider mb-2">
+              Condição Pós-Reparo
+            </label>
+            <select
+              value={repairCondicao}
+              onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)}
+              className="w-full px-4 py-3 bg-surface border border-outline rounded-xl text-sm focus:ring-2 focus:ring-primary mb-6"
+            >
+              <option value="NOVO">Novo</option>
+              <option value="BOM">Bom</option>
+              <option value="REGULAR">Regular</option>
+              <option value="RUIM">Ruim</option>
+            </select>
+
+            <p className="text-xs text-outline mb-6 bg-surface-container p-3 rounded-xl">
+              O item será movido para <strong>Almoxarifado Central (Manutenção Concluída)</strong> com status <strong>GUARDADO</strong>,
+              pronto para ser retirado por um responsável autorizado.
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setRepairTarget(null)}
+                className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-xl text-sm font-bold text-outline transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleCompleteRepair}
+                className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-xl text-sm font-bold transition-colors active:scale-95"
+              >
+                Confirmar Reparo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

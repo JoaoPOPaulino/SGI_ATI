@@ -102,7 +102,7 @@ const Labin: React.FC = () => {
     const now = new Date().toISOString();
     if (formStatusServico === 'FINALIZADO') {
       await updateItem(item.id, {
-        status: 'ATIVO',
+        status: 'GUARDADO',
         condicao: 'BOM',
         localizacao_atual: 'Almoxarifado Central (Reparado no LABIN)',
         updated_at: now
