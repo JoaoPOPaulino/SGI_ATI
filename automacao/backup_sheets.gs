@@ -17,8 +17,8 @@
 // ============================================================
 // CONFIGURAÇÃO - Coloque seus dados aqui antes do setup()
 // ============================================================
-var SUPABASE_URL = 'https://xxxxxxxxxxxx.supabase.co';
-var SUPABASE_SERVICE_ROLE_KEY = 'eyJh...'; // service_role, NÃO a anon key
+var SUPABASE_URL = 'https://hpprmuxpawtjgyvsiyeb.supabase.co';
+var SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwcHJtdXhwYXd0amd5dnNpeWViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ4ODQ1MiwiZXhwIjoyMDkwMDY0NDUyfQ.SJqzZDj2N2xt-nnu2k-SBrQyDHPfZLF9rVQvABvyOwA';
 // ============================================================
 
 var SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();
@@ -85,163 +85,102 @@ function executarBackup() {
 
   Logger.log('🚀 Iniciando backup — ' + tsLong);
 
-  // ──────────── ITENS ────────────
-  var headerItens = [
-    'ID',
-    'Nome',
-    'Tipo',
-    'Categoria',
-    'Condição',
-    'Status',
-    'Nº Patrimônio',
-    'Nº Série',
-    'Marca',
-    'Modelo',
-    'Quantidade',
-    'Localização Atual',
-    'Polo',
-    'Prédio',
-    'Andar',
-    'Setor',
-    'Sala',
-    'Estação',
-    'Responsável (ID)',
-    'Responsável (Nome)',
-    'Criado em',
-    'Atualizado em'
-  ];
+  try {
+    // ──────────── ITENS ────────────
+    Logger.log('📦 Buscando itens...');
+    var headerItens = [
+      'ID', 'Nome', 'Tipo', 'Categoria', 'Condição', 'Status',
+      'Nº Patrimônio', 'Nº Série', 'Marca', 'Modelo', 'Quantidade',
+      'Localização Atual', 'Polo', 'Prédio', 'Andar', 'Setor', 'Sala', 'Estação',
+      'Responsável (ID)', 'Responsável (Nome)', 'Criado em', 'Atualizado em'
+    ];
 
-  var rowsItens = [];
-  var offset = 0;
-  var limit = 1000;
-  var countItens = 0;
-
-  do {
-    var url = apiBase + '/itens?select=*&order=created_at.desc&limit=' + limit + '&offset=' + offset;
-    var response = UrlFetchApp.fetch(url, {
+    var respItens = UrlFetchApp.fetch(apiBase + '/itens?select=*&limit=5000', {
       method: 'get',
-      headers: {
-        'apikey': apiKey,
-        'Authorization': 'Bearer ' + apiKey
-      },
+      headers: { 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey },
       muteHttpExceptions: true
     });
 
-    var data = JSON.parse(response.getContentText());
-    if (!Array.isArray(data)) break;
+    var codeItens = respItens.getResponseCode();
+    Logger.log('Itens HTTP: ' + codeItens);
 
-    data.forEach(function (item) {
-      rowsItens.push([
-        item.id || '',
-        item.nome || '',
-        item.tipo || '',
-        item.categoria || '',
-        item.condicao || '',
-        item.status || '',
-        item.numero_patrimonio || '',
-        item.numero_serie || '',
-        item.marca || '',
-        item.modelo || '',
-        item.quantidade !== null && item.quantidade !== undefined ? item.quantidade : '',
-        item.localizacao_atual || '',
-        item.polo || '',
-        item.predio || '',
-        item.andar || '',
-        item.setor || '',
-        item.sala || '',
-        item.estacao || '',
-        item.atribuido_a_id || '',
-        item.atribuido_a_nome || '',
-        item.created_at || '',
-        item.updated_at || ''
-      ]);
-    });
+    var dadosItens = [];
+    if (codeItens === 200) {
+      var rawItens = JSON.parse(respItens.getContentText());
+      if (Array.isArray(rawItens)) {
+        rawItens.forEach(function (item) {
+          dadosItens.push([
+            item.id, item.nome, item.tipo, item.categoria, item.condicao, item.status,
+            item.numero_patrimonio || '', item.numero_serie || '', item.marca || '', item.modelo || '',
+            item.quantidade != null ? item.quantidade : '',
+            item.localizacao_atual || '', item.polo || '', item.predio || '', item.andar || '', item.setor || '', item.sala || '', item.estacao || '',
+            item.atribuido_a_id || '', item.atribuido_a_nome || '',
+            item.created_at || '', item.updated_at || ''
+          ]);
+        });
+        Logger.log('Itens encontrados: ' + rawItens.length);
+      }
+    }
 
-    countItens += data.length;
-    offset += limit;
-  } while (data.length === limit);
+    // ──────────── MOVIMENTAÇÕES ────────────
+    Logger.log('📦 Buscando movimentações...');
+    var headerMovs = [
+      'ID', 'Equipamento', 'Tipo', 'Origem', 'Destino',
+      'Solicitante (ID)', 'Solicitante (Nome)', 'Aprovador (ID)', 'Aprovador (Nome)',
+      'Status Aprovação', 'Data Movimentação', 'Observação', 'Tipo Documento', 'Token Assinatura'
+    ];
 
-  // ──────────── MOVIMENTAÇÕES ────────────
-  var headerMovs = [
-    'ID',
-    'Equipamento',
-    'Tipo',
-    'Origem',
-    'Destino',
-    'Solicitante (ID)',
-    'Solicitante (Nome)',
-    'Aprovador (ID)',
-    'Aprovador (Nome)',
-    'Status Aprovação',
-    'Data Movimentação',
-    'Observação',
-    'Tipo Documento',
-    'Token Assinatura'
-  ];
-
-  var rowsMovs = [];
-  offset = 0;
-  var countMovs = 0;
-
-  do {
-    var urlMovs = apiBase + '/movimentacoes?select=*&order=data_movimentacao.desc&limit=' + limit + '&offset=' + offset;
-    var responseMovs = UrlFetchApp.fetch(urlMovs, {
+    var respMovs = UrlFetchApp.fetch(apiBase + '/movimentacoes?select=*&limit=5000', {
       method: 'get',
-      headers: {
-        'apikey': apiKey,
-        'Authorization': 'Bearer ' + apiKey
-      },
+      headers: { 'apikey': apiKey, 'Authorization': 'Bearer ' + apiKey },
       muteHttpExceptions: true
     });
 
-    var dataMovs = JSON.parse(responseMovs.getContentText());
-    if (!Array.isArray(dataMovs)) break;
+    var codeMovs = respMovs.getResponseCode();
+    Logger.log('Movs HTTP: ' + codeMovs);
 
-    dataMovs.forEach(function (mov) {
-      rowsMovs.push([
-        mov.id || '',
-        mov.item_nome || '',
-        mov.tipo || '',
-        mov.origem || '',
-        mov.destino || '',
-        mov.solicitante_id || '',
-        mov.solicitante_nome || '',
-        mov.aprovador_id || '',
-        mov.aprovador_nome || '',
-        mov.status_aprovacao || '',
-        mov.data_movimentacao || '',
-        mov.observacao || '',
-        mov.tipo_documento || '',
-        mov.signature_token || ''
-      ]);
-    });
+    var dadosMovs = [];
+    if (codeMovs === 200) {
+      var rawMovs = JSON.parse(respMovs.getContentText());
+      if (Array.isArray(rawMovs)) {
+        rawMovs.forEach(function (mov) {
+          dadosMovs.push([
+            mov.id, mov.item_nome, mov.tipo, mov.origem, mov.destino,
+            mov.solicitante_id || '', mov.solicitante_nome || '',
+            mov.aprovador_id || '', mov.aprovador_nome || '',
+            mov.status_aprovacao || '', mov.data_movimentacao || '',
+            mov.observacao || '', mov.tipo_documento || '', mov.signature_token || ''
+          ]);
+        });
+        Logger.log('Movs encontradas: ' + rawMovs.length);
+      }
+    }
 
-    countMovs += dataMovs.length;
-    offset += limit;
-  } while (dataMovs.length === limit);
+    // ──────────── ESCREVE NAS ABAS ────────────
+    var countItens = dadosItens.length;
+    var countMovs = dadosMovs.length;
 
-  // ──────────── ESCREVE NAS ABAS ────────────
-  var abaItens = ss.insertSheet('Itens_' + timestamp);
-  abaItens.getRange(1, 1, 1, headerItens.length).setValues([headerItens]);
-  abaItens.getRange(1, 1, 1, headerItens.length).setFontWeight('bold');
-  abaItens.getRange(1, 1, 1, headerItens.length).setBackground('#1a1a2e');
-  abaItens.getRange(1, 1, 1, headerItens.length).setFontColor('#ffffff');
-  abaItens.setFrozenRows(1);
-  if (rowsItens.length > 0) {
-    abaItens.getRange(2, 1, rowsItens.length, headerItens.length).setValues(rowsItens);
-  }
-  abaItens.autoResizeColumns(1, headerItens.length);
+    var abaItens = ss.insertSheet('Itens_' + timestamp);
+    abaItens.getRange(1, 1, 1, headerItens.length).setValues([headerItens]);
+    abaItens.getRange(1, 1, 1, headerItens.length).setFontWeight('bold');
+    abaItens.getRange(1, 1, 1, headerItens.length).setBackground('#1a1a2e');
+    abaItens.getRange(1, 1, 1, headerItens.length).setFontColor('#ffffff');
+    abaItens.setFrozenRows(1);
+    if (dadosItens.length > 0) {
+      abaItens.getRange(2, 1, dadosItens.length, headerItens.length).setValues(dadosItens);
+    }
+    abaItens.autoResizeColumns(1, headerItens.length);
 
-  var abaMovs = ss.insertSheet('Movs_' + timestamp);
-  abaMovs.getRange(1, 1, 1, headerMovs.length).setValues([headerMovs]);
-  abaMovs.getRange(1, 1, 1, headerMovs.length).setFontWeight('bold');
-  abaMovs.getRange(1, 1, 1, headerMovs.length).setBackground('#1a1a2e');
-  abaMovs.getRange(1, 1, 1, headerMovs.length).setFontColor('#ffffff');
-  abaMovs.setFrozenRows(1);
-  if (rowsMovs.length > 0) {
-    abaMovs.getRange(2, 1, rowsMovs.length, headerMovs.length).setValues(rowsMovs);
-  }
-  abaMovs.autoResizeColumns(1, headerMovs.length);
+    var abaMovs = ss.insertSheet('Movs_' + timestamp);
+    abaMovs.getRange(1, 1, 1, headerMovs.length).setValues([headerMovs]);
+    abaMovs.getRange(1, 1, 1, headerMovs.length).setFontWeight('bold');
+    abaMovs.getRange(1, 1, 1, headerMovs.length).setBackground('#1a1a2e');
+    abaMovs.getRange(1, 1, 1, headerMovs.length).setFontColor('#ffffff');
+    abaMovs.setFrozenRows(1);
+    if (dadosMovs.length > 0) {
+      abaMovs.getRange(2, 1, dadosMovs.length, headerMovs.length).setValues(dadosMovs);
+    }
+    abaMovs.autoResizeColumns(1, headerMovs.length);
 
   // ──────────── ABA _STATUS ────────────
   var statusSheet = ss.getSheetByName('_Status');
@@ -267,4 +206,22 @@ function executarBackup() {
     ' | Itens: ' + countItens +
     ' | Movimentações: ' + countMovs
   );
+
+  } catch (e) {
+    Logger.log('❌ Erro no backup: ' + e.toString());
+    var statusSheet = ss.getSheetByName('_Status');
+    if (!statusSheet) {
+      statusSheet = ss.insertSheet('_Status');
+      statusSheet.getRange('A1:D1').setValues([['Data Backup', 'Itens', 'Movimentações', 'Status']]);
+      statusSheet.getRange('A1:D1').setFontWeight('bold');
+      statusSheet.setFrozenRows(1);
+      ss.setActiveSheet(statusSheet);
+      ss.moveActiveSheet(1);
+    }
+    var statusRow = statusSheet.getLastRow() + 1;
+    statusSheet.getRange(statusRow, 1).setValue(tsLong);
+    statusSheet.getRange(statusRow, 2).setValue(0);
+    statusSheet.getRange(statusRow, 3).setValue(0);
+    statusSheet.getRange(statusRow, 4).setValue('❌ FALHA: ' + e.toString().slice(0, 100));
+  }
 }
