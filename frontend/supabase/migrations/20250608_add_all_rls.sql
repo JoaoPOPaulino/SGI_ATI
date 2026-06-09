@@ -38,12 +38,12 @@ CREATE POLICY "laudos_insert" ON public.laudos FOR INSERT WITH CHECK (true);
 CREATE POLICY "laudos_update" ON public.laudos FOR UPDATE USING (true) WITH CHECK (true);
 CREATE POLICY "laudos_delete" ON public.laudos FOR DELETE USING (true);
 
--- LOCAIS (LOCAL)
-ALTER TABLE public.local ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "local_select" ON public.local FOR SELECT USING (true);
-CREATE POLICY "local_insert" ON public.local FOR INSERT WITH CHECK (true);
-CREATE POLICY "local_update" ON public.local FOR UPDATE USING (true) WITH CHECK (true);
-CREATE POLICY "local_delete" ON public.local FOR DELETE USING (true);
+-- LOCAIS
+ALTER TABLE public.locais ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "locais_select" ON public.locais FOR SELECT USING (true);
+CREATE POLICY "locais_insert" ON public.locais FOR INSERT WITH CHECK (true);
+CREATE POLICY "locais_update" ON public.locais FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "locais_delete" ON public.locais FOR DELETE USING (true);
 
 -- USUARIOS (caso nao tenha politicas ainda)
 ALTER TABLE public.usuarios ENABLE ROW LEVEL SECURITY;

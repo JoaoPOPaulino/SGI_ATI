@@ -1,9 +1,11 @@
 import React, { useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { User, Mail, Shield, MapPin, Key, Clock, Camera } from 'lucide-react';
 
 const Perfil: React.FC = () => {
   const { user, updatePhoto } = useAuth();
+  const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
@@ -105,7 +107,7 @@ const Perfil: React.FC = () => {
                   <h4 className="font-bold text-sm">Senha de Acesso</h4>
                   <p className="text-xs text-on-surface-variant">Sua última alteração de senha foi há 30 dias.</p>
                 </div>
-                <button className="px-4 py-2 custom-gradient-btn text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all">
+                <button onClick={() => navigate('/trocar-senha')} className="px-4 py-2 custom-gradient-btn text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all">
                   Alterar Senha
                 </button>
               </div>
