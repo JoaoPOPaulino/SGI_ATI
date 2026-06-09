@@ -1,40 +1,77 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
+import type { VercelRequest, VercelResponse } from "@vercel/node";
+import { createClient } from "@supabase/supabase-js";
 
-const supabaseAdmin = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-);
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const appUrl = process.env.APP_URL;
+
+function setCorsHeaders(res: VercelResponse) {
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Método não permitido.' });
+  setCorsHeaders(res);
+
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
   }
 
-  const { nome, email, cpf, perfil, polo } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).json({
+      error: `Método ${req.method} não permitido. Use POST.`,
+    });
+  }
+
+  if (!supabaseUrl || !supabaseServiceRoleKey || !appUrl) {
+    return res.status(500).json({
+      error:
+        "Variáveis de ambiente ausentes. Configure SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY e APP_URL.",
+    });
+  }
+
+  const { nome, email, cpf, perfil, polo } = req.body || {};
 
   if (!nome || !email || !cpf || !perfil) {
-    return res.status(400).json({ error: 'Dados obrigatórios ausentes.' });
+    return res.status(400).json({
+      error: "Dados obrigatórios ausentes: nome, email, cpf e perfil.",
+    });
+  }
+
+  const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+  const { data: existingProfile } = await supabaseAdmin
+    .from("usuarios")
+    .select("id, email, cpf")
+    .or(`email.eq.${email},cpf.eq.${cpf}`)
+    .maybeSingle();
+
+  if (existingProfile) {
+    return res.status(409).json({
+      error: "Já existe um usuário cadastrado com este e-mail ou CPF.",
+    });
   }
 
   const { data: inviteData, error: inviteError } =
     await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${process.env.APP_URL}/trocar-senha`,
+      redirectTo: `${appUrl}/trocar-senha`,
       data: {
         nome,
         cpf,
         perfil,
-        polo,
+        polo: polo || null,
       },
     });
 
   if (inviteError || !inviteData.user) {
     return res.status(400).json({
-      error: inviteError?.message || 'Erro ao enviar convite.',
+      error: inviteError?.message || "Erro ao enviar convite.",
     });
   }
 
-  const { error: profileError } = await supabaseAdmin.from('usuarios').insert({
+  const { error: profileError } = await supabaseAdmin.from("usuarios").insert({
     auth_id: inviteData.user.id,
     nome,
     email,
@@ -47,7 +84,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   });
 
   if (profileError) {
-    return res.status(400).json({ error: profileError.message });
+    return res.status(400).json({
+      error: profileError.message,
+    });
   }
 
   return res.status(200).json({
