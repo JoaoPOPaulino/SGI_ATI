@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../services/supabase';
-import { Usuario, PerfilUsuario, getUsuarios } from '../services/bancoMock';
+import { Usuario, PerfilUsuario, getUsuarios, saveUsuarios } from '../services/bancoMock';
 
 interface AuthContextType {
   user: Usuario | null;
@@ -153,10 +153,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.setItem('sgi_ati_session', JSON.stringify(updatedUser));
     
     try {
-      await supabase.from('usuarios').update({ foto: fotoBase64 }).eq('id', user.id);
-    } catch {
-      // Silencioso
+      const { error } = await supabase.from('usuarios').update({ foto: fotoBase64 }).eq('id', user.id);
+      if (error) console.warn('Erro ao salvar foto no Supabase:', error.message);
+    } catch (err) {
+      console.warn('Supabase offline — foto salva localmente.');
     }
+
+    const usuarios = getUsuarios();
+    saveUsuarios(usuarios.map(u => u.id === user.id ? { ...u, foto: fotoBase64 } : u));
   };
 
   const hasPermission = (requiredPerfil: PerfilUsuario): boolean => {

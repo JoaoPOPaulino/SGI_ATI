@@ -11,6 +11,7 @@ interface ModalUser {
   perfil: string;
   ativo: boolean;
   polo?: string | null;
+  foto?: string | null;
 }
 
 interface UserDetailModalProps {
@@ -54,8 +55,12 @@ const UserDetailModal: React.FC<UserDetailModalProps> = ({ open, user, auditLogs
       <div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-lg w-full max-h-[85vh] flex flex-col animate-slide-up">
         <div className="flex items-center justify-between p-5 border-b border-outline-variant/10">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0">
-              {user.nome.charAt(0).toUpperCase()}
+            <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden">
+              {user.foto ? (
+                <img src={user.foto} alt={user.nome} className="w-full h-full object-cover" />
+              ) : (
+                user.nome.charAt(0).toUpperCase()
+              )}
             </div>
             <div>
               <h3 className="text-sm font-bold text-on-surface">{user.nome}</h3>

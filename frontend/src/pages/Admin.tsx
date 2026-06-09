@@ -624,8 +624,12 @@ const Admin: React.FC = () => {
                             className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity cursor-pointer w-full"
                             title="Clique para ver detalhes e histórico"
                           >
-                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${u.id === currentUser?.id ? 'bg-primary text-white ring-2 ring-primary-container' : 'bg-surface-container-highest text-on-surface-variant'}`}>
-                              {u.nome.charAt(0).toUpperCase()}
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 overflow-hidden ${u.id === currentUser?.id ? 'ring-2 ring-primary' : ''} ${!u.foto ? (u.id === currentUser?.id ? 'bg-primary text-white' : 'bg-surface-container-highest text-on-surface-variant') : ''}`}>
+                              {u.foto ? (
+                                <img src={u.foto} alt={u.nome} className="w-full h-full object-cover" />
+                              ) : (
+                                u.nome.charAt(0).toUpperCase()
+                              )}
                             </div>
                             <div>
                               <p className="text-xs font-bold text-on-surface flex items-center gap-2 max-w-[180px]">
