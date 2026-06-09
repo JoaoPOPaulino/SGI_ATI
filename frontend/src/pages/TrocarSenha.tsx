@@ -1,19 +1,10 @@
-<<<<<<< HEAD:frontend/src/pages/ChangePassword.tsx
 import React, { useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/ContextoAutenticacao";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, Lock, CheckCircle2, Save } from "lucide-react";
 import { supabase } from "../services/supabase";
-=======
-import React, { useState } from 'react';
-import { useAuth } from '../contexts/ContextoAutenticacao';
-import { useNavigate } from 'react-router-dom';
-import { AlertCircle, Lock, CheckCircle2, Save } from 'lucide-react';
-import { supabase } from '../services/supabase';
-import { hashPasswordWithNewSalt } from '../services/utilidadesSenha';
->>>>>>> de164c85f77a1760fba0c2519a2515c805e245c0:frontend/src/pages/TrocarSenha.tsx
 
-const ChangePassword: React.FC = () => {
+const TrocarSenha: React.FC = () => {
   const { user } = useAuth();
   const [senhaNova, setSenhaNova] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -21,7 +12,6 @@ const ChangePassword: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Redireciona se não estiver logado ou se não for primeiro acesso
   React.useEffect(() => {
     if (!user) {
       navigate("/login", { replace: true });
@@ -38,6 +28,7 @@ const ChangePassword: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!senhaNova || !confirmarSenha) {
       setError("Preencha todos os campos.");
       return;
@@ -98,6 +89,7 @@ const ChangePassword: React.FC = () => {
         <h2 className="text-2xl font-extrabold text-gray-800 text-center mb-2">
           Trocar Senha
         </h2>
+
         <p className="text-sm text-gray-500 text-center mb-8">
           Por segurança, você deve definir uma nova senha no seu primeiro
           acesso.
@@ -115,6 +107,7 @@ const ChangePassword: React.FC = () => {
             <label className="block text-sm font-bold text-gray-700 ml-1">
               Nova Senha
             </label>
+
             <input
               type="password"
               value={senhaNova}
@@ -128,6 +121,7 @@ const ChangePassword: React.FC = () => {
             <label className="block text-sm font-bold text-gray-700 ml-1">
               Confirmar Senha
             </label>
+
             <input
               type="password"
               value={confirmarSenha}
@@ -137,11 +131,11 @@ const ChangePassword: React.FC = () => {
             />
           </div>
 
-          {/* Regras de senha visual */}
           <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-2">
             <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
               Requisitos da senha
             </p>
+
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <CheckCircle2
                 size={14}
@@ -151,6 +145,7 @@ const ChangePassword: React.FC = () => {
               />
               <span>Mínimo de 8 caracteres</span>
             </div>
+
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <CheckCircle2
                 size={14}
@@ -160,6 +155,7 @@ const ChangePassword: React.FC = () => {
               />
               <span>Pelo menos um número</span>
             </div>
+
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <CheckCircle2
                 size={14}
@@ -197,4 +193,4 @@ const ChangePassword: React.FC = () => {
   );
 };
 
-export default ChangePassword;
+export default TrocarSenha;
