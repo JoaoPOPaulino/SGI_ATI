@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import {
   Item, TipoItem, CategoriaItem, CondicaoItem, StatusItem,
-  Movimentacao, Local, LaudoTecnico
+  Movimentacao, Local, LaudoTecnico, getUsuarios
 } from '../services/bancoMock';
 import { fetchItens, createItem, updateItem, deleteItem as deleteSupabaseItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
@@ -54,6 +54,7 @@ const Inventario: React.FC = () => {
   const [formAndar, setFormAndar] = useState('');
   const [formSetor, setFormSetor] = useState('');
   const [formSala, setFormSala] = useState('');
+  const [formResponsavelId, setFormResponsavelId] = useState('');
 
   const [formError, setFormError] = useState('');
 
@@ -75,6 +76,8 @@ const Inventario: React.FC = () => {
 
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
+
+  const usuarios = useMemo(() => getUsuarios().filter(u => u.ativo), []);
 
   // Carregar itens do banco mock
   const loadItens = async () => {
@@ -162,6 +165,7 @@ const Inventario: React.FC = () => {
       setFormAndar(item.andar || '');
       setFormSetor(item.setor || '');
       setFormSala(item.sala || '');
+      setFormResponsavelId(item.atribuido_a_id || '');
     } else {
       setEditingItem(null);
       setFormNome('');
@@ -179,6 +183,7 @@ const Inventario: React.FC = () => {
       setFormAndar('Térreo');
       setFormSetor('Suporte Técnico');
       setFormSala('');
+      setFormResponsavelId('');
     }
     setIsModalOpen(true);
   };
@@ -223,6 +228,7 @@ const Inventario: React.FC = () => {
 
     if (editingItem) {
       // Edição
+      const respEdit = usuarios.find(u => u.id === formResponsavelId);
       await updateItem(editingItem.id, {
         nome: formNome,
         tipo: formTipo,
@@ -239,7 +245,9 @@ const Inventario: React.FC = () => {
         sala: formSala,
         marca: formMarca,
         modelo: formModelo,
-        quantidade: (formTipo === 'PATRIMONIADO' || formTipo === 'SERIALIZADO') ? 1 : formQuantidade
+        quantidade: (formTipo === 'PATRIMONIADO' || formTipo === 'SERIALIZADO') ? 1 : formQuantidade,
+        atribuido_a_id: formResponsavelId || undefined,
+        atribuido_a_nome: respEdit?.nome || undefined
       });
 
       if (editingItem.status !== formStatus || editingItem.localizacao_atual !== localConcatenado) {
@@ -260,6 +268,7 @@ const Inventario: React.FC = () => {
     } else {
       // Cadastro
       const newItemId = crypto.randomUUID();
+      const respNew = usuarios.find(u => u.id === formResponsavelId);
       const newItem: Item = {
         id: newItemId,
         nome: formNome,
@@ -278,7 +287,9 @@ const Inventario: React.FC = () => {
         sala: formSala,
         marca: formMarca,
         modelo: formModelo,
-        quantidade: (formTipo === 'PATRIMONIADO' || formTipo === 'SERIALIZADO') ? 1 : formQuantidade
+        quantidade: (formTipo === 'PATRIMONIADO' || formTipo === 'SERIALIZADO') ? 1 : formQuantidade,
+        atribuido_a_id: formResponsavelId || undefined,
+        atribuido_a_nome: respNew?.nome || undefined
       };
       await createItem(newItem);
 
@@ -1174,6 +1185,23 @@ const Inventario: React.FC = () => {
                     </select>
                   )}
                 </div>
+              </div>
+
+              {/* Responsável */}
+              <div>
+                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+                  Responsável pelo Item
+                </label>
+                <select
+                  value={formResponsavelId}
+                  onChange={(e) => setFormResponsavelId(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
+                >
+                  <option value="">-- Nenhum (não atribuído) --</option>
+                  {usuarios.map(u => (
+                    <option key={u.id} value={u.id}>{u.nome} ({u.perfil})</option>
+                  ))}
+                </select>
               </div>
 
               {formError && (
