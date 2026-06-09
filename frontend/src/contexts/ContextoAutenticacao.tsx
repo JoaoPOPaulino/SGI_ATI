@@ -1,6 +1,11 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../services/supabase';
-import { Usuario, PerfilUsuario, getUsuarios, saveUsuarios } from '../services/bancoMock';
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { supabase } from "../services/supabase";
+import {
+  Usuario,
+  PerfilUsuario,
+  getUsuarios,
+  saveUsuarios,
+} from "../services/bancoMock";
 
 interface AuthContextType {
   user: Usuario | null;
@@ -154,49 +159,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
-      const { data, error } = await supabase
-        .from('usuarios')
-        .select('*')
-        .eq('cpf', cleanCpf)
-        .eq('ativo', true)
-        .single();
+      const { data: perfilUsuario, error: perfilError } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("cpf", cleanCpf)
+        .eq("ativo", true)
+        .maybeSingle();
 
-      if (!error && data) {
-        if (data.senha) {
-          if (data.salt) {
-            const { verifyPassword } = await import('../services/utilidadesSenha');
-            const valid = await verifyPassword(senha || '', data.salt, data.senha);
-            if (!valid) {
-              return { success: false, error: 'Senha incorreta.' };
-            }
-          } else {
-            if (data.senha !== senha) {
-              return { success: false, error: 'Senha incorreta.' };
-            }
-          }
-        }
-        const mappedUser: Usuario = {
-          id: data.id,
-          nome: data.nome,
-          email: data.email,
-          cpf: data.cpf,
-          perfil: data.perfil,
-          ativo: data.ativo ?? true,
-          polo: data.polo || undefined,
-          foto: data.foto || undefined,
-        };
-        setUser(mappedUser);
-        localStorage.setItem('sgi_ati_session', JSON.stringify(mappedUser));
-        return { 
-          success: true, 
-          requirePasswordChange: data.primeiro_acesso || false
+      if (perfilError || !perfilUsuario) {
+        return { success: false, error: "Usuário não encontrado ou inativo." };
+      }
+
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({
+          email: perfilUsuario.email,
+          password: senha,
+        });
+
+      if (authError || !authData.user) {
+        return {
+          success: false,
+          error: "CPF ou senha incorretos, ou e-mail ainda não confirmado.",
         };
       }
-    } catch {
-      return { success: false, error: 'Serviço de autenticação indisponível. Tente novamente.' };
-    }
 
-    return { success: false, error: 'Usuário não encontrado ou inativo.' };
+      const profile = await loadUserProfile(authData.user.id);
+
+      if (!profile) {
+        await supabase.auth.signOut();
+        return { success: false, error: "Perfil do usuário não encontrado." };
+      }
+
+      return {
+        success: true,
+        requirePasswordChange: profile.primeiro_acesso || false,
+      };
+    } catch {
+      return {
+        success: false,
+        error: "Serviço de autenticação indisponível. Tente novamente.",
+      };
+    }
   };
 
   const logout = async () => {
@@ -218,17 +221,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const updatedUser = { ...user, foto: fotoBase64 };
     setUser(updatedUser);
-    localStorage.setItem('sgi_ati_session', JSON.stringify(updatedUser));
+    localStorage.setItem("sgi_ati_session", JSON.stringify(updatedUser));
 
     try {
-      const { error } = await supabase.from('usuarios').update({ foto: fotoBase64 }).eq('id', user.id);
-      if (error) console.warn('Erro ao salvar foto no Supabase:', error.message);
+      const { error } = await supabase
+        .from("usuarios")
+        .update({ foto: fotoBase64 })
+        .eq("id", user.id);
+      if (error)
+        console.warn("Erro ao salvar foto no Supabase:", error.message);
     } catch {
-      console.warn('Supabase offline — foto salva localmente.');
+      console.warn("Supabase offline — foto salva localmente.");
     }
 
     const usuarios = getUsuarios();
-    saveUsuarios(usuarios.map(u => u.id === user.id ? { ...u, foto: fotoBase64 } : u));
+    saveUsuarios(
+      usuarios.map((u) => (u.id === user.id ? { ...u, foto: fotoBase64 } : u)),
+    );
   };
 
   const hasPermission = (requiredPerfil: PerfilUsuario): boolean => {

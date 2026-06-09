@@ -216,55 +216,28 @@ export async function inviteUser(payload: {
   nome: string;
   email: string;
   cpf: string;
-  perfil: "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
+  perfil: string;
   polo?: string;
-}): Promise<{ success: boolean; error?: string; user?: { id: string } }> {
-  const cleanCpf = payload.cpf.replace(/\D/g, "");
-  const cleanEmail = payload.email.trim().toLowerCase();
+}) {
+  const response = await fetch('/api/convidar-usuario', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
 
-  // Tentar via Edge Function primeiro
-  try {
-    const { data, error } = await supabase.functions.invoke("invite-user", {
-      body: {
-        ...payload,
-        cpf: cleanCpf,
-        email: cleanEmail,
-      },
-    });
+  const data = await response.json();
 
-    if (!error && data?.success) {
-      return { success: true, user: data.user };
-    }
-  } catch {}
-
-  // Fallback: criar usuário no localStorage
-  const usuarios = getUsuarios();
-
-  const cpfExistente = usuarios.find(
-    (u) => u.cpf.replace(/\D/g, "") === cleanCpf
-  );
-  if (cpfExistente) {
-    return { success: false, error: "CPF já cadastrado." };
+  if (!response.ok) {
+    return {
+      success: false,
+      error: data.error || 'Erro ao convidar usuário.',
+    };
   }
 
-  const emailExistente = usuarios.find(
-    (u) => u.email.trim().toLowerCase() === cleanEmail
-  );
-  if (emailExistente) {
-    return { success: false, error: "E-mail já cadastrado." };
-  }
-
-  const newUser: Usuario = {
-    id: `usr-${Date.now()}`,
-    nome: payload.nome.trim(),
-    email: cleanEmail,
-    cpf: cleanCpf,
-    perfil: payload.perfil,
-    ativo: true,
-    polo: payload.polo || undefined,
+  return {
+    success: true,
+    user: data.user,
   };
-
-  saveUsuarios([...usuarios, newUser]);
-
-  return { success: true, user: { id: newUser.id } };
 }

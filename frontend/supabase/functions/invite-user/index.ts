@@ -186,7 +186,7 @@ serve(async (req: Request) => {
       await supabaseAdmin.auth.admin.createUser({
         email: cleanEmail,
         password: senhaPadrao,
-        email_confirm: true, // Confirmar email automaticamente
+        email_confirm: false,
         user_metadata: {
           nome: cleanNome,
           cpf: cleanCpf,
