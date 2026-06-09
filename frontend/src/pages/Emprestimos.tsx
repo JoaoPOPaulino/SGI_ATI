@@ -462,7 +462,7 @@ const Emprestimos: React.FC = () => {
               </div>
             </div>
             {formEventError && <div className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[10px] text-red-700 font-semibold">{formEventError}</div>}
-            <button type="submit" className="w-full py-2.5 bg-surface-container-high border border-outline-variant text-on-surface hover:text-primary font-semibold rounded-xl text-xs transition-all">
+            <button type="submit" className="w-full py-3 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md active:scale-95">
               Cadastrar Evento
             </button>
           </form>
