@@ -48,10 +48,12 @@ export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
 
   // Sempre inclui usuários do localStorage que não existem no Supabase
   const localUsers = getUsuarios();
-  const supabaseCpfs = new Set(supabaseUsers.map(u => u.cpf.replace(/\D/g, '')));
+  const supabaseCpfs = new Set(
+    supabaseUsers.map((u) => u.cpf.replace(/\D/g, "")),
+  );
 
   const localOnly = localUsers
-    .filter(u => !supabaseCpfs.has(u.cpf.replace(/\D/g, '')))
+    .filter((u) => !supabaseCpfs.has(u.cpf.replace(/\D/g, "")))
     .map((u) => ({
       ...u,
       auth_id: null,
@@ -219,25 +221,50 @@ export async function inviteUser(payload: {
   perfil: string;
   polo?: string;
 }) {
-  const response = await fetch('/api/convidar-usuario', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(payload),
-  });
+  try {
+    const response = await fetch("/api/convidar-usuario", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
 
-  const data = await response.json();
+    const rawText = await response.text();
 
-  if (!response.ok) {
+    let data: any = null;
+
+    if (rawText) {
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        return {
+          success: false,
+          error: `A API respondeu algo que não é JSON. Status: ${response.status}. Resposta: ${rawText.slice(0, 200)}`,
+        };
+      }
+    }
+
+    if (!response.ok) {
+      return {
+        success: false,
+        error:
+          data?.error ||
+          `Erro ao convidar usuário. Status HTTP: ${response.status}`,
+      };
+    }
+
+    return {
+      success: true,
+      user: data?.user,
+    };
+  } catch (error) {
     return {
       success: false,
-      error: data.error || 'Erro ao convidar usuário.',
+      error:
+        error instanceof Error
+          ? error.message
+          : "Erro inesperado ao chamar a API de convite.",
     };
   }
-
-  return {
-    success: true,
-    user: data.user,
-  };
 }
