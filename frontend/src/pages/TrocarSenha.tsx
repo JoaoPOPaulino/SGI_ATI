@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/ContextoAutenticacao";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, Lock, CheckCircle2, Save } from "lucide-react";
 import { supabase } from "../services/supabase";
+import { hashPasswordWithNewSalt } from "../services/utilidadesSenha";
 
 const TrocarSenha: React.FC = () => {
   const { user } = useAuth();
@@ -50,17 +51,12 @@ const TrocarSenha: React.FC = () => {
     setError("");
 
     try {
-      const { error: authError } = await supabase.auth.updateUser({
-        password: senhaNova,
-      });
-
-      if (authError) {
-        throw authError;
-      }
-
+      const { hash, salt } = await hashPasswordWithNewSalt(senhaNova);
       const { error: updateError } = await supabase
         .from("usuarios")
         .update({
+          senha: hash,
+          salt,
           primeiro_acesso: false,
         })
         .eq("id", user?.id);
@@ -68,6 +64,8 @@ const TrocarSenha: React.FC = () => {
       if (updateError) {
         throw updateError;
       }
+
+      localStorage.setItem('sgi_ati_ultima_troca_senha', new Date().toISOString());
 
       alert("Senha alterada com sucesso!");
       navigate("/", { replace: true });

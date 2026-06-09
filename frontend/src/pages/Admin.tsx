@@ -367,19 +367,27 @@ const Admin: React.FC = () => {
 
   const executeDelete = async (id: string) => {
     const target = allUsuarios.find(u => u.id === id);
-    await deleteUser(id);
+    try {
+      const deleted = await deleteUser(id);
+      if (!deleted) {
+        alert('Falha ao excluir usuário. Tente novamente.');
+        return;
+      }
 
-    await insertAuditLog({
-      admin_id: currentUser?.id || '',
-      admin_name: currentUser?.nome || '',
-      action: 'DELETE_USER',
-      target_user_id: id,
-      target_user_name: target?.nome || id,
-      details: `Email: ${target?.email || 'N/A'} | Perfil: ${target?.perfil || 'N/A'}`
-    });
+      await insertAuditLog({
+        admin_id: currentUser?.id || '',
+        admin_name: currentUser?.nome || '',
+        action: 'DELETE_USER',
+        target_user_id: id,
+        target_user_name: target?.nome || id,
+        details: `Email: ${target?.email || 'N/A'} | Perfil: ${target?.perfil || 'N/A'}`
+      });
 
-    setSelectedUser(null);
-    await loadUsuarios();
+      setSelectedUser(null);
+      await loadUsuarios();
+    } catch {
+      alert('Erro ao processar a exclusão. Verifique a conexão com o servidor.');
+    }
     closeConfirm();
   };
 

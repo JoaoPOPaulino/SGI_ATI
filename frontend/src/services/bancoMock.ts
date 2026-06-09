@@ -2,7 +2,7 @@
 
 export type PerfilUsuario = 'ESTAGIARIO' | 'TECNICO' | 'SUPERIOR' | 'ADMIN';
 export type TipoItem = 'PATRIMONIADO' | 'SERIALIZADO' | 'NAO_SERIALIZADO';
-export type CategoriaItem = 'COMPUTADOR' | 'NOTEBOOK' | 'MONITOR' | 'IMPRESSORA' | 'FERRAMENTA' | 'ACESSORIO' | 'OUTROS';
+export type CategoriaItem = string;
 export type CondicaoItem = 'NOVO' | 'BOM' | 'REGULAR' | 'RUIM' | 'ESTRAGADO';
 export type StatusItem = 'ATIVO' | 'EM_MANUTENCAO' | 'AGUARDANDO_BAIXA' | 'BAIXADO' | 'GUARDADO' | 'EMPRESTADO' | 'EM_EVENTO';
 export type TipoMovimentacao = 'CHECK_OUT' | 'CHECK_IN' | 'TRANSFERENCIA' | 'MANUTENCAO' | 'BAIXA' | 'EMPRESTIMO' | 'VIAGEM';

@@ -197,24 +197,27 @@ const Movimentacoes: React.FC = () => {
     if (!hasPermission('SUPERIOR')) return;
 
     const now = new Date().toISOString();
-
-    await updateMovimentacao(mov.id, {
-      status_aprovacao: 'APROVADO',
-      aprovador_id: user?.id,
-      aprovador_nome: user?.nome,
-      data_movimentacao: now
-    });
-
-    if (mov.tipo === 'BAIXA') {
-      await updateItem(mov.item_id, {
-        status: 'BAIXADO',
-        localizacao_atual: 'Baixado / Descartado Definitivamente',
-        updated_at: now
+    try {
+      await updateMovimentacao(mov.id, {
+        status_aprovacao: 'APROVADO',
+        aprovador_id: user?.id,
+        aprovador_nome: user?.nome,
+        data_movimentacao: now
       });
-      alert('Baixa patrimonial homologada com sucesso!');
-    }
 
-    await loadData();
+      if (mov.tipo === 'BAIXA') {
+        await updateItem(mov.item_id, {
+          status: 'BAIXADO',
+          localizacao_atual: 'Baixado / Descartado Definitivamente',
+          updated_at: now
+        });
+        alert('Baixa patrimonial homologada com sucesso!');
+      }
+
+      await loadData();
+    } catch {
+      alert('Erro ao aprovar movimentação. Verifique sua conexão e permissões.');
+    }
   };
 
   // Rejeitar movimentação PENDENTE (Superior/Admin)
@@ -225,53 +228,55 @@ const Movimentacoes: React.FC = () => {
     if (!motivo) return;
 
     const now = new Date().toISOString();
+    try {
+      await updateMovimentacao(mov.id, {
+        status_aprovacao: 'REJEITADO',
+        aprovador_id: user?.id,
+        aprovador_nome: user?.nome,
+        observacao: mov.observacao + ` | REJEITADO: ${motivo}`,
+        data_movimentacao: now
+      });
 
-    await updateMovimentacao(mov.id, {
-      status_aprovacao: 'REJEITADO',
-      aprovador_id: user?.id,
-      aprovador_nome: user?.nome,
-      observacao: mov.observacao + ` | REJEITADO: ${motivo}`,
-      data_movimentacao: now
-    });
+      if (mov.tipo === 'BAIXA') {
+        const allItens = await fetchItens();
+        const item = allItens.find(i => i.id === mov.item_id);
+        if (item) {
+          const allMovs = await fetchMovimentacoes();
+          const itemMovs = allMovs
+            .filter(m => m.item_id === item.id && m.status_aprovacao === 'APROVADO' && m.tipo !== 'BAIXA')
+            .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
 
-    if (mov.tipo === 'BAIXA') {
-      const allItens = await fetchItens();
-      const item = allItens.find(i => i.id === mov.item_id);
-      if (item) {
-        const allMovs = await fetchMovimentacoes();
-        const itemMovs = allMovs
-          .filter(m => m.item_id === item.id && m.status_aprovacao === 'APROVADO' && m.tipo !== 'BAIXA')
-          .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
-
-        let revertedStatus: StatusItem = 'ATIVO';
-        if (itemMovs.length > 0) {
-          const lastMov = itemMovs[0];
-          switch (lastMov.tipo) {
-            case 'CHECK_IN':
-              revertedStatus = lastMov.destino.includes('Almoxarifado') ? 'GUARDADO' : 'ATIVO';
-              break;
-            case 'CHECK_OUT':
-              revertedStatus = 'GUARDADO';
-              break;
-            case 'MANUTENCAO':
-              revertedStatus = 'EM_MANUTENCAO';
-              break;
-            case 'TRANSFERENCIA':
-            case 'EMPRESTIMO':
-            case 'VIAGEM':
-              revertedStatus = 'ATIVO';
-              break;
-            default:
-              revertedStatus = 'ATIVO';
+          let revertedStatus: StatusItem = 'ATIVO';
+          if (itemMovs.length > 0) {
+            const lastMov = itemMovs[0];
+            switch (lastMov.tipo) {
+              case 'CHECK_IN':
+                revertedStatus = lastMov.destino.includes('Almoxarifado') ? 'GUARDADO' : 'ATIVO';
+                break;
+              case 'CHECK_OUT':
+                revertedStatus = 'GUARDADO';
+                break;
+              case 'MANUTENCAO':
+                revertedStatus = 'EM_MANUTENCAO';
+                break;
+              case 'TRANSFERENCIA':
+              case 'EMPRESTIMO':
+              case 'VIAGEM':
+                revertedStatus = 'ATIVO';
+                break;
+              default:
+                revertedStatus = 'ATIVO';
+            }
           }
+          await updateItem(mov.item_id, { status: revertedStatus, updated_at: now });
         }
-
-        await updateItem(mov.item_id, { status: revertedStatus, updated_at: now });
       }
-    }
 
-    await loadData();
-    alert('Movimentação rejeitada com sucesso.');
+      await loadData();
+      alert('Movimentação rejeitada com sucesso.');
+    } catch {
+      alert('Erro ao rejeitar movimentação. Verifique sua conexão e permissões.');
+    }
   };
 
   const handleExportMovimentacoesCsv = () => {

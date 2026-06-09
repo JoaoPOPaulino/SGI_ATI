@@ -72,7 +72,12 @@ const Dashboard: React.FC = () => {
     loadData();
   }, []);
 
-  const today = useMemo(() => new Date(), []);
+  const [today, setToday] = useState(new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setToday(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   const stats = useMemo(() => {
     const nonBixado = itens.filter(i => i.status !== 'BAIXADO');
@@ -92,16 +97,15 @@ const Dashboard: React.FC = () => {
   }, [loans, today]);
 
   const meusDados = useMemo(() => {
-    if (!user) return { meusItens: [], minhasSolicitacoes: [], aprovarPendentes: [] };
-    const meusItens = itens.filter(i => i.atribuido_a_id === user.id && i.status !== 'BAIXADO');
+    if (!user) return { minhasSolicitacoes: [], aprovarPendentes: [] };
     const minhasSolicitacoes = movs
       .filter(m => m.solicitante_id === user.id && m.status_aprovacao === 'PENDENTE')
       .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
     const aprovarPendentes = movs
       .filter(m => m.status_aprovacao === 'PENDENTE' && m.solicitante_id !== user.id)
       .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
-    return { meusItens, minhasSolicitacoes, aprovarPendentes };
-  }, [itens, movs, user]);
+    return { minhasSolicitacoes, aprovarPendentes };
+  }, [movs, user]);
 
   const recentMovs = useMemo(() => {
     return [...movs]
@@ -153,19 +157,12 @@ const Dashboard: React.FC = () => {
           </div>
           <div>
             <h2 className="text-lg font-extrabold text-primary tracking-tight">Minha Responsabilidade</h2>
-            <p className="text-[10px] text-outline font-semibold">Itens sob sua custódia e solicitações pendentes</p>
+            <p className="text-[10px] text-outline font-semibold">Suas solicitações pendentes e itens aguardando aprovação</p>
           </div>
         </div>
 
         {/* Mini cards de resumo pessoal */}
-        <div className={`grid grid-cols-1 gap-4 mb-6 ${isSuperiorOrAdmin ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
-          <div className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10">
-            <div className="flex items-center gap-2 mb-2">
-              <Package size={14} className="text-primary" />
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Sob minha custódia</span>
-            </div>
-            <h3 className="text-2xl font-black text-primary">{meusDados.meusItens.length}</h3>
-          </div>
+        <div className={`grid grid-cols-1 gap-4 mb-4 ${isSuperiorOrAdmin ? 'sm:grid-cols-2' : 'sm:grid-cols-1'}`}>
           <div className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10">
             <div className="flex items-center gap-2 mb-2">
               <Clock size={14} className="text-amber-500" />
@@ -183,55 +180,6 @@ const Dashboard: React.FC = () => {
             </div>
           )}
         </div>
-
-        {/* Lista de itens sob custódia */}
-        {meusDados.meusItens.length > 0 && (
-          <div className="mb-6">
-            <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Package size={12} />
-              Itens Acautelados a Mim
-            </h4>
-            <div className="space-y-2">
-              {meusDados.meusItens.map((item) => (
-                <div key={item.id} className="bg-surface-container-lowest/90 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10 flex items-center gap-4 hover:shadow-md hover:border-primary/20 transition-all group">
-                  <div className="p-2.5 bg-primary/10 rounded-lg text-primary group-hover:bg-primary/20 transition-colors">
-                    {CATEGORIA_ICON[item.categoria] || <Package size={16} />}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-on-surface truncate">{item.nome}</p>
-                    <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      {item.numero_patrimonio && (
-                        <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">
-                          {item.numero_patrimonio}
-                        </span>
-                      )}
-                      <span className="text-[10px] text-on-surface-variant font-medium truncate">
-                        {item.localizacao_atual}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <span className={`text-[10px] font-bold ${CONDICAO_COLOR[item.condicao] || 'text-outline'}`}>
-                      {item.condicao}
-                    </span>
-                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${STATUS_LABEL[item.status]?.color || ''}`}>
-                      {STATUS_LABEL[item.status]?.label || item.status}
-                    </span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {meusDados.meusItens.length === 0 && (
-          <div className="mb-6 bg-surface-container-lowest/60 rounded-xl p-6 text-center border border-dashed border-outline-variant/20">
-            <Package size={24} className="text-outline/40 mx-auto mb-2" />
-            <p className="text-xs text-outline font-semibold">Nenhum item acautelado a você no momento.</p>
-          </div>
-        )}
-
-        {/* Minhas solicitações pendentes */}
         {meusDados.minhasSolicitacoes.length > 0 && (
           <div className="mb-4">
             <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-2">
