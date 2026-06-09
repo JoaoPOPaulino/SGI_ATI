@@ -3,12 +3,27 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { User, Mail, Shield, MapPin, Key, Clock, Camera } from 'lucide-react';
 
+function tempoDecorrido(isoDate: string | null): string {
+  if (!isoDate) return 'Nunca alterada';
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const minutos = Math.floor(diff / 60000);
+  const horas = Math.floor(diff / 3600000);
+  const dias = Math.floor(diff / 86400000);
+  if (minutos < 1) return 'agora mesmo';
+  if (minutos < 60) return `há ${minutos} minuto${minutos > 1 ? 's' : ''}`;
+  if (horas < 24) return `há ${horas} hora${horas > 1 ? 's' : ''}`;
+  if (dias === 1) return 'há 1 dia';
+  return `há ${dias} dias`;
+}
+
 const Perfil: React.FC = () => {
   const { user, updatePhoto } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!user) return null;
+
+  const ultimaTroca = localStorage.getItem('sgi_ati_ultima_troca_senha');
 
   const handlePhotoClick = () => {
     fileInputRef.current?.click();
@@ -48,7 +63,6 @@ const Perfil: React.FC = () => {
 
   return (
     <div className="space-y-8 animate-fade-in font-body text-on-surface">
-      {/* Cabeçalho da Página */}
       <div>
         <h1 className="text-3xl font-extrabold tracking-tight text-primary">Meu Perfil</h1>
         <p className="text-xs text-outline font-semibold">Gerencie suas informações de conta e credenciais de acesso.</p>
@@ -58,7 +72,7 @@ const Perfil: React.FC = () => {
         <div>
           <div className="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/20 shadow-sm flex flex-col items-center text-center relative overflow-hidden">
             <div className="absolute top-0 left-0 w-full h-24 bg-primary-container/20"></div>
-            
+
             <div className="w-24 h-24 bg-primary text-white rounded-full flex items-center justify-center shadow-lg border-4 border-surface-container-lowest relative z-10 mb-4 mt-6 overflow-hidden group cursor-pointer" onClick={handlePhotoClick}>
               {user.foto ? (
                 <img src={user.foto} alt="Foto de perfil" className="w-full h-full object-cover" />
@@ -70,12 +84,12 @@ const Perfil: React.FC = () => {
               </div>
             </div>
             <input type="file" ref={fileInputRef} accept="image/*" onChange={handleFileChange} className="absolute w-0 h-0 opacity-0 pointer-events-none" />
-            
+
             <h2 className="text-xl font-bold text-primary mb-1 truncate px-4">{user.nome}</h2>
             <div className="inline-flex px-2 py-0.5 rounded uppercase tracking-widest font-black text-[10px] bg-primary/10 text-primary border border-primary/20 mb-6">
               {user.perfil}
             </div>
-            
+
             <div className="w-full space-y-4 text-left">
               <div className="flex items-center gap-3 text-sm">
                 <Mail size={16} className="text-outline" />
@@ -93,49 +107,54 @@ const Perfil: React.FC = () => {
           </div>
         </div>
 
-        {/* Informações Detalhadas e Configurações */}
         <div className="space-y-6">
           <div className="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/20 shadow-sm">
             <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
               <Key size={18} className="text-primary" />
               Segurança
             </h3>
-            
+
             <div className="space-y-4">
               <div className="p-4 bg-surface rounded-xl border border-outline-variant/30 flex items-center justify-between">
                 <div>
                   <h4 className="font-bold text-sm">Senha de Acesso</h4>
-                  <p className="text-xs text-on-surface-variant">Sua última alteração de senha foi há 30 dias.</p>
+                  <p className="text-xs text-on-surface-variant">
+                    Última alteração: {tempoDecorrido(ultimaTroca)}
+                  </p>
                 </div>
                 <button onClick={() => navigate('/trocar-senha')} className="px-4 py-2 custom-gradient-btn text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all">
                   Alterar Senha
                 </button>
               </div>
-
-
             </div>
           </div>
 
           <div className="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/20 shadow-sm">
             <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
               <Clock size={18} className="text-primary" />
-              Sessões Recentes
+              Atividade
             </h3>
-            
+
             <div className="space-y-3">
               <div className="flex items-center justify-between py-2 border-b border-outline-variant/10">
                 <div className="text-sm">
-                  <span className="font-bold block">Windows / Chrome</span>
-                  <span className="text-xs text-on-surface-variant">Palmas, TO - IP 192.168.1.100</span>
+                  <span className="font-bold block">Sessão atual</span>
+                  <span className="text-xs text-on-surface-variant">
+                    {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' })}
+                  </span>
                 </div>
-                <div className="text-xs font-semibold text-emerald-500">Agora (Ativa)</div>
+                <div className="text-xs font-semibold text-emerald-500">Ativa</div>
               </div>
               <div className="flex items-center justify-between py-2">
                 <div className="text-sm">
-                  <span className="font-bold block">Android / Safari</span>
-                  <span className="text-xs text-on-surface-variant">Araguaína, TO - IP 172.16.0.45</span>
+                  <span className="font-bold block">Acesso ao sistema</span>
+                  <span className="text-xs text-on-surface-variant">
+                    Perfil: {user.perfil} • Polo: {user.polo || 'Geral'}
+                  </span>
                 </div>
-                <div className="text-xs font-semibold text-outline">Ontem, 14:32</div>
+                <div className="text-xs font-semibold text-outline">
+                  {user.ativo ? 'Ativo' : 'Inativo'}
+                </div>
               </div>
             </div>
           </div>

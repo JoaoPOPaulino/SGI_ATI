@@ -61,7 +61,7 @@ export async function updateItem(id: string, updates: Partial<Item>): Promise<It
   }
 }
 
-export async function deleteItem(id: string): Promise<boolean> {
+export async function deleteItem(id: string): Promise<{success: boolean, error?: string}> {
   try {
     const { error } = await supabase
       .from('itens')
@@ -70,12 +70,12 @@ export async function deleteItem(id: string): Promise<boolean> {
 
     if (error) {
       console.error('Erro ao excluir item:', error);
-      return false;
+      return { success: false, error: error.message };
     }
 
-    return true;
+    return { success: true };
   } catch (err) {
     console.error('Falha ao excluir item:', err);
-    return false;
+    return { success: false, error: String(err) };
   }
 }

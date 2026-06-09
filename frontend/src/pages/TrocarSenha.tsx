@@ -3,18 +3,19 @@ import { useAuth } from "../contexts/ContextoAutenticacao";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, Lock, CheckCircle2, Save } from "lucide-react";
 import { supabase } from "../services/supabase";
+import { hashPasswordWithNewSalt } from "../services/utilidadesSenha";
 
 const TrocarSenha: React.FC = () => {
   const { user } = useAuth();
-  const [senhaNova, setSenhaNova] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
-  const [error, setError] = useState("");
+  const [senhaNova, setSenhaNova] = useState('');
+  const [confirmarSenha, setConfirmarSenha] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   React.useEffect(() => {
     if (!user) {
-      navigate("/login", { replace: true });
+      navigate('/login', { replace: true });
     }
   }, [user, navigate]);
 
@@ -22,7 +23,6 @@ const TrocarSenha: React.FC = () => {
     const minLength = senha.length >= 8;
     const hasNumber = /[0-9]/.test(senha);
     const hasSpecial = /[^a-zA-Z0-9]/.test(senha);
-
     return minLength && hasNumber && hasSpecial;
   };
 
@@ -30,49 +30,44 @@ const TrocarSenha: React.FC = () => {
     e.preventDefault();
 
     if (!senhaNova || !confirmarSenha) {
-      setError("Preencha todos os campos.");
+      setError('Preencha todos os campos.');
       return;
     }
 
     if (senhaNova !== confirmarSenha) {
-      setError("As senhas não coincidem.");
+      setError('As senhas não coincidem.');
       return;
     }
 
     if (!validarSenha(senhaNova)) {
-      setError(
-        "A senha deve ter pelo menos 8 caracteres, incluindo números e caracteres especiais.",
-      );
+      setError('A senha deve ter pelo menos 8 caracteres, incluindo números e caracteres especiais.');
       return;
     }
 
     setLoading(true);
-    setError("");
+    setError('');
 
     try {
-      const { error: authError } = await supabase.auth.updateUser({
-        password: senhaNova,
-      });
-
-      if (authError) {
-        throw authError;
-      }
+      const { hash, salt } = await hashPasswordWithNewSalt(senhaNova);
 
       const { error: updateError } = await supabase
-        .from("usuarios")
+        .from('usuarios')
         .update({
+          senha: hash,
+          salt,
           primeiro_acesso: false,
         })
-        .eq("id", user?.id);
+        .eq('id', user?.id);
 
-      if (updateError) {
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
-      alert("Senha alterada com sucesso!");
-      navigate("/", { replace: true });
+      localStorage.setItem('sgi_ati_ultima_troca_senha', new Date().toISOString());
+
+      alert('Senha alterada com sucesso!');
+      navigate('/', { replace: true });
     } catch (err: any) {
-      setError(err.message || "Erro ao alterar a senha.");
+      setError(err.message || 'Erro ao alterar a senha.');
+    } finally {
       setLoading(false);
     }
   };
@@ -91,8 +86,7 @@ const TrocarSenha: React.FC = () => {
         </h2>
 
         <p className="text-sm text-gray-500 text-center mb-8">
-          Por segurança, você deve definir uma nova senha no seu primeiro
-          acesso.
+          Por segurança, defina uma senha forte com pelo menos 8 caracteres.
         </p>
 
         {error && (
@@ -139,9 +133,7 @@ const TrocarSenha: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <CheckCircle2
                 size={14}
-                className={
-                  senhaNova.length >= 8 ? "text-green-500" : "text-gray-300"
-                }
+                className={senhaNova.length >= 8 ? 'text-green-500' : 'text-gray-300'}
               />
               <span>Mínimo de 8 caracteres</span>
             </div>
@@ -149,9 +141,7 @@ const TrocarSenha: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <CheckCircle2
                 size={14}
-                className={
-                  /[0-9]/.test(senhaNova) ? "text-green-500" : "text-gray-300"
-                }
+                className={/[0-9]/.test(senhaNova) ? 'text-green-500' : 'text-gray-300'}
               />
               <span>Pelo menos um número</span>
             </div>
@@ -159,11 +149,7 @@ const TrocarSenha: React.FC = () => {
             <div className="flex items-center gap-2 text-xs text-gray-500">
               <CheckCircle2
                 size={14}
-                className={
-                  /[^a-zA-Z0-9]/.test(senhaNova)
-                    ? "text-green-500"
-                    : "text-gray-300"
-                }
+                className={/[^a-zA-Z0-9]/.test(senhaNova) ? 'text-green-500' : 'text-gray-300'}
               />
               <span>Um caractere especial (@, #, !, etc)</span>
             </div>
@@ -171,11 +157,7 @@ const TrocarSenha: React.FC = () => {
 
           <button
             type="submit"
-            disabled={
-              loading ||
-              !validarSenha(senhaNova) ||
-              senhaNova !== confirmarSenha
-            }
+            disabled={loading || !validarSenha(senhaNova) || senhaNova !== confirmarSenha}
             className="w-full mt-2 py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? (

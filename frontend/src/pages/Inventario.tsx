@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import {
   Item, TipoItem, CategoriaItem, CondicaoItem, StatusItem,
-  Movimentacao, Local, LaudoTecnico
+  Movimentacao, Local, LaudoTecnico, getUsuarios
 } from '../services/bancoMock';
 import { fetchItens, createItem, updateItem, deleteItem as deleteSupabaseItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
@@ -35,6 +35,7 @@ const Inventario: React.FC = () => {
   // Estado do Modal de Cadastro/Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
   
   // Campos do Formulário de Cadastro (Issue #8)
   const [formNome, setFormNome] = useState('');
@@ -53,6 +54,7 @@ const Inventario: React.FC = () => {
   const [formAndar, setFormAndar] = useState('');
   const [formSetor, setFormSetor] = useState('');
   const [formSala, setFormSala] = useState('');
+  const [formResponsavelId, setFormResponsavelId] = useState('');
 
   const [formError, setFormError] = useState('');
 
@@ -74,6 +76,8 @@ const Inventario: React.FC = () => {
 
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
+
+  const usuarios = useMemo(() => getUsuarios().filter(u => u.ativo), []);
 
   // Carregar itens do banco mock
   const loadItens = async () => {
@@ -161,6 +165,7 @@ const Inventario: React.FC = () => {
       setFormAndar(item.andar || '');
       setFormSetor(item.setor || '');
       setFormSala(item.sala || '');
+      setFormResponsavelId(item.atribuido_a_id || '');
     } else {
       setEditingItem(null);
       setFormNome('');
@@ -178,6 +183,7 @@ const Inventario: React.FC = () => {
       setFormAndar('Térreo');
       setFormSetor('Suporte Técnico');
       setFormSala('');
+      setFormResponsavelId('');
     }
     setIsModalOpen(true);
   };
@@ -185,6 +191,9 @@ const Inventario: React.FC = () => {
   // Submissão do Formulário (Cadastro / Edição)
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
     if (!formNome.trim()) {
       setFormError('O nome do item é obrigatório.');
       return;
@@ -219,6 +228,7 @@ const Inventario: React.FC = () => {
 
     if (editingItem) {
       // Edição
+      const respEdit = usuarios.find(u => u.id === formResponsavelId);
       await updateItem(editingItem.id, {
         nome: formNome,
         tipo: formTipo,
@@ -235,7 +245,9 @@ const Inventario: React.FC = () => {
         sala: formSala,
         marca: formMarca,
         modelo: formModelo,
-        quantidade: (formTipo === 'PATRIMONIADO' || formTipo === 'SERIALIZADO') ? 1 : formQuantidade
+        quantidade: (formTipo === 'PATRIMONIADO' || formTipo === 'SERIALIZADO') ? 1 : formQuantidade,
+        atribuido_a_id: formResponsavelId || undefined,
+        atribuido_a_nome: respEdit?.nome || undefined
       });
 
       if (editingItem.status !== formStatus || editingItem.localizacao_atual !== localConcatenado) {
@@ -256,6 +268,7 @@ const Inventario: React.FC = () => {
     } else {
       // Cadastro
       const newItemId = crypto.randomUUID();
+      const respNew = usuarios.find(u => u.id === formResponsavelId);
       const newItem: Item = {
         id: newItemId,
         nome: formNome,
@@ -274,11 +287,12 @@ const Inventario: React.FC = () => {
         sala: formSala,
         marca: formMarca,
         modelo: formModelo,
-        quantidade: (formTipo === 'PATRIMONIADO' || formTipo === 'SERIALIZADO') ? 1 : formQuantidade
+        quantidade: (formTipo === 'PATRIMONIADO' || formTipo === 'SERIALIZADO') ? 1 : formQuantidade,
+        atribuido_a_id: formResponsavelId || undefined,
+        atribuido_a_nome: respNew?.nome || undefined
       };
       await createItem(newItem);
 
-      // Gera silenciosamente a primeira movimentação de CHECK_IN (Regras Comportamentais)
       await createMovimentacao({
         id: crypto.randomUUID(),
         item_id: newItem.id,
@@ -299,6 +313,9 @@ const Inventario: React.FC = () => {
 
     setIsModalOpen(false);
     await loadItens();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Exibição de Detalhes (Issue #7)
@@ -392,7 +409,11 @@ const Inventario: React.FC = () => {
       return;
     }
     if (confirm('Tem certeza que deseja remover este item permanentemente do inventário?')) {
-      await deleteSupabaseItem(id);
+      const result = await deleteSupabaseItem(id);
+      if (!result.success) {
+        alert('Falha ao excluir o item: ' + (result.error || 'Erro desconhecido. Verifique se há movimentações vinculadas ou se você possui permissão suficiente.'));
+        return;
+      }
       await loadItens();
     }
   };
@@ -539,7 +560,7 @@ const Inventario: React.FC = () => {
             >
               <option value="TODOS">Status</option>
               <option value="ATIVO">Ativo</option>
-              <option value="GUARDADO">Guardado</option>
+              <option value="GUARDADO">Pronto</option>
               <option value="EMPRESTADO">Emprestado</option>
               <option value="EM_EVENTO">Em Evento</option>
               <option value="EM_MANUTENCAO">Manutenção</option>
@@ -1160,10 +1181,27 @@ const Inventario: React.FC = () => {
                       className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                     >
                       <option value="ATIVO">Ativo</option>
-                      <option value="GUARDADO">Guardado</option>
+                      <option value="GUARDADO">Pronto</option>
                     </select>
                   )}
                 </div>
+              </div>
+
+              {/* Responsável */}
+              <div>
+                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+                  Responsável pelo Item
+                </label>
+                <select
+                  value={formResponsavelId}
+                  onChange={(e) => setFormResponsavelId(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
+                >
+                  <option value="">-- Nenhum (não atribuído) --</option>
+                  {usuarios.map(u => (
+                    <option key={u.id} value={u.id}>{u.nome} ({u.perfil})</option>
+                  ))}
+                </select>
               </div>
 
               {formError && (
@@ -1183,9 +1221,10 @@ const Inventario: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95"
+                  disabled={isSaving}
+                  className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Salvar Registro
+                  {isSaving ? 'Salvando...' : 'Salvar Registro'}
                 </button>
               </div>
             </form>
