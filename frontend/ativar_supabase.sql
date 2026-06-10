@@ -162,10 +162,16 @@ ALTER TABLE public.solicitacoes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Public Access Solicitacoes" ON public.solicitacoes FOR ALL USING (true);
 
 -- ================================================================
--- SEED DATA: Locais iniciais (limpa e reinsere)
+-- SEED DATA: Locais iniciais (insere apenas se tabela vazia)
 -- ================================================================
-DELETE FROM public.locais;
-INSERT INTO public.locais (polo, predio, andar, setor, sala, estacao) VALUES
-  ('GSM', 'Bloco A', '3º Andar', 'Tecnologia da Informação', 'Sala 302', 'Estação A-10'),
-  ('Laboratório', 'Bloco B', '1º Andar', 'Infraestrutura', 'Laboratório', 'Bancada B-1'),
-  ('GSM', 'Anexo I', 'Térreo', 'Atendimento', 'Recepção', 'Estação R-1');
+INSERT INTO public.locais (polo, predio, andar, setor, sala, estacao)
+SELECT 'GSM', 'Bloco A', '3º Andar', 'Tecnologia da Informação', 'Sala 302', 'Estação A-10'
+WHERE NOT EXISTS (SELECT 1 FROM public.locais WHERE polo = 'GSM' AND predio = 'Bloco A' AND sala = 'Sala 302');
+
+INSERT INTO public.locais (polo, predio, andar, setor, sala, estacao)
+SELECT 'Laboratório', 'Bloco B', '1º Andar', 'Infraestrutura', 'Laboratório', 'Bancada B-1'
+WHERE NOT EXISTS (SELECT 1 FROM public.locais WHERE polo = 'Laboratório' AND predio = 'Bloco B' AND sala = 'Laboratório');
+
+INSERT INTO public.locais (polo, predio, andar, setor, sala, estacao)
+SELECT 'GSM', 'Anexo I', 'Térreo', 'Atendimento', 'Recepção', 'Estação R-1'
+WHERE NOT EXISTS (SELECT 1 FROM public.locais WHERE polo = 'GSM' AND predio = 'Anexo I' AND sala = 'Recepção');
