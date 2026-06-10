@@ -198,11 +198,11 @@ const Labin: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/50">
-                  <th className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Equipamento</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Técnico</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Status</th>
-                  <th className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Data</th>
-                  <th className="px-8 py-4 text-right"></th>
+                  <th scope="col" className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Equipamento</th>
+                  <th scope="col" className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Técnico</th>
+                  <th scope="col" className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Status</th>
+                  <th scope="col" className="px-8 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Data</th>
+                  <th scope="col" className="px-8 py-4 text-right"></th>
                 </tr>
               </thead>
               <tbody className="text-xs">

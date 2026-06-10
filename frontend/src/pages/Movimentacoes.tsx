@@ -6,7 +6,7 @@ import {
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { ArrowLeftRight, Check, X, FileText, Printer, ShieldCheck, Wrench, Download } from 'lucide-react';
-import { getReversedStatus } from '../services/utilidades';
+import { getReversedStatus, exportToCsv } from '../services/utilidades';
 
 const TIPO_MOV_LABEL: Record<string, string> = {
   CHECK_OUT: 'Saída',
@@ -280,17 +280,9 @@ const Movimentacoes: React.FC = () => {
 
   const handleExportMovimentacoesCsv = () => {
     const data = searchQuery.trim() ? filteredMovs : movs;
-    let csv = "ID,Equipamento,Tipo,Origem,Destino,Solicitante,Status,Data\n";
-    data.forEach(m => {
-      csv += `"${m.id}","${m.item_nome}","${m.tipo}","${m.origem}","${m.destino}","${m.solicitante_nome}","${m.status_aprovacao}","${m.data_movimentacao}"\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `movimentacoes_ati_${new Date().toISOString().slice(0,10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const headers = ['ID','Equipamento','Tipo','Origem','Destino','Solicitante','Status','Data'];
+    const rows = data.map(m => [m.id, m.item_nome, m.tipo, m.origem, m.destino, m.solicitante_nome, m.status_aprovacao, m.data_movimentacao]);
+    exportToCsv(headers, rows, `movimentacoes_ati_${new Date().toISOString().slice(0,10)}`);
   };
 
   return (

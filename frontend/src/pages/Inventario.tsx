@@ -9,6 +9,7 @@ import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovi
 import { fetchLocais } from '../services/supabaseLocais';
 import { fetchLaudos } from '../services/supabaseLaudos';
 import StatusBadge from '../components/DistintivoStatus';
+import { exportToCsv } from '../services/utilidades';
 import {
   Search, Plus, Table, LayoutGrid, Edit2, Trash2,
   Folder, MapPin, Info, Eye, History, ArrowRightLeft, Download, X
@@ -419,17 +420,9 @@ const Inventario: React.FC = () => {
 
   const handleExportInventarioCsv = () => {
     const data = filteredItens;
-    let csv = "ID,Nome,Tipo,Categoria,Condição,Status,Patrimônio,Serie,Polo,Localização\n";
-    data.forEach(i => {
-      csv += `"${i.id}","${i.nome}","${i.tipo}","${i.categoria}","${i.condicao}","${i.status}","${i.numero_patrimonio || ''}","${i.numero_serie || ''}","${i.polo || ''}","${i.localizacao_atual}"\n`;
-    });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `inventario_ati_${new Date().toISOString().slice(0,10)}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const headers = ['ID','Nome','Tipo','Categoria','Condicao','Status','Patrimonio','Serie','Polo','Localizacao'];
+    const rows = data.map(i => [i.id, i.nome, i.tipo, i.categoria, i.condicao, i.status, i.numero_patrimonio || '', i.numero_serie || '', i.polo || '', i.localizacao_atual]);
+    exportToCsv(headers, rows, `inventario_ati_${new Date().toISOString().slice(0,10)}`);
   };
 
   return (
@@ -638,13 +631,13 @@ const Inventario: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/50">
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Identificador / Pat</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Equipamento</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Categoria</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Condição</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Localização</th>
-                  <th className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Status</th>
-                  <th className="px-6 py-4 text-right">Ações</th>
+                  <th scope="col" className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Identificador / Pat</th>
+                  <th scope="col" className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Equipamento</th>
+                  <th scope="col" className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Categoria</th>
+                  <th scope="col" className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Condição</th>
+                  <th scope="col" className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Localização</th>
+                  <th scope="col" className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest">Status</th>
+                  <th scope="col" className="px-6 py-4 text-right">Ações</th>
                 </tr>
               </thead>
               <tbody className="text-xs">

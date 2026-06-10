@@ -491,6 +491,7 @@ const Admin: React.FC = () => {
     children: React.ReactNode;
   }> = ({ field, children }) => (
     <th
+      scope="col"
       className="py-3 px-4 text-[10px] font-black text-outline uppercase tracking-wider cursor-pointer hover:text-on-surface transition-colors select-none"
       onClick={() => toggleSort(field)}
     >
@@ -758,7 +759,7 @@ const Admin: React.FC = () => {
                       <SortableTh field="perfil">Perfil</SortableTh>
                       <SortableTh field="polo">Polo</SortableTh>
                       <SortableTh field="status">Status</SortableTh>
-                      <th className="py-3 px-4 text-[10px] font-black text-outline uppercase tracking-wider text-right">
+                      <th scope="col" className="py-3 px-4 text-[10px] font-black text-outline uppercase tracking-wider text-right">
                         Ações
                       </th>
                     </tr>

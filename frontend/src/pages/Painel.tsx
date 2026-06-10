@@ -7,26 +7,8 @@ import { fetchLoans } from '../services/supabaseEmprestimos';
 import { 
   Package, Wrench, ArrowLeftRight,
   AlertTriangle, CheckCircle,
-  User, Shield, Clock, Laptop, Monitor, Printer, HardDrive, Hammer, Box
+  User, Shield, Clock
 } from 'lucide-react';
-
-const CATEGORIA_ICON: Record<string, React.ReactNode> = {
-  NOTEBOOK: <Laptop size={16} />,
-  COMPUTADOR: <HardDrive size={16} />,
-  MONITOR: <Monitor size={16} />,
-  IMPRESSORA: <Printer size={16} />,
-  FERRAMENTA: <Hammer size={16} />,
-  ACESSORIO: <Box size={16} />,
-  OUTROS: <Package size={16} />,
-};
-
-const CONDICAO_COLOR: Record<string, string> = {
-  NOVO: 'text-emerald-400',
-  BOM: 'text-emerald-500',
-  REGULAR: 'text-amber-500',
-  RUIM: 'text-orange-500',
-  ESTRAGADO: 'text-red-500',
-};
 
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   ATIVO: { label: 'Ativo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
