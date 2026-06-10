@@ -419,7 +419,6 @@ const Manutencao: React.FC = () => {
               onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)}
               className="w-full px-4 py-3 bg-surface border border-outline rounded-xl text-sm focus:ring-2 focus:ring-primary mb-6"
             >
-              <option value="NOVO">Novo</option>
               <option value="BOM">Bom</option>
               <option value="REGULAR">Regular</option>
               <option value="RUIM">Ruim</option>
