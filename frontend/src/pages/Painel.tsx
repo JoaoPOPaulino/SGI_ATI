@@ -71,6 +71,7 @@ const Dashboard: React.FC = () => {
       emEvento: nonBaixado.filter(i => i.status === 'EM_EVENTO').length,
       disponiveis: nonBaixado.filter(i => i.status === 'GUARDADO' || i.status === 'ATIVO').length,
       aguardandoBaixa: itens.filter(i => i.status === 'AGUARDANDO_BAIXA').length,
+      prontosRetirada: itens.filter(i => i.status === 'GUARDADO' && i.localizacao_atual.includes('Almoxarifado Central')).length,
     };
   }, [itens]);
 
@@ -238,8 +239,19 @@ const Dashboard: React.FC = () => {
       {/* ═══════════════════════════════════════════════════════════ */}
       {/* ALERTAS CRÍTICOS                                           */}
       {/* ═══════════════════════════════════════════════════════════ */}
-      {(overdueLoans.length > 0 || stats.aguardandoBaixa > 0) && (
+      {(overdueLoans.length > 0 || stats.aguardandoBaixa > 0 || stats.prontosRetirada > 0) && (
         <div className="space-y-3">
+          {stats.prontosRetirada > 0 && (
+            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
+              <CheckCircle size={20} className="text-emerald-500 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="text-sm font-bold text-emerald-700">Itens Prontos para Retirada</h3>
+                <p className="text-xs text-emerald-600 mt-1">
+                  {stats.prontosRetirada} equipamento{stats.prontosRetirada > 1 ? 's' : ''} reparado{stats.prontosRetirada > 1 ? 's' : ''} e disponív{stats.prontosRetirada > 1 ? 'eis' : 'el'} no Almoxarifado Central para retirada.
+                </p>
+              </div>
+            </div>
+          )}
           {overdueLoans.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
               <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
