@@ -14,7 +14,7 @@ import {
 const STATUS_LABEL: Record<string, { label: string; color: string }> = {
   ATIVO: { label: 'Ativo', color: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30' },
   EM_MANUTENCAO: { label: 'Em Manutenção', color: 'bg-orange-500/15 text-orange-400 border-orange-500/30' },
-  GUARDADO: { label: 'Pronto', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
+  GUARDADO: { label: 'Guardado', color: 'bg-blue-500/15 text-blue-400 border-blue-500/30' },
   AGUARDANDO_BAIXA: { label: 'Aguardando Baixa', color: 'bg-red-500/15 text-red-400 border-red-500/30' },
   BAIXADO: { label: 'Baixado', color: 'bg-neutral-500/15 text-neutral-400 border-neutral-500/30' },
   EMPRESTADO: { label: 'Emprestado', color: 'bg-violet-500/15 text-violet-400 border-violet-500/30' },
