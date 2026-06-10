@@ -1,11 +1,35 @@
 import { supabase } from "./supabase";
 import type { Item } from "./bancoMock";
-
-export async function fetchItens(limit = 100): Promise<Item[]> {
+export async function fetchItens(limit = 50): Promise<Item[]> {
   try {
     const { data, error } = await supabase
       .from("itens")
-      .select("*")
+      .select(
+        `
+        id,
+        nome,
+        tipo,
+        categoria,
+        condicao,
+        status,
+        numero_patrimonio,
+        numero_serie,
+        localizacao_atual,
+        created_at,
+        updated_at,
+        polo,
+        predio,
+        andar,
+        setor,
+        sala,
+        estacao,
+        marca,
+        modelo,
+        quantidade,
+        atribuido_a_id,
+        atribuido_a_nome
+      `,
+      )
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -20,7 +44,6 @@ export async function fetchItens(limit = 100): Promise<Item[]> {
     return [];
   }
 }
-
 export async function createItem(item: Item): Promise<Item | null> {
   try {
     const { data, error } = await supabase

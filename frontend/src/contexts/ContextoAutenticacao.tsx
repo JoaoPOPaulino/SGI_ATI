@@ -111,7 +111,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     initSession();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        if (event === "INITIAL_SESSION") return;
         setTimeout(async () => {
           try {
             if (!mounted) return;
@@ -161,9 +162,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     let requirePasswordChange = false;
 
     try {
-      const { data: fnData, error: fnError } = await supabase.functions.invoke("login-cpf", {
-        body: { cpf: cleanCpf, senha },
-      });
+      const { data: fnData, error: fnError } = await supabase.functions.invoke(
+        "login-cpf",
+        {
+          body: { cpf: cleanCpf, senha },
+        },
+      );
 
       if (!fnError && fnData?.success) {
         if (fnData.session) {
@@ -172,12 +176,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
             refresh_token: fnData.session.refresh_token,
           });
         }
-        const profile = await loadUserProfile(fnData.user.auth_id || fnData.user.id);
+        const profile = await loadUserProfile(
+          fnData.user.auth_id || fnData.user.id,
+        );
         if (profile) {
           requirePasswordChange = profile.primeiro_acesso || false;
         }
         if (!profile) {
-          return { success: false, error: "Erro ao carregar perfil. Tente novamente." };
+          return {
+            success: false,
+            error: "Erro ao carregar perfil. Tente novamente.",
+          };
         }
         return { success: true, requirePasswordChange };
       }
@@ -186,7 +195,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return { success: false, error: fnData.error };
       }
     } catch (err) {
-      console.error('login-cpf Edge Function fallback error:', err);
+      console.error("login-cpf Edge Function fallback error:", err);
     }
 
     try {

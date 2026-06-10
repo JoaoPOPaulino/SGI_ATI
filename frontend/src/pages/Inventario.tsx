@@ -111,11 +111,14 @@ const Inventario: React.FC = () => {
 
   // Carregar itens do banco mock
   const loadItens = async () => {
-    const [allItens, allLocais] = await Promise.all([
-      fetchItens(),
-      fetchLocais(),
-    ]);
+    const allItens = await fetchItens(50);
     setItens(allItens);
+  };
+
+  const ensureLocaisLoaded = async () => {
+    if (locaisList.length > 0) return;
+
+    const allLocais = await fetchLocais();
     setLocaisList(allLocais);
   };
 
@@ -213,6 +216,7 @@ const Inventario: React.FC = () => {
   // Abertura do Modal de Cadastro/Edição
   const openModal = (item: Item | null = null) => {
     if (isEstagiario) return;
+    void ensureLocaisLoaded();
     if (item && item.status === "BAIXADO") {
       alert("Nenhuma modificação é permitida num registro BAIXADO.");
       return;
@@ -438,6 +442,7 @@ const Inventario: React.FC = () => {
   // Exibição de Movimentação Rápida (Issue #6)
   const openQuickMove = (item: Item) => {
     if (isEstagiario) return;
+    void ensureLocaisLoaded()
     if (item.status === "BAIXADO") {
       alert("Nenhuma movimentação é permitida num registro BAIXADO.");
       return;
