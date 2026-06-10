@@ -58,7 +58,7 @@ const Emprestimos: React.FC = () => {
     let changed = false;
     
     const expiredEventos = currentEventos.filter(evt => new Date(evt.data_fim) < today && evt.itens_alocados.length > 0);
-    if (expiredEventos.length > 0) {
+    if (expiredEventos.length > 0 && canModify) {
       try {
         for (const evt of expiredEventos) {
           const rollbackSnapshots: { itemId: string; oldStatus: string; oldLocal: string }[] = [];

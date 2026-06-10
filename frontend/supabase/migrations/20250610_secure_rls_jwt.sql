@@ -207,6 +207,13 @@ CREATE POLICY "usuarios_update" ON public.usuarios FOR UPDATE USING (
   auth.uid() IS NOT NULL
   AND public.get_auth_perfil() = 'ADMIN'
 );
+
+-- Allow users to update their own row (photo, primeiro_acesso)
+CREATE POLICY "usuarios_update_self" ON public.usuarios FOR UPDATE USING (
+  auth_id = auth.uid()
+) WITH CHECK (
+  auth_id = auth.uid()
+);
 CREATE POLICY "usuarios_delete" ON public.usuarios FOR DELETE USING (
   auth.uid() IS NOT NULL
   AND public.get_auth_perfil() = 'ADMIN'
