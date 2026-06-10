@@ -1039,7 +1039,7 @@ const Inventario: React.FC = () => {
                           else val = 'PAT-';
                           setFormPatrimonio(val);
                         }}
-                        placeholder="PAT-000000"
+                        placeholder="000000"
                         maxLength={10}
                         className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface font-mono"
                       />
