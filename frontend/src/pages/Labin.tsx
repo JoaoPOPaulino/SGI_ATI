@@ -208,8 +208,8 @@ const Labin: React.FC = () => {
               <tbody className="text-xs">
                 {filteredLaudos.map((laudo) => (
                   <tr key={laudo.id} className="border-b border-surface-container-low hover:bg-surface-bright transition-colors group">
-                    <td className="px-8 py-4 font-bold max-w-[220px] truncate">{laudo.item_nome}</td>
-                    <td className="px-8 py-4 font-semibold text-on-surface-variant max-w-[160px] truncate">{laudo.tecnico_nome}</td>
+                    <td className="px-8 py-4 font-bold max-w-55 truncate">{laudo.item_nome}</td>
+                    <td className="px-8 py-4 font-semibold text-on-surface-variant max-w-40 truncate">{laudo.tecnico_nome}</td>
                     <td className="px-8 py-4">
                       <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase ${getStatusBadgeStyle(laudo.status_servico)}`}>
                         {laudo.status_servico}
@@ -398,7 +398,7 @@ const Labin: React.FC = () => {
                 <div className="space-y-3">
                   <div>
                     <span className="text-[10px] text-outline font-semibold block mb-0.5">Descrição Técnica da Falha:</span>
-                    <p className="bg-slate-50 p-2.5 border rounded-lg italic font-medium break-words">"{activeLaudoPrint.descricao_problema}"</p>
+                    <p className="bg-slate-50 p-2.5 border rounded-lg italic font-medium wrap-break-words">"{activeLaudoPrint.descricao_problema}"</p>
                   </div>
                 </div>
               </div>
