@@ -1,191 +1,251 @@
-import React, { useState } from "react";
-import { useAuth } from "../contexts/ContextoAutenticacao";
+import React, { useEffect, useState } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Eye,
+  EyeOff,
+  Loader2,
+  Lock,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { AlertCircle, Lock, CheckCircle2, Save } from "lucide-react";
 import { supabase } from "../services/supabase";
-import { hashPasswordWithNewSalt } from "../services/utilidadesSenha";
 
 const TrocarSenha: React.FC = () => {
-  const { user } = useAuth();
-  const [senhaNova, setSenhaNova] = useState("");
-  const [confirmarSenha, setConfirmarSenha] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  React.useEffect(() => {
-    if (!user) {
-      navigate("/login", { replace: true });
+  const [novaSenha, setNovaSenha] = useState("");
+  const [confirmarSenha, setConfirmarSenha] = useState("");
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [mostrarConfirmacao, setMostrarConfirmacao] = useState(false);
+
+  const [loading, setLoading] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    const verificarSessao = async () => {
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error || !data.session?.user) {
+        setError(
+          "Sessão inválida ou expirada. Acesse novamente pelo link enviado ao seu e-mail.",
+        );
+      }
+
+      setCheckingSession(false);
+    };
+
+    verificarSessao();
+  }, []);
+
+  const validarSenha = () => {
+    if (!novaSenha || !confirmarSenha) {
+      setError("Preencha todos os campos.");
+      return false;
     }
-  }, [user, navigate]);
 
-  const validarSenha = (senha: string) => {
-    const minLength = senha.length >= 8;
-    const hasNumber = /[0-9]/.test(senha);
-    const hasSpecial = /[^a-zA-Z0-9]/.test(senha);
+    if (novaSenha.length < 6) {
+      setError("A nova senha deve ter no mínimo 6 caracteres.");
+      return false;
+    }
 
-    return minLength && hasNumber && hasSpecial;
+    if (novaSenha !== confirmarSenha) {
+      setError("As senhas não conferem.");
+      return false;
+    }
+
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!senhaNova || !confirmarSenha) {
-      setError("Preencha todos os campos.");
-      return;
-    }
+    setError("");
+    setSuccess("");
 
-    if (senhaNova !== confirmarSenha) {
-      setError("As senhas não coincidem.");
-      return;
-    }
-
-    if (!validarSenha(senhaNova)) {
-      setError(
-        "A senha deve ter pelo menos 8 caracteres, incluindo números e caracteres especiais.",
-      );
-      return;
-    }
+    if (!validarSenha()) return;
 
     setLoading(true);
-    setError("");
 
     try {
-      const { error: authError } = await supabase.auth.updateUser({
-        password: senhaNova,
-      });
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
 
-      if (authError) {
-        throw authError;
+      if (userError || !userData.user) {
+        setError(
+          "Sessão inválida ou expirada. Acesse novamente pelo link enviado ao seu e-mail.",
+        );
+        setLoading(false);
+        return;
       }
 
-      const { hash, salt } = await hashPasswordWithNewSalt(senhaNova);
-      await supabase
+      const { error: updatePasswordError } = await supabase.auth.updateUser({
+        password: novaSenha,
+      });
+
+      if (updatePasswordError) {
+        setError(updatePasswordError.message || "Erro ao atualizar senha.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: updateProfileError } = await supabase
         .from("usuarios")
         .update({
-          senha: hash,
-          salt,
           primeiro_acesso: false,
         })
-        .eq("id", user?.id);
+        .eq("auth_id", userData.user.id);
 
-      localStorage.setItem('sgi_ati_ultima_troca_senha', new Date().toISOString());
+      if (updateProfileError) {
+        setError(
+          "Senha alterada, mas houve erro ao atualizar o perfil do usuário.",
+        );
+        setLoading(false);
+        return;
+      }
 
-      alert("Senha alterada com sucesso!");
-      navigate("/", { replace: true });
-    } catch (err: any) {
-      setError(err.message || "Erro ao alterar a senha.");
+      setSuccess("Senha alterada com sucesso! Redirecionando...");
+
+      setTimeout(() => {
+        navigate("/", { replace: true });
+      }, 1500);
+    } catch {
+      setError("Erro inesperado ao alterar senha. Tente novamente.");
+    } finally {
       setLoading(false);
     }
   };
 
+  if (checkingSession) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 text-center max-w-md w-full">
+          <Loader2
+            size={42}
+            className="text-blue-600 animate-spin mx-auto mb-5"
+          />
+          <h1 className="text-2xl font-extrabold text-gray-800 mb-3">
+            Validando acesso
+          </h1>
+          <p className="text-sm text-gray-500">
+            Aguarde enquanto verificamos sua sessão.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-      <div className="w-full max-w-[440px] bg-white rounded-3xl shadow-xl p-8 border border-gray-100 animate-slide-up">
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center">
-            <Lock size={32} className="text-blue-600" />
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+      <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 max-w-md w-full">
+        <div className="flex justify-center mb-5">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <Lock size={28} />
           </div>
         </div>
 
-        <h2 className="text-2xl font-extrabold text-gray-800 text-center mb-2">
-          Trocar Senha
-        </h2>
+        <h1 className="text-2xl font-extrabold text-gray-800 text-center mb-2">
+          Definir nova senha
+        </h1>
 
-        <p className="text-sm text-gray-500 text-center mb-8">
-          Por segurança, você deve definir uma nova senha no seu primeiro
-          acesso.
+        <p className="text-sm text-gray-500 text-center mb-6">
+          Para continuar, crie uma senha de acesso para sua conta.
         </p>
 
         {error && (
-          <div className="flex items-start gap-2.5 p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-700 font-semibold mb-6">
+          <div className="flex items-start gap-2.5 p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-700 font-semibold mb-5">
             <AlertCircle size={18} className="shrink-0 mt-0.5" />
             <span>{error}</span>
+          </div>
+        )}
+
+        {success && (
+          <div className="flex items-start gap-2.5 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl text-sm text-emerald-700 font-semibold mb-5">
+            <CheckCircle2 size={18} className="shrink-0 mt-0.5" />
+            <span>{success}</span>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
             <label className="block text-sm font-bold text-gray-700 ml-1">
-              Nova Senha
+              Nova senha
             </label>
 
-            <input
-              type="password"
-              value={senhaNova}
-              onChange={(e) => setSenhaNova(e.target.value)}
-              placeholder="Digite a nova senha"
-              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 text-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium"
-            />
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Lock size={18} className="text-gray-400" />
+              </div>
+
+              <input
+                type={mostrarSenha ? "text" : "password"}
+                value={novaSenha}
+                onChange={(e) => setNovaSenha(e.target.value)}
+                placeholder="Digite sua nova senha"
+                className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 text-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium placeholder-gray-400"
+                disabled={loading || !!success}
+              />
+
+              <button
+                type="button"
+                onClick={() => setMostrarSenha((value) => !value)}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+                disabled={loading || !!success}
+              >
+                {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
           </div>
 
           <div className="space-y-1.5">
             <label className="block text-sm font-bold text-gray-700 ml-1">
-              Confirmar Senha
+              Confirmar senha
             </label>
 
-            <input
-              type="password"
-              value={confirmarSenha}
-              onChange={(e) => setConfirmarSenha(e.target.value)}
-              placeholder="Digite a senha novamente"
-              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 text-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium"
-            />
-          </div>
+            <div className="relative">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                <Lock size={18} className="text-gray-400" />
+              </div>
 
-          <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 space-y-2">
-            <p className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-2">
-              Requisitos da senha
-            </p>
-
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <CheckCircle2
-                size={14}
-                className={
-                  senhaNova.length >= 8 ? "text-green-500" : "text-gray-300"
-                }
+              <input
+                type={mostrarConfirmacao ? "text" : "password"}
+                value={confirmarSenha}
+                onChange={(e) => setConfirmarSenha(e.target.value)}
+                placeholder="Repita sua nova senha"
+                className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 text-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium placeholder-gray-400"
+                disabled={loading || !!success}
               />
-              <span>Mínimo de 8 caracteres</span>
-            </div>
 
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <CheckCircle2
-                size={14}
-                className={
-                  /[0-9]/.test(senhaNova) ? "text-green-500" : "text-gray-300"
+              <button
+                type="button"
+                onClick={() => setMostrarConfirmacao((value) => !value)}
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                aria-label={
+                  mostrarConfirmacao ? "Ocultar senha" : "Mostrar senha"
                 }
-              />
-              <span>Pelo menos um número</span>
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-gray-500">
-              <CheckCircle2
-                size={14}
-                className={
-                  /[^a-zA-Z0-9]/.test(senhaNova)
-                    ? "text-green-500"
-                    : "text-gray-300"
-                }
-              />
-              <span>Um caractere especial (@, #, !, etc)</span>
+                disabled={loading || !!success}
+              >
+                {mostrarConfirmacao ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
-            disabled={
-              loading ||
-              !validarSenha(senhaNova) ||
-              senhaNova !== confirmarSenha
-            }
-            className="w-full mt-2 py-4 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || !!success}
+            className="w-full mt-2 py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
           >
             {loading ? (
-              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <>
+                <Loader2 size={20} className="animate-spin" />
+                Salvando...
+              </>
             ) : (
               <>
-                <Save size={20} />
-                Salvar e Continuar
+                <Lock size={20} />
+                Salvar nova senha
               </>
             )}
           </button>

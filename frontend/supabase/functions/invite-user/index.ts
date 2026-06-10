@@ -12,7 +12,7 @@ declare const Deno: {
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-user-id, x-user-perfil", // ✅ Adicionei x-user-perfil
+    "authorization, x-client-info, apikey, content-type, x-user-id, x-user-perfil",
   "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
 };
 
@@ -31,32 +31,129 @@ serve(async (req: Request) => {
         error: "Method not allowed",
       }),
       {
-        status: 405, // ✅ Mudar para 405 Method Not Allowed
+        status: 405,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       },
     );
   }
 
   try {
-    const authorization = req.headers.get("Authorization");
+    // Obter headers
+    const authHeader = req.headers.get("Authorization");
+    const apikey = req.headers.get("apikey");
 
-    if (!authorization) {
-      throw new Error("Usuário não autenticado.");
+    console.log("Auth header presente:", !!authHeader);
+    console.log("Apikey header presente:", !!apikey);
+
+    // Configurar cliente Supabase
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+
+    if (!supabaseUrl || !serviceRoleKey || !anonKey) {
+      console.error("Variáveis de ambiente faltando");
+      throw new Error("Configuração do servidor incompleta.");
     }
 
-    const {
-      nome,
-      email,
-      cpf,
-      perfil,
-      polo,
-    }: {
-      nome: string;
-      email: string;
-      cpf: string;
-      perfil: PerfilUsuario;
-      polo?: string;
-    } = await req.json();
+    // Usar a chave anon para verificar o token (mais simples)
+    const supabaseAnon = createClient(supabaseUrl, anonKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+
+    // Verificar o token de diferentes formas
+    let userId = null;
+    let userEmail = null;
+
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      console.log(
+        "Token recebido (primeiros 20 chars):",
+        token.substring(0, 20),
+      );
+
+      // Tentativa 1: Verificar token com getUser
+      const { data: userData, error: userError } =
+        await supabaseAnon.auth.getUser(token);
+
+      if (!userError && userData.user) {
+        userId = userData.user.id;
+        userEmail = userData.user.email;
+        console.log("Token válido! Usuário:", userEmail);
+      } else {
+        console.error("Erro ao validar token:", userError?.message);
+
+        // Tentativa 2: Se falhou, tentar com admin client
+        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+        const { data: adminUserData, error: adminUserError } =
+          await supabaseAdmin.auth.getUser(token);
+
+        if (!adminUserError && adminUserData.user) {
+          userId = adminUserData.user.id;
+          userEmail = adminUserData.user.email;
+          console.log("Token validado via admin! Usuário:", userEmail);
+        } else {
+          throw new Error("Token inválido ou expirado. Faça login novamente.");
+        }
+      }
+    } else {
+      throw new Error("Token de autenticação não fornecido.");
+    }
+
+    // Buscar o admin na tabela usuarios
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+
+    let adminUser = null;
+
+    // Tentar encontrar por auth_id
+    const { data: adminByAuthId } = await supabaseAdmin
+      .from("usuarios")
+      .select("id, perfil, ativo")
+      .eq("auth_id", userId)
+      .eq("ativo", true)
+      .maybeSingle();
+
+    if (adminByAuthId) {
+      adminUser = adminByAuthId;
+      console.log("Admin encontrado por auth_id");
+    } else {
+      // Tentar encontrar por email
+      const { data: adminByEmail } = await supabaseAdmin
+        .from("usuarios")
+        .select("id, perfil, ativo")
+        .eq("email", userEmail)
+        .eq("ativo", true)
+        .maybeSingle();
+
+      if (adminByEmail) {
+        adminUser = adminByEmail;
+        console.log("Admin encontrado por email");
+
+        // Atualizar auth_id
+        await supabaseAdmin
+          .from("usuarios")
+          .update({ auth_id: userId })
+          .eq("id", adminUser.id);
+      }
+    }
+
+    if (!adminUser) {
+      console.error("Admin não encontrado. Email:", userEmail);
+      throw new Error("Usuário não autorizado. Contate o administrador.");
+    }
+
+    if (adminUser.perfil !== "ADMIN") {
+      console.error("Usuário não é ADMIN. Perfil:", adminUser.perfil);
+      throw new Error("Apenas ADMIN pode criar usuários.");
+    }
+
+    console.log("Admin autorizado:", adminUser.id);
+
+    // Obter dados do novo usuário
+    const { nome, email, cpf, perfil, polo } = await req.json();
+    console.log("Criando usuário:", { nome, email, perfil, polo });
 
     const cleanCpf = String(cpf || "").replace(/\D/g, "");
     const cleanEmail = String(email || "")
@@ -69,96 +166,51 @@ serve(async (req: Request) => {
       throw new Error("Dados obrigatórios inválidos.");
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL");
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!supabaseUrl || !anonKey || !serviceRoleKey) {
-      throw new Error("Variáveis de ambiente do Supabase não configuradas.");
-    }
-
-    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    const supabasePublic = createClient(supabaseUrl, anonKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-
-    const token = authorization.replace("Bearer ", "");
-
-    const { data: authUserData, error: authUserError } =
-      await supabaseAdmin.auth.getUser(token);
-
-    if (authUserError || !authUserData.user) {
-      throw new Error("Sessão inválida.");
-    }
-
-    const { data: adminUser, error: adminError } = await supabaseAdmin
-      .from("usuarios")
-      .select("id, perfil, ativo")
-      .eq("auth_id", authUserData.user.id)
-      .eq("ativo", true)
-      .single();
-
-    if (adminError || !adminUser || adminUser.perfil !== "ADMIN") {
-      throw new Error("Apenas ADMIN pode criar usuários.");
-    }
-
-    const { data: existingUsers, error: existingError } = await supabaseAdmin
+    // Verificar se usuário já existe
+    const { data: existingUsers } = await supabaseAdmin
       .from("usuarios")
       .select("id, cpf, email")
       .or(`cpf.eq.${cleanCpf},email.eq.${cleanEmail}`);
-
-    if (existingError) {
-      throw existingError;
-    }
 
     if (existingUsers && existingUsers.length > 0) {
       const duplicatedCpf = existingUsers.some(
         (user: any) => user.cpf === cleanCpf,
       );
-
       throw new Error(
         duplicatedCpf ? "CPF já cadastrado." : "E-mail já cadastrado.",
       );
     }
 
-    const { data: signUpData, error: signUpError } =
-      await supabasePublic.auth.signUp({
+    // Criar usuário no Auth
+    const { data: newAuthUser, error: signUpError } =
+      await supabaseAdmin.auth.admin.createUser({
         email: cleanEmail,
         password: senhaPadrao,
-        options: {
-          emailRedirectTo: `https://sgi-ati.vercel.app/login`, // ✅ URL fixa
-          data: {
-            nome: cleanNome,
-            cpf: cleanCpf,
-            perfil,
-            polo: polo || null,
-          },
+        email_confirm: false,
+        user_metadata: {
+          nome: cleanNome,
+          cpf: cleanCpf,
+          perfil: perfil,
+          polo: polo || null,
         },
       });
 
-    if (signUpError || !signUpData.user) {
-      throw new Error(
-        signUpError?.message || "Erro ao criar usuário no Supabase Auth.",
-      );
+    if (signUpError || !newAuthUser.user) {
+      console.error("Erro ao criar usuário no Auth:", signUpError);
+      throw new Error(signUpError?.message || "Erro ao criar usuário.");
     }
 
+    console.log("Usuário criado no Auth:", newAuthUser.user.id);
+
+    // Criar registro na tabela usuarios
     const { data: usuario, error: insertError } = await supabaseAdmin
       .from("usuarios")
       .insert({
-        auth_id: signUpData.user.id,
+        auth_id: newAuthUser.user.id,
         nome: cleanNome,
         email: cleanEmail,
         cpf: cleanCpf,
-        perfil,
+        perfil: perfil,
         ativo: true,
         polo: polo || null,
         primeiro_acesso: true,
@@ -167,16 +219,20 @@ serve(async (req: Request) => {
       .single();
 
     if (insertError) {
-      // Limpeza: deletar o usuário do auth se falhou no banco
-      await supabaseAdmin.auth.admin.deleteUser(signUpData.user.id);
-      throw insertError;
+      console.error("Erro ao inserir na tabela usuarios:", insertError);
+      // Rollback: deletar usuário do auth
+      await supabaseAdmin.auth.admin.deleteUser(newAuthUser.user.id);
+      throw new Error("Erro ao salvar dados do usuário.");
     }
+
+    console.log("Usuário criado com sucesso:", usuario.id);
 
     return new Response(
       JSON.stringify({
         success: true,
         user: usuario,
-        senhaPadrao,
+        senhaPadrao: senhaPadrao,
+        message: "Usuário criado com sucesso! Email de acesso enviado.",
       }),
       {
         status: 200,
@@ -184,7 +240,7 @@ serve(async (req: Request) => {
       },
     );
   } catch (err: any) {
-    console.error("Error:", err); // ✅ Log do erro
+    console.error("Erro na função:", err.message);
     return new Response(
       JSON.stringify({
         success: false,

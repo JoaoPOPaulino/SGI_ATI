@@ -48,10 +48,12 @@ export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
 
   // Sempre inclui usuários do localStorage que não existem no Supabase
   const localUsers = getUsuarios();
-  const supabaseCpfs = new Set(supabaseUsers.map(u => u.cpf.replace(/\D/g, '')));
+  const supabaseCpfs = new Set(
+    supabaseUsers.map((u) => u.cpf.replace(/\D/g, "")),
+  );
 
   const localOnly = localUsers
-    .filter(u => !supabaseCpfs.has(u.cpf.replace(/\D/g, '')))
+    .filter((u) => !supabaseCpfs.has(u.cpf.replace(/\D/g, "")))
     .map((u) => ({
       ...u,
       auth_id: null,
@@ -216,55 +218,53 @@ export async function inviteUser(payload: {
   nome: string;
   email: string;
   cpf: string;
-  perfil: "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
+  perfil: string;
   polo?: string;
-}): Promise<{ success: boolean; error?: string; user?: { id: string } }> {
-  const cleanCpf = payload.cpf.replace(/\D/g, "");
-  const cleanEmail = payload.email.trim().toLowerCase();
-
-  // Tentar via Edge Function primeiro
+}) {
   try {
-    const { data, error } = await supabase.functions.invoke("invite-user", {
-      body: {
-        ...payload,
-        cpf: cleanCpf,
-        email: cleanEmail,
+    const response = await fetch("/api/convidar-usuario", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
+      body: JSON.stringify(payload),
     });
 
-    if (!error && data?.success) {
-      return { success: true, user: data.user };
+    const rawText = await response.text();
+
+    let data: any = null;
+
+    if (rawText) {
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        return {
+          success: false,
+          error: `A API respondeu algo que não é JSON. Status: ${response.status}. Resposta: ${rawText.slice(0, 200)}`,
+        };
+      }
     }
-  } catch {}
 
-  // Fallback: criar usuário no localStorage
-  const usuarios = getUsuarios();
+    if (!response.ok) {
+      return {
+        success: false,
+        error:
+          data?.error ||
+          `Erro ao convidar usuário. Status HTTP: ${response.status}`,
+      };
+    }
 
-  const cpfExistente = usuarios.find(
-    (u) => u.cpf.replace(/\D/g, "") === cleanCpf
-  );
-  if (cpfExistente) {
-    return { success: false, error: "CPF já cadastrado." };
+    return {
+      success: true,
+      user: data?.user,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error
+          ? error.message
+          : "Erro inesperado ao chamar a API de convite.",
+    };
   }
-
-  const emailExistente = usuarios.find(
-    (u) => u.email.trim().toLowerCase() === cleanEmail
-  );
-  if (emailExistente) {
-    return { success: false, error: "E-mail já cadastrado." };
-  }
-
-  const newUser: Usuario = {
-    id: `usr-${Date.now()}`,
-    nome: payload.nome.trim(),
-    email: cleanEmail,
-    cpf: cleanCpf,
-    perfil: payload.perfil,
-    ativo: true,
-    polo: payload.polo || undefined,
-  };
-
-  saveUsuarios([...usuarios, newUser]);
-
-  return { success: true, user: { id: newUser.id } };
 }
