@@ -237,47 +237,66 @@ const Dashboard: React.FC = () => {
       </div>
 
       {/* ═══════════════════════════════════════════════════════════ */}
-      {/* ALERTAS CRÍTICOS                                           */}
-      {/* ═══════════════════════════════════════════════════════════ */}
-      {(overdueLoans.length > 0 || stats.aguardandoBaixa > 0 || stats.prontosRetirada > 0) && (
-        <div className="space-y-3">
-          {stats.prontosRetirada > 0 && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
-              <CheckCircle size={20} className="text-emerald-500 shrink-0 mt-0.5" />
-              <div>
+      {/* ALERTAS CRÍTICOS */}
+      <div className="space-y-3">
+        {/* Prontos para Retirada — Todos os usuários */}
+        {stats.prontosRetirada > 0 && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
+            <CheckCircle size={20} className="text-emerald-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-sm font-bold text-emerald-700">Itens Prontos para Retirada</h3>
-                <p className="text-xs text-emerald-600 mt-1">
-                  {stats.prontosRetirada} equipamento{stats.prontosRetirada > 1 ? 's' : ''} reparado{stats.prontosRetirada > 1 ? 's' : ''} e disponív{stats.prontosRetirada > 1 ? 'eis' : 'el'} no Almoxarifado Central para retirada.
-                </p>
+                <span className="text-[9px] font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded">Todos os perfis</span>
               </div>
+              <p className="text-xs text-emerald-600">
+                {stats.prontosRetirada} equipamento{stats.prontosRetirada > 1 ? 's' : ''} reparado{stats.prontosRetirada > 1 ? 's' : ''} e disponív{stats.prontosRetirada > 1 ? 'eis' : 'el'} no Almoxarifado Central.
+              </p>
             </div>
-          )}
-          {overdueLoans.length > 0 && (
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
-              <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
-              <div>
-                <h3 className="text-sm font-bold text-red-700">Empréstimos Vencidos — Ação Necessária</h3>
-                <p className="text-xs text-red-600 mt-1">
-                  {overdueLoans.length} equipamento{overdueLoans.length > 1 ? 's' : ''} com prazo de devolução expirado.{' '}
-                  {overdueLoans.slice(0, 3).map(l => l.item_nome).join(', ')}
-                  {overdueLoans.length > 3 ? ` e mais ${overdueLoans.length - 3}...` : ''}.
-                </p>
+          </div>
+        )}
+
+        {/* Empréstimos Vencidos — SUPERIOR/ADMIN */}
+        {isSuperiorOrAdmin && overdueLoans.length > 0 && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
+            <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <h3 className="text-sm font-bold text-red-700">Empréstimos Vencidos</h3>
+                <span className="text-[9px] font-bold bg-red-200 text-red-800 px-1.5 py-0.5 rounded">Superior / Admin</span>
               </div>
+              <p className="text-xs text-red-600">
+                {overdueLoans.length} equipamento{overdueLoans.length > 1 ? 's' : ''} com prazo de devolução expirado.{' '}
+                {overdueLoans.slice(0, 3).map(l => l.item_nome).join(', ')}
+                {overdueLoans.length > 3 ? ` e mais ${overdueLoans.length - 3}...` : ''}.
+              </p>
             </div>
-          )}
-          {stats.aguardandoBaixa > 0 && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
-              <Clock size={20} className="text-amber-500 shrink-0 mt-0.5" />
-              <div>
+          </div>
+        )}
+
+        {/* Baixas Aguardando — SUPERIOR/ADMIN */}
+        {isSuperiorOrAdmin && stats.aguardandoBaixa > 0 && (
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
+            <Clock size={20} className="text-amber-500 shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-sm font-bold text-amber-700">Baixas Aguardando Aprovação</h3>
-                <p className="text-xs text-amber-600 mt-1">
-                  {stats.aguardandoBaixa} solicitaç{stats.aguardandoBaixa > 1 ? 'ões' : 'ão'} de baixa patrimonial pendente{stats.aguardandoBaixa > 1 ? 's' : ''} de homologação pelo Superior.
-                </p>
+                <span className="text-[9px] font-bold bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded">Superior / Admin</span>
               </div>
+              <p className="text-xs text-amber-600">
+                {stats.aguardandoBaixa} solicitaç{stats.aguardandoBaixa > 1 ? 'ões' : 'ão'} de baixa pendente{stats.aguardandoBaixa > 1 ? 's' : ''} de homologação.
+              </p>
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+
+        {stats.prontosRetirada === 0 && !isSuperiorOrAdmin && overdueLoans.length === 0 && stats.aguardandoBaixa === 0 && (
+          <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-xl p-6 text-center">
+            <CheckCircle size={24} className="text-emerald-400 mx-auto mb-2" />
+            <p className="text-sm font-bold text-on-surface">Tudo em ordem</p>
+            <p className="text-xs text-outline mt-1">Nenhum alerta pendente no momento.</p>
+          </div>
+        )}
+      </div>
 
       {/* ═══════════════════════════════════════════════════════════ */}
       {/* CARDS DE ESTATÍSTICAS GERAIS                              */}
