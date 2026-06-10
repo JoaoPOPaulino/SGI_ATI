@@ -221,8 +221,8 @@ const Manutencao: React.FC = () => {
         
         {/* Painel Esquerdo: Fila de Manutenção Ativa (RF11 / RF12) */}
         <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest flex flex-col min-h-[50vh]">
-          <h2 className="text-base font-bold text-on-surface mb-2 flex items-center gap-2 border-b border-outline-variant/20 pb-3">
-            <Wrench size={18} className="text-primary" />
+          <h2 className="text-sm font-bold text-on-surface mb-2 flex items-center gap-2 border-b border-outline-variant/20 pb-3">
+            <Wrench size={16} className="text-primary" />
             Fila de Manutenção Ativa
           </h2>
 
@@ -278,10 +278,10 @@ const Manutencao: React.FC = () => {
           
           {/* Fila de Baixas Aguardando Homologação */}
           <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest flex flex-col min-h-[35vh]">
-            <h2 className="text-base font-bold text-on-surface mb-2 flex items-center gap-2 border-b border-outline-variant/20 pb-3">
-              <Trash2 size={18} className="text-error" />
-              Controle de Baixas Patrimoniais
-            </h2>
+              <h2 className="text-sm font-bold text-on-surface mb-2 flex items-center gap-2 border-b border-outline-variant/20 pb-3">
+                <Trash2 size={16} className="text-error" />
+                Controle de Baixas Patrimoniais
+              </h2>
 
             {awaitingDecommissionItens.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center text-outline py-6">
@@ -298,12 +298,12 @@ const Manutencao: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-xs font-bold text-on-surface truncate">{item.nome}</span>
-                        <span className="px-2 py-0.5 text-5xs font-bold rounded bg-amber-50 border border-amber-200 text-amber-700">
+                        <span className="text-[11px] font-bold text-on-surface truncate">{item.nome}</span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-50 border border-amber-200 text-amber-700">
                           Aguardando Baixa
                         </span>
                       </div>
-                      <span className="text-5xs font-bold font-mono text-outline block uppercase">
+                      <span className="text-[9px] font-bold font-mono text-outline block uppercase">
                         Pat: {item.numero_patrimonio || 'S/N: ' + item.numero_serie}
                       </span>
                     </div>
@@ -341,8 +341,8 @@ const Manutencao: React.FC = () => {
           {/* Solicitar Nova Baixa (Formulário) */}
           {canModify && (
             <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
-              <h2 className="text-base font-bold text-on-surface mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
-                <Trash2 size={18} className="text-primary" />
+              <h2 className="text-sm font-bold text-on-surface mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
+                <Trash2 size={16} className="text-primary" />
                 Solicitar Descarte de Ativo
               </h2>
 
@@ -405,7 +405,7 @@ const Manutencao: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRepairTarget(null)} />
           <div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-md w-full animate-slide-up p-6">
-            <h3 className="text-lg font-bold text-on-surface mb-2">Concluir Reparo</h3>
+            <h3 className="text-base font-bold text-on-surface mb-2">Concluir Reparo</h3>
             <p className="text-sm text-on-surface-variant mb-6">
               Equipamento: <strong>{repairTarget.nome}</strong>
               {repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}
