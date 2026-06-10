@@ -510,7 +510,7 @@ const Inventario: React.FC = () => {
           <div>
             <input
               type="text"
-              placeholder="Patrimônio..."
+              placeholder="Patrimonio (6 digitos)..."
               value={filterPatrimonio}
               onChange={(e) => setFilterPatrimonio(e.target.value)}
               className="w-full px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface"
@@ -1030,8 +1030,17 @@ const Inventario: React.FC = () => {
                       <input
                         type="text"
                         value={formPatrimonio}
-                        onChange={(e) => setFormPatrimonio(e.target.value)}
-                        placeholder="Ex: PAT-001234"
+                        onChange={(e) => {
+                          let val = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+                          if (!val.startsWith('PAT-')) val = 'PAT-' + val.replace(/^PAT/, '');
+                          const digits = val.replace('PAT-', '').replace(/\D/g, '').slice(0, 6);
+                          if (digits) val = 'PAT-' + digits;
+                          else if (val === 'PAT-') val = 'PAT-';
+                          else val = 'PAT-';
+                          setFormPatrimonio(val);
+                        }}
+                        placeholder="PAT-000000"
+                        maxLength={10}
                         className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface font-mono"
                       />
                     </div>
