@@ -65,25 +65,16 @@ const Movimentacoes: React.FC = () => {
     if (formTipo === 'MANUTENCAO') {
       setFormTipoDoc('GUIA_MOVIMENTACAO');
       setFormDestinoPolo('Laboratório');
-      setFormDestinoAndar('');
-      setFormDestinoSala('');
-      setFormDestinoSetor('');
-      setFormDestinoEstacao('');
+      setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
       setFormDestinoLivre('');
     } else if (formTipo === 'VIAGEM') {
       setFormTipoDoc('CONTROLE_ENTRADA_SAIDA');
-      setFormDestinoAndar('');
-      setFormDestinoSala('');
-      setFormDestinoSetor('');
-      setFormDestinoEstacao('');
-    } else if (formTipo === 'CHECK_OUT') {
+      setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
+    } else if (formTipo === 'CHECK_OUT' || formTipo === 'CHECK_IN') {
       setFormTipoDoc('CONTROLE_ENTRADA_SAIDA');
-      setFormDestinoPolo('');
-      setFormDestinoAndar('');
-      setFormDestinoSala('');
-      setFormDestinoSetor('');
-      setFormDestinoEstacao('');
+      setFormDestinoPolo(''); setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
     } else {
+      setFormTipoDoc('GUIA_MOVIMENTACAO');
       setFormDestinoLivre('');
     }
   }, [formTipo]);
@@ -350,7 +341,8 @@ const Movimentacoes: React.FC = () => {
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                 >
                   <option value="TRANSFERENCIA">Transferência (Local)</option>
-                  <option value="CHECK_OUT">Saída / Entrega (Almox → Local)</option>
+                  <option value="CHECK_OUT">Saída (Almox → Local)</option>
+                  <option value="CHECK_IN">Entrada (Local → Almox)</option>
                   <option value="MANUTENCAO">Envio p/ Manutenção</option>
                   <option value="VIAGEM">Viagem Externa</option>
                 </select>
@@ -364,6 +356,7 @@ const Movimentacoes: React.FC = () => {
                 >
                   <option value="GUIA_MOVIMENTACAO">Guia de Movimentação</option>
                   <option value="CONTROLE_ENTRADA_SAIDA">Controle de Entrada/Saída</option>
+                  <option value="LAUDO_TECNICO">Laudo Técnico</option>
                 </select>
               </div>
             </div>
