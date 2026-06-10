@@ -124,7 +124,8 @@ const Inventario: React.FC = () => {
       const matchesSerial = !filterSerial || 
         (item.numero_serie && item.numero_serie.toLowerCase().includes(filterSerial.toLowerCase()));
 
-      const matchesCategoria = filterCategoria === 'TODAS' || item.categoria === filterCategoria;
+      const matchesCategoria = filterCategoria === 'TODAS' || 
+        item.categoria.toLowerCase() === filterCategoria.toLowerCase();
       const matchesStatus = filterStatus === 'TODOS' || item.status === filterStatus;
       const matchesCondicao = filterCondicao === 'TODAS' || item.condicao === filterCondicao;
       const matchesPolo = filterPolo === 'TODOS' || item.polo === filterPolo;
@@ -538,13 +539,9 @@ const Inventario: React.FC = () => {
               className="w-full bg-surface border border-outline rounded-lg px-2 py-1.5 text-xs text-on-surface"
             />
             <datalist id="filtro-categorias">
-              <option value="NOTEBOOK" />
-              <option value="COMPUTADOR" />
-              <option value="MONITOR" />
-              <option value="IMPRESSORA" />
-              <option value="FERRAMENTA" />
-              <option value="ACESSORIO" />
-              <option value="OUTROS" />
+              {[...new Set(itens.map(i => i.categoria))].map(c => (
+                <option key={c} value={c} />
+              ))}
             </datalist>
           </div>
 
@@ -1015,13 +1012,9 @@ const Inventario: React.FC = () => {
                     className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                   />
                   <datalist id="categoria-opcoes">
-                    <option value="NOTEBOOK" />
-                    <option value="COMPUTADOR" />
-                    <option value="MONITOR" />
-                    <option value="IMPRESSORA" />
-                    <option value="FERRAMENTA" />
-                    <option value="ACESSORIO" />
-                    <option value="OUTROS" />
+                    {[...new Set(itens.map(i => i.categoria))].map(c => (
+                      <option key={c} value={c} />
+                    ))}
                   </datalist>
                 </div>
               </div>
