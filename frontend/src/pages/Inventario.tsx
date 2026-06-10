@@ -1119,15 +1119,8 @@ const Inventario: React.FC = () => {
                         value={formPredio}
                         onChange={(e) => setFormPredio(e.target.value)}
                         placeholder="Ex: ATI"
-                        list="predio-sugestoes"
                         className="w-full px-2 py-1.5 bg-surface border border-outline rounded-lg text-xs"
                       />
-                      <datalist id="predio-sugestoes">
-                        <option value="ATI" />
-                        <option value="Bloco A" />
-                        <option value="Bloco B" />
-                        <option value="Anexo I" />
-                      </datalist>
                   </div>
                   <div>
                     <label className="block text-[9px] font-bold text-outline uppercase mb-1">Andar *</label>
@@ -1146,16 +1139,8 @@ const Inventario: React.FC = () => {
                         value={formSetor}
                         onChange={(e) => setFormSetor(e.target.value)}
                         placeholder="Ex: GSM"
-                        list="setor-sugestoes"
                         className="w-full px-2 py-1.5 bg-surface border border-outline rounded-lg text-xs"
                       />
-                      <datalist id="setor-sugestoes">
-                        <option value="GSM" />
-                        <option value="Tecnologia da Informação" />
-                        <option value="Infraestrutura" />
-                        <option value="Atendimento" />
-                        <option value="Administrativo" />
-                      </datalist>
                   </div>
                   <div>
                     <label className="block text-[9px] font-bold text-outline uppercase mb-1">Sala</label>
