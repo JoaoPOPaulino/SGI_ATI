@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
   LayoutGrid, Package, ArrowLeftRight, CalendarRange, 
@@ -11,7 +11,7 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
-  const { user, hasPermission, logout } = useAuth();
+  const { hasPermission, logout } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const isCollapsed = !isHovered;
 
@@ -99,19 +99,8 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         )}
       </nav>
 
-      {/* Footer Info Area */}
+      {/* Footer */}
       <div className={`mt-auto px-4 pt-4 border-t border-blue-100/10 space-y-1 ${isCollapsed ? 'flex flex-col items-center' : ''}`}>
-        {!isCollapsed ? (
-          <Link to="/perfil" onClick={handleNav} className="px-4 py-2 text-xs text-blue-100/70 flex items-center gap-2 hover:text-white hover:bg-primary-container/40 rounded-lg transition-colors cursor-pointer">
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0"></div>
-            <span className="font-semibold truncate">{(user?.nome || 'Usuário').split(' ')[0]} ({user?.perfil})</span>
-          </Link>
-        ) : (
-          <Link to="/perfil" onClick={handleNav} className="py-2 flex items-center justify-center hover:bg-primary-container/40 rounded-lg transition-colors" title={`${user?.nome} (${user?.perfil}) - Ver Perfil`}>
-            <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-          </Link>
-        )}
-        
         <button
           onClick={() => { handleNav(); logout(); }}
           title={isCollapsed ? "Sair do Sistema" : undefined}
