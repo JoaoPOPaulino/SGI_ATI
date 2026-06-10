@@ -24,7 +24,7 @@ const Manutencao: React.FC = () => {
     const allItens = await fetchItens();
     setMaintenanceItens(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
-    setActiveItens(allItens.filter(i => i.status === 'ATIVO' || i.status === 'GUARDADO'));
+    setActiveItens(allItens.filter(i => (i.status === 'ATIVO' || i.status === 'GUARDADO') && (i.condicao === 'RUIM' || i.condicao === 'ESTRAGADO')));
     setLoading(false);
   };
 
@@ -234,9 +234,10 @@ const Manutencao: React.FC = () => {
             <p className="text-[11px] text-on-surface-variant mb-5">Equipamento: <strong>{repairTarget.nome}</strong>{repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}</p>
             <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1.5`}>Condição Pós-Reparo</label>
             <select value={repairCondicao} onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)} className="w-full px-3 py-2.5 bg-surface border border-outline rounded-lg text-[11px] focus:ring-2 focus:ring-primary mb-5">
+              {repairTarget && repairTarget.condicao === 'ESTRAGADO' && <option value="ESTRAGADO">Estragado</option>}
+              {repairTarget && (repairTarget.condicao === 'ESTRAGADO' || repairTarget.condicao === 'RUIM') && <option value="RUIM">Ruim</option>}
+              {repairTarget && repairTarget.condicao !== 'BOM' && <option value="REGULAR">Regular</option>}
               <option value="BOM">Bom</option>
-              <option value="REGULAR">Regular</option>
-              <option value="RUIM">Ruim</option>
             </select>
             <p className="text-[10px] text-outline mb-5 bg-surface-container p-2.5 rounded-lg">O item será movido para <strong>Almoxarifado Central</strong> com status <strong>GUARDADO</strong>, pronto para retirada.</p>
             <div className="flex gap-2.5">

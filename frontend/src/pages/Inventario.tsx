@@ -214,6 +214,10 @@ const Inventario: React.FC = () => {
       setFormError('Itens serializados exigem o Número de Série.');
       return;
     }
+    if (formStatus === 'ATIVO' && (formCondicao === 'ESTRAGADO')) {
+      setFormError('Equipamento ESTRAGADO não pode estar ATIVO. Altere o status para EM_MANUTENCAO ou a condição.');
+      return;
+    }
 
     const now = new Date().toISOString();
 
@@ -1159,7 +1163,11 @@ const Inventario: React.FC = () => {
                   </label>
                   <select
                     value={formCondicao}
-                    onChange={(e) => setFormCondicao(e.target.value as CondicaoItem)}
+                    onChange={(e) => {
+                      const c = e.target.value as CondicaoItem;
+                      setFormCondicao(c);
+                      if (c === 'ESTRAGADO' && formStatus === 'ATIVO') setFormStatus('EM_MANUTENCAO');
+                    }}
                     className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                   >
                     <option value="NOVO">Novo</option>
