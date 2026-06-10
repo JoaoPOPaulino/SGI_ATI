@@ -502,7 +502,7 @@ const Movimentacoes: React.FC = () => {
                 <p className="text-xs font-bold">Nenhum registro encontrado</p>
               </div>
             ) : (
-              <div className="space-y-3 overflow-y-auto pr-1">
+              <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
                 {filteredMovs.map((m) => (
                   <div
                     key={m.id}
