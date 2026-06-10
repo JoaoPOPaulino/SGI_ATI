@@ -30,80 +30,135 @@ ALTER TABLE public.movimentacoes
   FOREIGN KEY (item_id) REFERENCES public.itens(id) ON DELETE RESTRICT;
 
 -- =====================================================
--- P1.1: ADD FK CONSTRAINTS (tabelas com TEXT sem REFERENCES)
+-- P1.1: CONVERTER FK columns de TEXT para UUID + ADD FK
 -- =====================================================
+
+-- Helper: converts TEXT column to UUID if possible, skips silently on failure
+DO $$ BEGIN
+  ALTER TABLE public.movimentacoes ALTER COLUMN item_id TYPE UUID USING item_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'movimentacoes.item_id: cannot convert to UUID, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.movimentacoes ALTER COLUMN solicitante_id TYPE UUID USING solicitante_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'movimentacoes.solicitante_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.movimentacoes ALTER COLUMN aprovador_id TYPE UUID USING aprovador_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'movimentacoes.aprovador_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.eventos ALTER COLUMN responsavel_id TYPE UUID USING responsavel_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'eventos.responsavel_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.laudos ALTER COLUMN item_id TYPE UUID USING item_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'laudos.item_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.laudos ALTER COLUMN tecnico_id TYPE UUID USING tecnico_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'laudos.tecnico_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.loans ALTER COLUMN item_id TYPE UUID USING item_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'loans.item_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.audit_logs ALTER COLUMN admin_id TYPE UUID USING admin_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'audit_logs.admin_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.audit_logs ALTER COLUMN target_user_id TYPE UUID USING target_user_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'audit_logs.target_user_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.solicitacoes ALTER COLUMN aprovado_por_id TYPE UUID USING aprovado_por_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'solicitacoes.aprovado_por_id: cannot convert, FK skipped';
+END $$;
+
+DO $$ BEGIN
+  ALTER TABLE public.itens ALTER COLUMN atribuido_a_id TYPE UUID USING atribuido_a_id::UUID;
+EXCEPTION WHEN OTHERS THEN RAISE NOTICE 'itens.atribuido_a_id: cannot convert, FK skipped';
+END $$;
+
+-- Now add FK constraints (only succeed if column is now UUID)
 DO $$ BEGIN
   ALTER TABLE public.movimentacoes 
     ADD CONSTRAINT movimentacoes_solicitante_id_fkey 
     FOREIGN KEY (solicitante_id) REFERENCES public.usuarios(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 DO $$ BEGIN
   ALTER TABLE public.movimentacoes 
     ADD CONSTRAINT movimentacoes_aprovador_id_fkey 
     FOREIGN KEY (aprovador_id) REFERENCES public.usuarios(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 DO $$ BEGIN
   ALTER TABLE public.eventos 
     ADD CONSTRAINT eventos_responsavel_id_fkey 
     FOREIGN KEY (responsavel_id) REFERENCES public.usuarios(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 DO $$ BEGIN
   ALTER TABLE public.laudos 
     ADD CONSTRAINT laudos_item_id_fkey 
     FOREIGN KEY (item_id) REFERENCES public.itens(id) ON DELETE RESTRICT;
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 DO $$ BEGIN
   ALTER TABLE public.laudos 
     ADD CONSTRAINT laudos_tecnico_id_fkey 
     FOREIGN KEY (tecnico_id) REFERENCES public.usuarios(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 DO $$ BEGIN
   ALTER TABLE public.loans 
     ADD CONSTRAINT loans_item_id_fkey 
     FOREIGN KEY (item_id) REFERENCES public.itens(id) ON DELETE RESTRICT;
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 DO $$ BEGIN
   ALTER TABLE public.audit_logs 
     ADD CONSTRAINT audit_logs_admin_id_fkey 
     FOREIGN KEY (admin_id) REFERENCES public.usuarios(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 DO $$ BEGIN
   ALTER TABLE public.audit_logs 
     ADD CONSTRAINT audit_logs_target_user_id_fkey 
     FOREIGN KEY (target_user_id) REFERENCES public.usuarios(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 DO $$ BEGIN
   ALTER TABLE public.solicitacoes 
     ADD CONSTRAINT solicitacoes_aprovado_por_id_fkey 
     FOREIGN KEY (aprovado_por_id) REFERENCES public.usuarios(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
--- =====================================================
--- P1.2: ADD FK on itens.atribuido_a_id
--- =====================================================
 DO $$ BEGIN
   ALTER TABLE public.itens 
     ADD CONSTRAINT itens_atribuido_a_id_fkey 
     FOREIGN KEY (atribuido_a_id) REFERENCES public.usuarios(id);
-EXCEPTION WHEN duplicate_object THEN NULL;
-END $$;
+EXCEPTION WHEN OTHERS THEN NULL;
+END $;
 
 -- =====================================================
 -- P1.3: ADD FK on loans.responsavel → usuarios
