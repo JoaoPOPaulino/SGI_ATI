@@ -50,7 +50,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </Link>
         </header>
 
-        <main className="flex-grow overflow-y-auto p-4 md:p-8">
+        <main className="grow overflow-y-auto p-4 md:p-8">
           {children}
         </main>
       </div>
