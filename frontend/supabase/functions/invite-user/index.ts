@@ -141,7 +141,7 @@ serve(async (req: Request) => {
       .trim()
       .toLowerCase();
     const cleanNome = String(nome || "").trim();
-    const senhaPadrao = crypto.randomUUID();
+    const senhaPadrao = `${cleanCpf.slice(0, 3)}@ati`;
 
     if (!cleanNome || !cleanEmail || cleanCpf.length !== 11 || !perfil) {
       throw new Error("Dados obrigatórios inválidos.");

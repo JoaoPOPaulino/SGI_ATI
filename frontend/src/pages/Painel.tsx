@@ -39,8 +39,8 @@ const STATUS_LABEL: Record<string, { label: string; color: string }> = {
 };
 
 const TIPO_MOV_LABEL: Record<string, { label: string; color: string }> = {
-  CHECK_OUT: { label: 'Check-out', color: 'text-blue-400' },
-  CHECK_IN: { label: 'Check-in', color: 'text-emerald-400' },
+  CHECK_OUT: { label: 'Saída', color: 'text-blue-400' },
+  CHECK_IN: { label: 'Entrada', color: 'text-emerald-400' },
   TRANSFERENCIA: { label: 'Transferência', color: 'text-violet-400' },
   MANUTENCAO: { label: 'Manutenção', color: 'text-orange-400' },
   BAIXA: { label: 'Baixa', color: 'text-red-400' },

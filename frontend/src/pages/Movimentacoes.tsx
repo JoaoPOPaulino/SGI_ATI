@@ -8,6 +8,16 @@ import { fetchMovimentacoes, createMovimentacao, updateMovimentacao } from '../s
 import { ArrowLeftRight, Check, X, FileText, Printer, ShieldCheck, Wrench, Download } from 'lucide-react';
 import { getReversedStatus } from '../services/utilidades';
 
+const TIPO_MOV_LABEL: Record<string, string> = {
+  CHECK_OUT: 'Saída',
+  CHECK_IN: 'Entrada',
+  TRANSFERENCIA: 'Transferência',
+  MANUTENCAO: 'Manutenção',
+  BAIXA: 'Baixa',
+  EMPRESTIMO: 'Empréstimo',
+  VIAGEM: 'Viagem',
+};
+
 const Movimentacoes: React.FC = () => {
   const { user, hasPermission } = useAuth();
 
@@ -495,16 +505,18 @@ const Movimentacoes: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-mono font-bold text-primary bg-primary-container/10 px-2 py-0.5 rounded">
-                          {m.id.toUpperCase()}
-                        </span>
                         <span className="text-[10px] font-bold text-outline">{new Date(m.data_movimentacao).toLocaleDateString()}</span>
+                        <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">
+                          {TIPO_MOV_LABEL[m.tipo] || m.tipo}
+                        </span>
                       </div>
                       <h3 className="text-xs font-bold text-on-surface mb-1 truncate">{m.item_nome}</h3>
                       <div className="flex items-center gap-1.5 text-[10px] font-semibold text-on-surface-variant">
-                        <span className="text-secondary">{m.tipo}</span>
                         <ArrowLeftRight size={10} className="text-outline" />
                         <span className="truncate max-w-[150px]" title={m.destino}>{m.destino}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-1 text-[9px] text-outline">
+                        <span>Solicitado por: <strong className="text-on-surface-variant">{m.solicitante_nome}</strong></span>
                       </div>
                     </div>
 
