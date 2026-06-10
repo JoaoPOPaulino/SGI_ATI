@@ -215,8 +215,12 @@ const Inventario: React.FC = () => {
       setFormError('Itens serializados exigem o Número de Série.');
       return;
     }
-    if (formStatus === 'ATIVO' && (formCondicao === 'ESTRAGADO')) {
+    if (formStatus === 'ATIVO' && formCondicao === 'ESTRAGADO') {
       setFormError('Equipamento ESTRAGADO não pode estar ATIVO. Altere o status para EM_MANUTENCAO ou a condição.');
+      return;
+    }
+    if (formStatus === 'EM_MANUTENCAO' && (formCondicao === 'NOVO' || formCondicao === 'BOM')) {
+      setFormError('Equipamento em manutenção deve estar RUIM ou ESTRAGADO. Ajuste a condição.');
       return;
     }
 

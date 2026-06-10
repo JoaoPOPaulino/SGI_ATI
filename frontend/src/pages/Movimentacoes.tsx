@@ -41,8 +41,6 @@ const Movimentacoes: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [formObs, setFormObs] = useState('');
   const [signDigitally, setSignDigitally] = useState(false);
-  const [formEntregador, setFormEntregador] = useState('');
-  const [formRecebedor, setFormRecebedor] = useState('');
   
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
@@ -70,9 +68,6 @@ const Movimentacoes: React.FC = () => {
     } else if (formTipo === 'VIAGEM') {
       setFormTipoDoc('CONTROLE_ENTRADA_SAIDA');
       setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
-    } else if (formTipo === 'CHECK_OUT' || formTipo === 'CHECK_IN') {
-      setFormTipoDoc('CONTROLE_ENTRADA_SAIDA');
-      setFormDestinoPolo(''); setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
     } else {
       setFormTipoDoc('GUIA_MOVIMENTACAO');
       setFormDestinoLivre('');
@@ -154,7 +149,7 @@ const Movimentacoes: React.FC = () => {
         aprovador_nome: user?.nome || 'Anônimo',
         status_aprovacao: 'APROVADO',
         data_movimentacao: now,
-        observacao: [formObs, formEntregador ? `Entregue por: ${formEntregador}` : '', formRecebedor ? `Recebido por: ${formRecebedor}` : ''].filter(Boolean).join(' | '),
+        observacao: formObs,
         tipo_documento: formTipoDoc,
         signature_token: `sha256-${crypto.randomUUID()}${crypto.randomUUID()}`
       };
@@ -171,17 +166,6 @@ const Movimentacoes: React.FC = () => {
       } else if (formTipo === 'CHECK_IN') {
         await updateItem(item.id, {
           status: 'GUARDADO',
-          localizacao_atual: destinoFinal,
-          updated_at: now,
-          polo: formDestinoPolo,
-          andar: formDestinoAndar,
-          setor: formDestinoSetor,
-          sala: formDestinoSala,
-          estacao: formDestinoEstacao
-        });
-      } else if (formTipo === 'CHECK_OUT') {
-        await updateItem(item.id, {
-          status: 'ATIVO',
           localizacao_atual: destinoFinal,
           updated_at: now,
           polo: formDestinoPolo,
@@ -210,8 +194,6 @@ const Movimentacoes: React.FC = () => {
       setFormDestinoEstacao('');
       setFormDestinoLivre('');
       setFormObs('');
-      setFormEntregador('');
-      setFormRecebedor('');
       setSignDigitally(false);
       setFormSuccess('Guia emitida com sucesso!');
       await loadData();
@@ -332,7 +314,7 @@ const Movimentacoes: React.FC = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Tipo de Movimentação</label>
                 <select
@@ -341,22 +323,8 @@ const Movimentacoes: React.FC = () => {
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                 >
                   <option value="TRANSFERENCIA">Transferência (Local)</option>
-                  <option value="CHECK_OUT">Saída (Almox → Local)</option>
-                  <option value="CHECK_IN">Entrada (Local → Almox)</option>
                   <option value="MANUTENCAO">Envio p/ Manutenção</option>
                   <option value="VIAGEM">Viagem Externa</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Tipo de Documento</label>
-                <select
-                  value={formTipoDoc}
-                  onChange={(e) => setFormTipoDoc(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-                >
-                  <option value="GUIA_MOVIMENTACAO">Guia de Movimentação</option>
-                  <option value="CONTROLE_ENTRADA_SAIDA">Controle de Entrada/Saída</option>
-                  <option value="LAUDO_TECNICO">Laudo Técnico</option>
                 </select>
               </div>
             </div>
@@ -437,29 +405,6 @@ const Movimentacoes: React.FC = () => {
                 placeholder="Justificativa da movimentação..."
                 className="w-full px-4 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface focus:ring-1"
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Entregador</label>
-                <input
-                  type="text"
-                  value={formEntregador}
-                  onChange={(e) => setFormEntregador(e.target.value)}
-                  placeholder="Nome de quem entregou"
-                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface focus:ring-1"
-                />
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Recebedor</label>
-                <input
-                  type="text"
-                  value={formRecebedor}
-                  onChange={(e) => setFormRecebedor(e.target.value)}
-                  placeholder="Nome de quem recebeu"
-                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface focus:ring-1"
-                />
-              </div>
             </div>
 
             {/* Caixa de Assinatura Digital (Issue #14) */}
