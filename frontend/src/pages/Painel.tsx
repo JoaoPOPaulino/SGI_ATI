@@ -1,4 +1,5 @@
 import React, { useMemo, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { Item, Movimentacao, Loan } from '../services/bancoMock';
 import { fetchItens } from '../services/supabaseItens';
@@ -32,6 +33,7 @@ const TIPO_MOV_LABEL: Record<string, { label: string; color: string }> = {
 
 const Dashboard: React.FC = () => {
   const { user, hasPermission } = useAuth();
+  const navigate = useNavigate();
   const [itens, setItens] = useState<Item[]>([]);
   const [movs, setMovs] = useState<Movimentacao[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -146,7 +148,7 @@ const Dashboard: React.FC = () => {
 
         {/* Mini cards de resumo pessoal */}
         <div className={`grid grid-cols-1 gap-4 mb-4 ${isSuperiorOrAdmin ? 'sm:grid-cols-2' : 'sm:grid-cols-1'}`}>
-          <div className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10">
+          <div onClick={() => navigate('/movimentacoes')} className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10 cursor-pointer hover:shadow-md transition-all">
             <div className="flex items-center gap-2 mb-2">
               <Clock size={14} className="text-amber-500" />
               <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Minhas Pendências</span>
@@ -154,7 +156,7 @@ const Dashboard: React.FC = () => {
             <h3 className="text-2xl font-black text-amber-500">{meusDados.minhasSolicitacoes.length}</h3>
           </div>
           {isSuperiorOrAdmin && (
-            <div className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10">
+            <div onClick={() => navigate('/movimentacoes')} className="bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10 cursor-pointer hover:shadow-md transition-all">
               <div className="flex items-center gap-2 mb-2">
                 <Shield size={14} className="text-violet-500" />
                 <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Aguardam Aprovação</span>
@@ -173,7 +175,7 @@ const Dashboard: React.FC = () => {
               {meusDados.minhasSolicitacoes.map((mov) => {
                 const tipoInfo = TIPO_MOV_LABEL[mov.tipo] || { label: mov.tipo, color: 'text-outline' };
                 return (
-                  <div key={mov.id} className="bg-surface-container-lowest/90 backdrop-blur-sm p-4 rounded-xl border border-amber-500/20 flex items-center gap-4 hover:shadow-md transition-all">
+                  <div key={mov.id} onClick={() => navigate('/movimentacoes')} className="bg-surface-container-lowest/90 backdrop-blur-sm p-4 rounded-xl border border-amber-500/20 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer">
                     <div className="p-2.5 bg-amber-500/10 rounded-lg text-amber-500">
                       <Clock size={16} />
                     </div>
@@ -208,7 +210,7 @@ const Dashboard: React.FC = () => {
               {meusDados.aprovarPendentes.map((mov) => {
                 const tipoInfo = TIPO_MOV_LABEL[mov.tipo] || { label: mov.tipo, color: 'text-outline' };
                 return (
-                  <div key={mov.id} className="bg-surface-container-lowest/90 backdrop-blur-sm p-4 rounded-xl border border-violet-500/20 flex items-center gap-4 hover:shadow-md transition-all">
+                  <div key={mov.id} onClick={() => navigate('/movimentacoes')} className="bg-surface-container-lowest/90 backdrop-blur-sm p-4 rounded-xl border border-violet-500/20 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer">
                     <div className="p-2.5 bg-violet-500/10 rounded-lg text-violet-500">
                       <Shield size={16} />
                     </div>
@@ -241,7 +243,7 @@ const Dashboard: React.FC = () => {
       <div className="space-y-3">
         {/* Prontos para Retirada — Todos os usuários */}
         {stats.prontosRetirada > 0 && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
+          <div onClick={() => navigate('/inventario')} className="bg-emerald-50 border border-emerald-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up cursor-pointer hover:shadow-md transition-all">
             <CheckCircle size={20} className="text-emerald-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -257,7 +259,7 @@ const Dashboard: React.FC = () => {
 
         {/* Empréstimos Vencidos — SUPERIOR/ADMIN */}
         {isSuperiorOrAdmin && overdueLoans.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
+          <div onClick={() => navigate('/emprestimos')} className="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up cursor-pointer hover:shadow-md transition-all">
             <AlertTriangle size={20} className="text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -275,7 +277,7 @@ const Dashboard: React.FC = () => {
 
         {/* Baixas Aguardando — SUPERIOR/ADMIN */}
         {isSuperiorOrAdmin && stats.aguardandoBaixa > 0 && (
-          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up">
+          <div onClick={() => navigate('/manutencao')} className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3 animate-slide-up cursor-pointer hover:shadow-md transition-all">
             <Clock size={20} className="text-amber-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
@@ -305,7 +307,7 @@ const Dashboard: React.FC = () => {
         <h2 className="text-sm font-bold text-on-surface-variant uppercase tracking-wider mb-4">Visão Geral do Acervo</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           
-          <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-primary hover:shadow-md transition-all">
+          <div onClick={() => navigate('/inventario')} className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-primary hover:shadow-md transition-all cursor-pointer">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-primary-fixed rounded-lg text-primary"><Package size={16} /></div>
             </div>
@@ -313,7 +315,7 @@ const Dashboard: React.FC = () => {
             <h4 className="text-xl font-black text-primary mt-0.5">{stats.total}</h4>
           </div>
 
-          <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-emerald-600/50 hover:shadow-md transition-all">
+          <div onClick={() => navigate('/inventario')} className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-emerald-600/50 hover:shadow-md transition-all cursor-pointer">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-tertiary-container/30 rounded-lg text-tertiary"><CheckCircle size={16} /></div>
             </div>
@@ -321,7 +323,7 @@ const Dashboard: React.FC = () => {
             <h4 className="text-xl font-black text-tertiary mt-0.5">{stats.disponiveis}</h4>
           </div>
 
-          <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-violet-600/50 hover:shadow-md transition-all">
+          <div onClick={() => navigate('/emprestimos')} className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-violet-600/50 hover:shadow-md transition-all cursor-pointer">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-violet-500/10 rounded-lg"><ArrowLeftRight size={16} className="text-violet-500" /></div>
             </div>
@@ -329,7 +331,7 @@ const Dashboard: React.FC = () => {
             <h4 className="text-xl font-black text-violet-500 mt-0.5">{stats.emprestados}</h4>
           </div>
 
-          <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-teal-600/50 hover:shadow-md transition-all">
+          <div onClick={() => navigate('/emprestimos')} className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-teal-600/50 hover:shadow-md transition-all cursor-pointer">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-teal-500/10 rounded-lg"><User size={16} className="text-teal-500" /></div>
             </div>
@@ -337,7 +339,7 @@ const Dashboard: React.FC = () => {
             <h4 className="text-xl font-black text-teal-500 mt-0.5">{stats.emEvento}</h4>
           </div>
 
-          <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-orange-600/50 hover:shadow-md transition-all">
+          <div onClick={() => navigate('/manutencao')} className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-orange-600/50 hover:shadow-md transition-all cursor-pointer">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-orange-500/10 rounded-lg"><Wrench size={16} className="text-orange-500" /></div>
             </div>
@@ -345,7 +347,7 @@ const Dashboard: React.FC = () => {
             <h4 className="text-xl font-black text-orange-500 mt-0.5">{stats.manutencao}</h4>
           </div>
 
-          <div className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-red-600/50 hover:shadow-md transition-all">
+          <div onClick={() => navigate('/manutencao')} className="bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-red-600/50 hover:shadow-md transition-all cursor-pointer">
             <div className="flex justify-between items-start mb-2">
               <div className="p-2 bg-red-500/10 rounded-lg"><AlertTriangle size={16} className="text-red-500" /></div>
             </div>
@@ -381,8 +383,9 @@ const Dashboard: React.FC = () => {
               return (
                 <div 
                   key={index} 
+                  onClick={() => navigate('/movimentacoes')}
                   style={{ height: `${Math.max(h, 4)}%` }} 
-                  className="flex-1 bg-primary/20 hover:bg-primary transition-all rounded-t-lg relative group"
+                  className="flex-1 bg-primary/20 hover:bg-primary transition-all rounded-t-lg relative group cursor-pointer"
                 >
                   <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-surface-container-highest text-on-surface text-[10px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-lg border border-outline-variant/20">
                     {data.label}: {data.value} movs
@@ -408,7 +411,7 @@ const Dashboard: React.FC = () => {
                 recentMovs.map((mov) => {
                   const tipoInfo = TIPO_MOV_LABEL[mov.tipo] || { label: mov.tipo, color: 'text-outline' };
                   return (
-                    <div key={mov.id} className="flex gap-4">
+                    <div key={mov.id} onClick={() => navigate('/movimentacoes')} className="flex gap-4 cursor-pointer hover:bg-surface-container-low rounded-lg p-2 -mx-2 transition-colors">
                       <div className="mt-1 w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center flex-shrink-0 text-primary">
                         <ArrowLeftRight size={14} />
                       </div>
