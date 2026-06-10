@@ -1,21 +1,37 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { useAuth } from '../contexts/ContextoAutenticacao';
+import React, { useState, useEffect, useMemo } from "react";
+import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
-  Movimentacao, Item, TipoMovimentacao, StatusItem
-} from '../services/bancoMock';
-import { fetchItens, updateItem } from '../services/supabaseItens';
-import { fetchMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
-import { ArrowLeftRight, Check, X, FileText, Printer, ShieldCheck, Wrench, Download } from 'lucide-react';
-import { getReversedStatus, exportToCsv } from '../services/utilidades';
+  Movimentacao,
+  Item,
+  TipoMovimentacao,
+  StatusItem,
+} from "../services/bancoMock";
+import { fetchItens, updateItem } from "../services/supabaseItens";
+import {
+  fetchMovimentacoes,
+  createMovimentacao,
+  updateMovimentacao,
+} from "../services/supabaseMovimentacoes";
+import {
+  ArrowLeftRight,
+  Check,
+  X,
+  FileText,
+  Printer,
+  ShieldCheck,
+  Wrench,
+  Download,
+} from "lucide-react";
+import { getReversedStatus, exportToCsv } from "../services/utilidades";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
-  CHECK_OUT: 'Saída',
-  CHECK_IN: 'Entrada',
-  TRANSFERENCIA: 'Transferência',
-  MANUTENCAO: 'Manutenção',
-  BAIXA: 'Baixa',
-  EMPRESTIMO: 'Empréstimo',
-  VIAGEM: 'Viagem',
+  CHECK_OUT: "Saída",
+  CHECK_IN: "Entrada",
+  TRANSFERENCIA: "Transferência",
+  MANUTENCAO: "Manutenção",
+  BAIXA: "Baixa",
+  EMPRESTIMO: "Empréstimo",
+  VIAGEM: "Viagem",
 };
 
 const Movimentacoes: React.FC = () => {
@@ -24,35 +40,42 @@ const Movimentacoes: React.FC = () => {
   // Estados
   const [movs, setMovs] = useState<Movimentacao[]>([]);
   const [itens, setItens] = useState<Item[]>([]);
-  
+
   // Filtro
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Campos de Solicitação (Issues #9, #14)
-  const [selectedItemId, setSelectedItemId] = useState('');
-  const [formTipo, setFormTipo] = useState<TipoMovimentacao>('TRANSFERENCIA');
-  const [formTipoDoc, setFormTipoDoc] = useState<'GUIA_MOVIMENTACAO' | 'CONTROLE_ENTRADA_SAIDA' | 'LAUDO_TECNICO'>('GUIA_MOVIMENTACAO');
-  const [formDestinoPolo, setFormDestinoPolo] = useState('');
-  const [formDestinoAndar, setFormDestinoAndar] = useState('');
-  const [formDestinoSetor, setFormDestinoSetor] = useState('');
-  const [formDestinoSala, setFormDestinoSala] = useState('');
-  const [formDestinoEstacao, setFormDestinoEstacao] = useState('');
-  const [formDestinoLivre, setFormDestinoLivre] = useState('');
+  const [selectedItemId, setSelectedItemId] = useState("");
+  const [formTipo, setFormTipo] = useState<TipoMovimentacao>("TRANSFERENCIA");
+  const [formTipoDoc, setFormTipoDoc] = useState<
+    "GUIA_MOVIMENTACAO" | "CONTROLE_ENTRADA_SAIDA" | "LAUDO_TECNICO"
+  >("GUIA_MOVIMENTACAO");
+  const [formDestinoPolo, setFormDestinoPolo] = useState("");
+  const [formDestinoAndar, setFormDestinoAndar] = useState("");
+  const [formDestinoSetor, setFormDestinoSetor] = useState("");
+  const [formDestinoSala, setFormDestinoSala] = useState("");
+  const [formDestinoEstacao, setFormDestinoEstacao] = useState("");
+  const [formDestinoLivre, setFormDestinoLivre] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [formObs, setFormObs] = useState('');
+  const [formObs, setFormObs] = useState("");
   const [signDigitally, setSignDigitally] = useState(false);
-  
-  const [formError, setFormError] = useState('');
-  const [formSuccess, setFormSuccess] = useState('');
+
+  const [formError, setFormError] = useState("");
+  const [formSuccess, setFormSuccess] = useState("");
 
   // Guia de Movimentação Ativa (para Modal de Impressão)
   const [activeGuia, setActiveGuia] = useState<Movimentacao | null>(null);
 
   // Carregar dados
   const loadData = async () => {
-    const [allMovs, allItens] = await Promise.all([fetchMovimentacoes(), fetchItens()]);
+    const [allMovs, allItens] = await Promise.all([
+      fetchMovimentacoes(),
+      fetchItens(),
+    ]);
     setMovs(allMovs);
-    setItens(allItens.filter(i => i.status === 'ATIVO' || i.status === 'GUARDADO'));
+    setItens(
+      allItens.filter((i) => i.status === "ATIVO" || i.status === "GUARDADO"),
+    );
   };
 
   useEffect(() => {
@@ -60,30 +83,43 @@ const Movimentacoes: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (formTipo === 'MANUTENCAO') {
-      setFormTipoDoc('GUIA_MOVIMENTACAO');
-      setFormDestinoPolo('Laboratório');
-      setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
-      setFormDestinoLivre('');
-    } else if (formTipo === 'VIAGEM') {
-      setFormTipoDoc('CONTROLE_ENTRADA_SAIDA');
-      setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
+    if (formTipo === "MANUTENCAO") {
+      setFormTipoDoc("GUIA_MOVIMENTACAO");
+      setFormDestinoPolo("Laboratório");
+      setFormDestinoAndar("");
+      setFormDestinoSala("");
+      setFormDestinoSetor("");
+      setFormDestinoEstacao("");
+      setFormDestinoLivre("");
+    } else if (formTipo === "VIAGEM") {
+      setFormTipoDoc("CONTROLE_ENTRADA_SAIDA");
+      setFormDestinoAndar("");
+      setFormDestinoSala("");
+      setFormDestinoSetor("");
+      setFormDestinoEstacao("");
     } else {
-      setFormTipoDoc('GUIA_MOVIMENTACAO');
-      setFormDestinoLivre('');
+      setFormTipoDoc("GUIA_MOVIMENTACAO");
+      setFormDestinoLivre("");
     }
   }, [formTipo]);
 
   // Permissões
-  const isTecnicoOrHigher = hasPermission('TECNICO');
+  const isTecnicoOrHigher = hasPermission("TECNICO");
 
   // Filtragem
   const filteredMovs = useMemo(() => {
-    return movs.filter(m => 
-      m.item_nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.destino.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.solicitante_nome.toLowerCase().includes(searchQuery.toLowerCase())
-    ).sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
+    return movs
+      .filter(
+        (m) =>
+          m.item_nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.destino.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          m.solicitante_nome.toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.data_movimentacao).getTime() -
+          new Date(a.data_movimentacao).getTime(),
+      );
   }, [movs, searchQuery]);
 
   // Enviar Solicitação
@@ -91,47 +127,60 @@ const Movimentacoes: React.FC = () => {
     e.preventDefault();
     if (isSaving) return;
     setIsSaving(true);
-    setFormError('');
-    setFormSuccess('');
+    setFormError("");
+    setFormSuccess("");
 
     if (!isTecnicoOrHigher) {
-      setFormError('Apenas perfis técnicos ou superiores podem emitir movimentações oficiais.');
-      setIsSaving(false); return;
+      setFormError(
+        "Apenas perfis técnicos ou superiores podem emitir movimentações oficiais.",
+      );
+      setIsSaving(false);
+      return;
     }
 
     if (!selectedItemId) {
-      setFormError('Selecione o equipamento que deseja movimentar.');
-      setIsSaving(false); return;
+      setFormError("Selecione o equipamento que deseja movimentar.");
+      setIsSaving(false);
+      return;
     }
 
-    let destinoFinal = '';
-    if (formTipo === 'MANUTENCAO') {
-      destinoFinal = 'Laboratório (Em Manutenção)';
-    } else if (formTipo === 'VIAGEM') {
+    let destinoFinal = "";
+    if (formTipo === "MANUTENCAO") {
+      destinoFinal = "Laboratório (Em Manutenção)";
+    } else if (formTipo === "VIAGEM") {
       if (!formDestinoLivre.trim()) {
-        setFormError('Para viagens, informe o destino externo.');
-        setIsSaving(false); return;
+        setFormError("Para viagens, informe o destino externo.");
+        setIsSaving(false);
+        return;
       }
-      const prefix = formDestinoPolo.trim() ? `${formDestinoPolo} — ` : '';
+      const prefix = formDestinoPolo.trim() ? `${formDestinoPolo} — ` : "";
       destinoFinal = `${prefix}Em Viagem: ${formDestinoLivre}`;
     } else {
-      destinoFinal = [formDestinoPolo, formDestinoAndar, formDestinoSetor, formDestinoSala, formDestinoEstacao]
+      destinoFinal = [
+        formDestinoPolo,
+        formDestinoAndar,
+        formDestinoSetor,
+        formDestinoSala,
+        formDestinoEstacao,
+      ]
         .filter(Boolean)
-        .join(' - ');
+        .join(" - ");
       if (!destinoFinal) {
-        setFormError('Informe o endereço hierárquico de destino.');
-        setIsSaving(false); return;
+        setFormError("Informe o endereço hierárquico de destino.");
+        setIsSaving(false);
+        return;
       }
     }
 
     if (!signDigitally) {
-      setFormError('A assinatura digital é obrigatória para emissão de guias.');
-      setIsSaving(false); return;
+      setFormError("A assinatura digital é obrigatória para emissão de guias.");
+      setIsSaving(false);
+      return;
     }
 
     try {
       const allItens = await fetchItens();
-      const item = allItens.find(i => i.id === selectedItemId);
+      const item = allItens.find((i) => i.id === selectedItemId);
       if (!item) return;
 
       const now = new Date().toISOString();
@@ -143,65 +192,67 @@ const Movimentacoes: React.FC = () => {
         tipo: formTipo,
         origem: item.localizacao_atual,
         destino: destinoFinal,
-        solicitante_id: user?.id || 'usr-anon',
-        solicitante_nome: user?.nome || 'Anônimo',
-        aprovador_id: user?.id || 'usr-anon',
-        aprovador_nome: user?.nome || 'Anônimo',
-        status_aprovacao: 'APROVADO',
+        solicitante_id: user?.id || "usr-anon",
+        solicitante_nome: user?.nome || "Anônimo",
+        aprovador_id: user?.id || "usr-anon",
+        aprovador_nome: user?.nome || "Anônimo",
+        status_aprovacao: "APROVADO",
         data_movimentacao: now,
         observacao: formObs,
         tipo_documento: formTipoDoc,
-        signature_token: `sha256-${crypto.randomUUID()}${crypto.randomUUID()}`
+        signature_token: `sha256-${crypto.randomUUID()}${crypto.randomUUID()}`,
       };
 
       await createMovimentacao(newMov);
 
       // Atualiza localização/status do item
-      if (formTipo === 'MANUTENCAO') {
+      if (formTipo === "MANUTENCAO") {
         await updateItem(item.id, {
-          status: 'EM_MANUTENCAO',
-          localizacao_atual: 'Laboratório (Em Manutenção)',
-          updated_at: now
+          status: "EM_MANUTENCAO",
+          localizacao_atual: "Laboratório (Em Manutenção)",
+          updated_at: now,
         });
-      } else if (formTipo === 'CHECK_IN') {
+      } else if (formTipo === "CHECK_IN") {
         await updateItem(item.id, {
-          status: 'GUARDADO',
+          status: "GUARDADO",
           localizacao_atual: destinoFinal,
           updated_at: now,
           polo: formDestinoPolo,
           andar: formDestinoAndar,
           setor: formDestinoSetor,
           sala: formDestinoSala,
-          estacao: formDestinoEstacao
+          estacao: formDestinoEstacao,
         });
       } else {
         await updateItem(item.id, {
           localizacao_atual: destinoFinal,
           updated_at: now,
-          polo: formTipo === 'VIAGEM' ? 'Viagem Externa' : formDestinoPolo,
-          andar: formTipo === 'VIAGEM' ? '' : formDestinoAndar,
-          setor: formTipo === 'VIAGEM' ? '' : formDestinoSetor,
-          sala: formTipo === 'VIAGEM' ? '' : formDestinoSala,
-          estacao: formTipo === 'VIAGEM' ? '' : formDestinoEstacao
+          polo: formTipo === "VIAGEM" ? "Viagem Externa" : formDestinoPolo,
+          andar: formTipo === "VIAGEM" ? "" : formDestinoAndar,
+          setor: formTipo === "VIAGEM" ? "" : formDestinoSetor,
+          sala: formTipo === "VIAGEM" ? "" : formDestinoSala,
+          estacao: formTipo === "VIAGEM" ? "" : formDestinoEstacao,
         });
       }
 
-      setSelectedItemId('');
-      setFormDestinoPolo('');
-      setFormDestinoAndar('');
-      setFormDestinoSetor('');
-      setFormDestinoSala('');
-      setFormDestinoEstacao('');
-      setFormDestinoLivre('');
-      setFormObs('');
+      setSelectedItemId("");
+      setFormDestinoPolo("");
+      setFormDestinoAndar("");
+      setFormDestinoSetor("");
+      setFormDestinoSala("");
+      setFormDestinoEstacao("");
+      setFormDestinoLivre("");
+      setFormObs("");
       setSignDigitally(false);
-      setFormSuccess('Guia emitida com sucesso!');
+      setFormSuccess("Guia emitida com sucesso!");
       await loadData();
-      
+
       // Auto abrir para impressão
       setActiveGuia(newMov);
     } catch {
-      setFormError('Erro ao emitir guia. Verifique a conexão e tente novamente.');
+      setFormError(
+        "Erro ao emitir guia. Verifique a conexão e tente novamente.",
+      );
     } finally {
       setIsSaving(false);
     }
@@ -209,87 +260,129 @@ const Movimentacoes: React.FC = () => {
 
   // Aprovar movimentação PENDENTE (Superior/Admin)
   const handleApproveMovement = async (mov: Movimentacao) => {
-    if (!hasPermission('SUPERIOR')) return;
+    if (!hasPermission("SUPERIOR")) return;
 
     const now = new Date().toISOString();
     try {
       await updateMovimentacao(mov.id, {
-        status_aprovacao: 'APROVADO',
+        status_aprovacao: "APROVADO",
         aprovador_id: user?.id,
         aprovador_nome: user?.nome,
-        data_movimentacao: now
+        data_movimentacao: now,
       });
 
-      if (mov.tipo === 'BAIXA') {
+      if (mov.tipo === "BAIXA") {
         await updateItem(mov.item_id, {
-          status: 'BAIXADO',
-          localizacao_atual: 'Baixado / Descartado Definitivamente',
-          updated_at: now
+          status: "BAIXADO",
+          localizacao_atual: "Baixado / Descartado Definitivamente",
+          updated_at: now,
         });
-        alert('Baixa patrimonial homologada com sucesso!');
+        alert("Baixa patrimonial homologada com sucesso!");
       }
 
       await loadData();
     } catch {
-      alert('Erro ao aprovar movimentação. Verifique sua conexão e permissões.');
+      alert(
+        "Erro ao aprovar movimentação. Verifique sua conexão e permissões.",
+      );
     }
   };
 
   // Rejeitar movimentação PENDENTE (Superior/Admin)
   const handleRejectMovement = async (mov: Movimentacao) => {
-    if (!hasPermission('SUPERIOR')) return;
+    if (!hasPermission("SUPERIOR")) return;
 
-    const motivo = prompt('Informe o motivo da rejeição:');
+    const motivo = prompt("Informe o motivo da rejeição:");
     if (!motivo) return;
 
     const now = new Date().toISOString();
     try {
       await updateMovimentacao(mov.id, {
-        status_aprovacao: 'REJEITADO',
+        status_aprovacao: "REJEITADO",
         aprovador_id: user?.id,
         aprovador_nome: user?.nome,
         observacao: mov.observacao + ` | REJEITADO: ${motivo}`,
-        data_movimentacao: now
+        data_movimentacao: now,
       });
 
-      if (mov.tipo === 'BAIXA') {
+      if (mov.tipo === "BAIXA") {
         const allItens = await fetchItens();
-        const item = allItens.find(i => i.id === mov.item_id);
+        const item = allItens.find((i) => i.id === mov.item_id);
         if (item) {
           const allMovs = await fetchMovimentacoes();
           const itemMovs = allMovs
-            .filter(m => m.item_id === item.id && m.status_aprovacao === 'APROVADO' && m.tipo !== 'BAIXA')
-            .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
+            .filter(
+              (m) =>
+                m.item_id === item.id &&
+                m.status_aprovacao === "APROVADO" &&
+                m.tipo !== "BAIXA",
+            )
+            .sort(
+              (a, b) =>
+                new Date(b.data_movimentacao).getTime() -
+                new Date(a.data_movimentacao).getTime(),
+            );
 
           const revertedStatus = getReversedStatus(itemMovs) as StatusItem;
-          await updateItem(mov.item_id, { status: revertedStatus, updated_at: now });
+          await updateItem(mov.item_id, {
+            status: revertedStatus,
+            updated_at: now,
+          });
         }
       }
 
       await loadData();
-      alert('Movimentação rejeitada com sucesso.');
+      alert("Movimentação rejeitada com sucesso.");
     } catch {
-      alert('Erro ao rejeitar movimentação. Verifique sua conexão e permissões.');
+      alert(
+        "Erro ao rejeitar movimentação. Verifique sua conexão e permissões.",
+      );
     }
   };
 
   const handleExportMovimentacoesCsv = () => {
     const data = searchQuery.trim() ? filteredMovs : movs;
-    const headers = ['ID','Equipamento','Tipo','Origem','Destino','Solicitante','Status','Data'];
-    const rows = data.map(m => [m.id, m.item_nome, m.tipo, m.origem, m.destino, m.solicitante_nome, m.status_aprovacao, m.data_movimentacao]);
-    exportToCsv(headers, rows, `movimentacoes_ati_${new Date().toISOString().slice(0,10)}`);
+    const headers = [
+      "ID",
+      "Equipamento",
+      "Tipo",
+      "Origem",
+      "Destino",
+      "Solicitante",
+      "Status",
+      "Data",
+    ];
+    const rows = data.map((m) => [
+      m.id,
+      m.item_nome,
+      m.tipo,
+      m.origem,
+      m.destino,
+      m.solicitante_nome,
+      m.status_aprovacao,
+      m.data_movimentacao,
+    ]);
+    exportToCsv(
+      headers,
+      rows,
+      `movimentacoes_ati_${new Date().toISOString().slice(0, 10)}`,
+    );
   };
 
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-extrabold tracking-tight text-primary">Movimentações e Guias</h1>
-        <p className="text-xs text-outline font-semibold">Registre transferências, envie itens para manutenção ou viagens e emita guias assinadas.</p>
+        <h1 className="text-3xl font-extrabold tracking-tight text-primary">
+          Movimentações e Guias
+        </h1>
+        <p className="text-xs text-outline font-semibold">
+          Registre transferências, envie itens para manutenção ou viagens e
+          emita guias assinadas.
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8">
-        
         {/* Painel Esquerdo: Formulário (Issues #9, #14) */}
         <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest shadow-sm h-fit">
           <h2 className="text-sm font-bold text-primary mb-5 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
@@ -299,8 +392,14 @@ const Movimentacoes: React.FC = () => {
 
           <form onSubmit={handleRequest} className="space-y-4">
             <div>
-              <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Equipamento</label>
+              <label
+                htmlFor="selectedItemId"
+                className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+              >
+                Equipamento
+              </label>
               <select
+                id="selectedItemId"
                 value={selectedItemId}
                 onChange={(e) => setSelectedItemId(e.target.value)}
                 className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
@@ -308,7 +407,11 @@ const Movimentacoes: React.FC = () => {
                 <option value="">-- Selecione o Ativo --</option>
                 {itens.map((i) => (
                   <option key={i.id} value={i.id}>
-                    {i.nome} (Pat: {i.numero_patrimonio || 'S/N: ' + i.numero_serie || 'Consumível'})
+                    {i.nome} (Pat:{" "}
+                    {i.numero_patrimonio ||
+                      "S/N: " + i.numero_serie ||
+                      "Consumível"}
+                    )
                   </option>
                 ))}
               </select>
@@ -316,10 +419,18 @@ const Movimentacoes: React.FC = () => {
 
             <div className="grid grid-cols-1 gap-3">
               <div>
-                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Tipo de Movimentação</label>
+                <label
+                  htmlFor="formTipo"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  Tipo de Movimentação
+                </label>
                 <select
+                  id="formTipo"
                   value={formTipo}
-                  onChange={(e) => setFormTipo(e.target.value as TipoMovimentacao)}
+                  onChange={(e) =>
+                    setFormTipo(e.target.value as TipoMovimentacao)
+                  }
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                 >
                   <option value="TRANSFERENCIA">Transferência (Local)</option>
@@ -330,20 +441,31 @@ const Movimentacoes: React.FC = () => {
             </div>
 
             <div className="bg-surface p-4 border border-outline-variant/20 rounded-xl space-y-3">
-              <h4 className="font-bold text-primary text-xs border-b border-outline-variant/10 pb-1">Destino</h4>
-              
-              {formTipo === 'MANUTENCAO' ? (
+              <h3 className="font-bold text-primary text-xs border-b border-outline-variant/10 pb-1">
+                Destino
+              </h3>
+
+              {formTipo === "MANUTENCAO" ? (
                 <div className="p-3 bg-primary/5 border border-primary/10 rounded-lg">
                   <p className="text-xs font-bold text-primary flex items-center gap-2">
                     <Wrench size={14} /> Laboratório (Em Manutenção)
                   </p>
-                  <p className="text-5xs text-primary/70 mt-1">Destino automático. O item ficará na fila do LABIN para reparo técnico.</p>
+                  <p className="text-5xs text-primary/70 mt-1">
+                    Destino automático. O item ficará na fila do LABIN para
+                    reparo técnico.
+                  </p>
                 </div>
-              ) : formTipo === 'VIAGEM' ? (
+              ) : formTipo === "VIAGEM" ? (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">Polo de Origem</label>
+                    <label
+                      htmlFor="formDestinoPoloViagem"
+                      className="block text-[9px] font-bold text-outline uppercase mb-1"
+                    >
+                      Polo de Origem
+                    </label>
                     <input
+                      id="formDestinoPoloViagem"
                       type="text"
                       value={formDestinoPolo}
                       onChange={(e) => setFormDestinoPolo(e.target.value)}
@@ -352,8 +474,14 @@ const Movimentacoes: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">Destino da Viagem *</label>
+                    <label
+                      htmlFor="formDestinoLivre"
+                      className="block text-[9px] font-bold text-outline uppercase mb-1"
+                    >
+                      Destino da Viagem *
+                    </label>
                     <input
+                      id="formDestinoLivre"
                       type="text"
                       value={formDestinoLivre}
                       onChange={(e) => setFormDestinoLivre(e.target.value)}
@@ -365,8 +493,14 @@ const Movimentacoes: React.FC = () => {
               ) : (
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">Polo *</label>
+                    <label
+                      htmlFor="formDestinoPolo"
+                      className="block text-[9px] font-bold text-outline uppercase mb-1"
+                    >
+                      Polo *
+                    </label>
                     <input
+                      id="formDestinoPolo"
                       type="text"
                       value={formDestinoPolo}
                       onChange={(e) => setFormDestinoPolo(e.target.value)}
@@ -375,8 +509,14 @@ const Movimentacoes: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">Andar / Setor</label>
+                    <label
+                      htmlFor="formDestinoAndar"
+                      className="block text-[9px] font-bold text-outline uppercase mb-1"
+                    >
+                      Andar / Setor
+                    </label>
                     <input
+                      id="formDestinoAndar"
                       type="text"
                       value={formDestinoAndar}
                       onChange={(e) => setFormDestinoAndar(e.target.value)}
@@ -384,8 +524,14 @@ const Movimentacoes: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">Sala</label>
+                    <label
+                      htmlFor="formDestinoSala"
+                      className="block text-[9px] font-bold text-outline uppercase mb-1"
+                    >
+                      Sala
+                    </label>
                     <input
+                      id="formDestinoSala"
                       type="text"
                       value={formDestinoSala}
                       onChange={(e) => setFormDestinoSala(e.target.value)}
@@ -397,8 +543,14 @@ const Movimentacoes: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Observação (Motivo)</label>
+              <label
+                htmlFor="formObs"
+                className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+              >
+                Observação (Motivo)
+              </label>
               <textarea
+                id="formObs"
                 rows={2}
                 value={formObs}
                 onChange={(e) => setFormObs(e.target.value)}
@@ -409,16 +561,24 @@ const Movimentacoes: React.FC = () => {
 
             {/* Caixa de Assinatura Digital (Issue #14) */}
             <div className="bg-primary-fixed/30 p-4 border border-primary/20 rounded-xl flex items-start gap-3">
-              <input 
-                type="checkbox" 
+              <input
+                type="checkbox"
                 id="signDoc"
                 checked={signDigitally}
                 onChange={(e) => setSignDigitally(e.target.checked)}
                 className="mt-0.5 rounded text-primary focus:ring-primary"
               />
               <div className="flex-1">
-                <label htmlFor="signDoc" className="text-[11px] font-bold text-primary block cursor-pointer">Assinar Digitalmente (Obrigatório)</label>
-                <p className="text-[9px] text-primary/70 mt-1 leading-relaxed">Declaro ter poderes e ciência sobre a emissão deste documento oficial de custódia patrimonial da ATI.</p>
+                <label
+                  htmlFor="signDoc"
+                  className="text-[11px] font-bold text-primary block cursor-pointer"
+                >
+                  Assinar Digitalmente (Obrigatório)
+                </label>
+                <p className="text-[9px] text-primary/70 mt-1 leading-relaxed">
+                  Declaro ter poderes e ciência sobre a emissão deste documento
+                  oficial de custódia patrimonial da ATI.
+                </p>
               </div>
             </div>
 
@@ -454,8 +614,9 @@ const Movimentacoes: React.FC = () => {
               </h2>
               <div className="flex items-center gap-2">
                 <div className="flex items-center bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/10">
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
+                    aria-label="Buscar guias emitidas"
                     placeholder="Buscar guias..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
@@ -486,28 +647,42 @@ const Movimentacoes: React.FC = () => {
                   >
                     <div>
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[10px] font-bold text-outline">{new Date(m.data_movimentacao).toLocaleDateString()}</span>
+                        <span className="text-[10px] font-bold text-outline">
+                          {new Date(m.data_movimentacao).toLocaleDateString()}
+                        </span>
                         <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">
                           {TIPO_MOV_LABEL[m.tipo] || m.tipo}
                         </span>
                       </div>
-                      <h3 className="text-xs font-bold text-on-surface mb-1 truncate">{m.item_nome}</h3>
+                      <h3 className="text-xs font-bold text-on-surface mb-1 truncate">
+                        {m.item_nome}
+                      </h3>
                       <div className="flex items-center gap-1.5 text-[10px] font-semibold text-on-surface-variant">
                         <ArrowLeftRight size={10} className="text-outline" />
-                        <span className="truncate max-w-[150px]" title={m.destino}>{m.destino}</span>
+                        <span
+                          className="truncate max-w-[150px]"
+                          title={m.destino}
+                        >
+                          {m.destino}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1 mt-1 text-[9px] text-outline">
-                        <span>Solicitado por: <strong className="text-on-surface-variant">{m.solicitante_nome}</strong></span>
+                        <span>
+                          Solicitado por:{" "}
+                          <strong className="text-on-surface-variant">
+                            {m.solicitante_nome}
+                          </strong>
+                        </span>
                       </div>
                     </div>
 
                     <div className="flex flex-col items-end gap-2">
-                      {m.status_aprovacao === 'PENDENTE' ? (
+                      {m.status_aprovacao === "PENDENTE" ? (
                         <>
                           <span className="px-2 py-0.5 rounded border text-[9px] font-black uppercase bg-amber-50 text-amber-700 border-amber-200">
                             Pendente
                           </span>
-                          {hasPermission('SUPERIOR') && m.tipo === 'BAIXA' && (
+                          {hasPermission("SUPERIOR") && m.tipo === "BAIXA" && (
                             <div className="flex items-center gap-1">
                               <button
                                 onClick={() => handleApproveMovement(m)}
@@ -526,7 +701,7 @@ const Movimentacoes: React.FC = () => {
                             </div>
                           )}
                         </>
-                      ) : m.status_aprovacao === 'REJEITADO' ? (
+                      ) : m.status_aprovacao === "REJEITADO" ? (
                         <span className="px-2 py-0.5 rounded border text-[9px] font-black uppercase bg-red-50 text-red-700 border-red-200">
                           Rejeitado
                         </span>
@@ -549,7 +724,6 @@ const Movimentacoes: React.FC = () => {
             )}
           </div>
         </div>
-
       </div>
 
       {/* Modal de Impressão (Guia em PDF Simulado - Issue #14) */}
@@ -560,9 +734,13 @@ const Movimentacoes: React.FC = () => {
             <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4 mb-6">
               <div>
                 <h1 className="text-lg font-extrabold uppercase leading-tight tracking-tight text-slate-900 truncate">
-                  {activeGuia.tipo_documento ? activeGuia.tipo_documento.replace(/_/g, ' ') : 'GUIA DE MOVIMENTAÇÃO'}
+                  {activeGuia.tipo_documento
+                    ? activeGuia.tipo_documento.replace(/_/g, " ")
+                    : "GUIA DE MOVIMENTAÇÃO"}
                 </h1>
-                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mt-1">SGI-ATI / Logística e Patrimônio</span>
+                <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest block mt-1">
+                  SGI-ATI / Logística e Patrimônio
+                </span>
               </div>
               <button
                 onClick={() => setActiveGuia(null)}
@@ -577,43 +755,75 @@ const Movimentacoes: React.FC = () => {
             <div className="space-y-6 text-xs leading-relaxed text-slate-800">
               <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 border border-slate-200 rounded-xl">
                 <div>
-                  <span className="text-[9px] font-black text-slate-400 uppercase block mb-0.5">Código de Rastreio</span>
-                  <span className="font-mono font-bold text-slate-800">{activeGuia.id.toUpperCase()}</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase block mb-0.5">
+                    Código de Rastreio
+                  </span>
+                  <span className="font-mono font-bold text-slate-800">
+                    {activeGuia.id.toUpperCase()}
+                  </span>
                 </div>
                 <div>
-                  <span className="text-[9px] font-black text-slate-400 uppercase block mb-0.5">Data da Operação</span>
-                  <span className="font-bold text-slate-800">{new Date(activeGuia.data_movimentacao).toLocaleString()}</span>
+                  <span className="text-[9px] font-black text-slate-400 uppercase block mb-0.5">
+                    Data da Operação
+                  </span>
+                  <span className="font-bold text-slate-800">
+                    {new Date(activeGuia.data_movimentacao).toLocaleString()}
+                  </span>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">Dados do Equipamento</h3>
+                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
+                  Dados do Equipamento
+                </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="col-span-2">
-                    <span className="text-[10px] text-slate-500 block">Equipamento:</span>
-                    <span className="font-bold text-slate-900">{activeGuia.item_nome}</span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Equipamento:
+                    </span>
+                    <span className="font-bold text-slate-900">
+                      {activeGuia.item_nome}
+                    </span>
                   </div>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">Trajeto / Destinação</h3>
+                <h3 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
+                  Trajeto / Destinação
+                </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <span className="text-[10px] text-slate-500 block">Tipo:</span>
-                    <span className="font-semibold text-slate-800">{activeGuia.tipo}</span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Tipo:
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {activeGuia.tipo}
+                    </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-slate-500 block">Observação (Motivo):</span>
-                    <span className="font-semibold text-slate-800">{activeGuia.observacao || '-'}</span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Observação (Motivo):
+                    </span>
+                    <span className="font-semibold text-slate-800">
+                      {activeGuia.observacao || "-"}
+                    </span>
                   </div>
                   <div className="col-span-2">
-                    <span className="text-[10px] text-slate-500 block">Origem:</span>
-                    <span className="font-medium text-slate-700">{activeGuia.origem}</span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Origem:
+                    </span>
+                    <span className="font-medium text-slate-700">
+                      {activeGuia.origem}
+                    </span>
                   </div>
                   <div className="col-span-2 bg-emerald-50 p-2 border border-emerald-100 rounded">
-                    <span className="text-[10px] text-emerald-700 block font-bold">Destino Oficial:</span>
-                    <span className="font-bold text-emerald-900">{activeGuia.destino}</span>
+                    <span className="text-[10px] text-emerald-700 block font-bold">
+                      Destino Oficial:
+                    </span>
+                    <span className="font-bold text-emerald-900">
+                      {activeGuia.destino}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -621,8 +831,12 @@ const Movimentacoes: React.FC = () => {
               <div className="pt-6 border-t border-slate-200 mt-8">
                 <div className="flex justify-between items-end">
                   <div>
-                    <span className="text-[10px] text-slate-500 block">Emitido/Aprovado por:</span>
-                    <span className="font-bold text-slate-900 block">{activeGuia.aprovador_nome || activeGuia.solicitante_nome}</span>
+                    <span className="text-[10px] text-slate-500 block">
+                      Emitido/Aprovado por:
+                    </span>
+                    <span className="font-bold text-slate-900 block">
+                      {activeGuia.aprovador_nome || activeGuia.solicitante_nome}
+                    </span>
                   </div>
                   <div className="text-right">
                     {activeGuia.signature_token ? (
@@ -631,23 +845,35 @@ const Movimentacoes: React.FC = () => {
                           <ShieldCheck size={10} />
                           Assinatura Digital Válida
                         </span>
-                        <span className="block font-mono text-[9px] text-slate-400 mt-1 break-all">Hash: {activeGuia.signature_token}</span>
+                        <span className="block font-mono text-[9px] text-slate-400 mt-1 break-all">
+                          Hash: {activeGuia.signature_token}
+                        </span>
                       </>
                     ) : (
-                      <span className="text-[9px] font-black text-slate-400 uppercase">Documento Físico (Sem Token)</span>
+                      <span className="text-[9px] font-black text-slate-400 uppercase">
+                        Documento Físico (Sem Token)
+                      </span>
                     )}
                   </div>
                 </div>
-                
+
                 {/* Linhas de Assinatura Física */}
                 <div className="grid grid-cols-2 gap-8 mt-12 mb-4">
                   <div className="border-t border-slate-400 pt-2 text-center">
-                    <span className="text-[10px] text-slate-600 font-semibold block">Responsável pela Entrega</span>
-                    <span className="text-[9px] text-slate-400 block">Data: ____/____/________</span>
+                    <span className="text-[10px] text-slate-600 font-semibold block">
+                      Responsável pela Entrega
+                    </span>
+                    <span className="text-[9px] text-slate-400 block">
+                      Data: ____/____/________
+                    </span>
                   </div>
                   <div className="border-t border-slate-400 pt-2 text-center">
-                    <span className="text-[10px] text-slate-600 font-semibold block">Recebedor (Destino)</span>
-                    <span className="text-[9px] text-slate-400 block">Data: ____/____/________</span>
+                    <span className="text-[10px] text-slate-600 font-semibold block">
+                      Recebedor (Destino)
+                    </span>
+                    <span className="text-[9px] text-slate-400 block">
+                      Data: ____/____/________
+                    </span>
                   </div>
                 </div>
               </div>
