@@ -80,14 +80,14 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const stats = useMemo(() => {
-    const nonBixado = itens.filter(i => i.status !== 'BAIXADO');
+    const nonBaixado = itens.filter(i => i.status !== 'BAIXADO');
     return {
-      total: nonBixado.length,
-      estragados: nonBixado.filter(i => i.condicao === 'ESTRAGADO').length,
-      manutencao: nonBixado.filter(i => i.status === 'EM_MANUTENCAO').length,
-      emprestados: nonBixado.filter(i => i.status === 'EMPRESTADO').length,
-      emEvento: nonBixado.filter(i => i.status === 'EM_EVENTO').length,
-      disponiveis: nonBixado.filter(i => i.status === 'GUARDADO' || i.status === 'ATIVO').length,
+      total: nonBaixado.length,
+      estragados: nonBaixado.filter(i => i.condicao === 'ESTRAGADO').length,
+      manutencao: nonBaixado.filter(i => i.status === 'EM_MANUTENCAO').length,
+      emprestados: nonBaixado.filter(i => i.status === 'EMPRESTADO').length,
+      emEvento: nonBaixado.filter(i => i.status === 'EM_EVENTO').length,
+      disponiveis: nonBaixado.filter(i => i.status === 'GUARDADO' || i.status === 'ATIVO').length,
       aguardandoBaixa: itens.filter(i => i.status === 'AGUARDANDO_BAIXA').length,
     };
   }, [itens]);

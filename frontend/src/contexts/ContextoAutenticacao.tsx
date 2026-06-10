@@ -185,7 +185,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (fnData?.error?.includes("Confirme seu e-mail")) {
         return { success: false, error: fnData.error };
       }
-    } catch {}
+    } catch (err) {
+      console.error('login-cpf Edge Function fallback error:', err);
+    }
 
     try {
       const { data: perfilUsuario, error: perfilError } = await supabase

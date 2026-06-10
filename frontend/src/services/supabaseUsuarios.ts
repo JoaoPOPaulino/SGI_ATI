@@ -44,9 +44,10 @@ export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
     if (!error && data && data.length > 0) {
       supabaseUsers = data as SupabaseUsuario[];
     }
-  } catch {}
+  } catch (err) {
+    console.error('Supabase fetchUsuarios error:', err);
+  }
 
-  // Sempre inclui usuários do localStorage que não existem no Supabase
   const localUsers = getUsuarios();
   const supabaseCpfs = new Set(
     supabaseUsers.map((u) => u.cpf.replace(/\D/g, "")),
@@ -98,7 +99,9 @@ export async function toggleUserStatus(
       .eq("id", userId);
 
     if (!error) return true;
-  } catch {}
+  } catch (err) {
+    console.error('Supabase toggleUserStatus error:', err);
+  }
 
   updateLocalUser(userId, { ativo });
   return true;
@@ -115,7 +118,9 @@ export async function updateUserRole(
       .eq("id", userId);
 
     if (!error) return true;
-  } catch {}
+  } catch (err) {
+    console.error('Supabase updateUserRole error:', err);
+  }
 
   updateLocalUser(userId, { perfil: perfil as Usuario["perfil"] });
   return true;
@@ -132,7 +137,9 @@ export async function updateUserPolo(
       .eq("id", userId);
 
     if (!error) return true;
-  } catch {}
+  } catch (err) {
+    console.error('Supabase updateUserPolo error:', err);
+  }
 
   updateLocalUser(userId, { polo: polo || undefined });
   return true;
@@ -153,7 +160,9 @@ export async function deleteUser(userId: string): Promise<boolean> {
     const { error } = await supabase.from("usuarios").delete().eq("id", userId);
 
     if (!error) return true;
-  } catch {}
+  } catch (err) {
+    console.error('Supabase deleteUser error:', err);
+  }
 
   const users = getUsuarios();
   saveUsuarios(users.filter((u) => u.id !== userId));
@@ -174,7 +183,9 @@ export async function fetchAuditLogsByUser(
     if (!error && data && data.length > 0) {
       return data as AuditLogRecord[];
     }
-  } catch {}
+  } catch (err) {
+    console.error('Supabase fetchAuditLogs error:', err);
+  }
 
   const logs = getAuditLogsByUser(userId);
 
@@ -202,7 +213,9 @@ export async function insertAuditLog(log: {
     const { error } = await supabase.from("audit_logs").insert(log);
 
     if (!error) return;
-  } catch {}
+  } catch (err) {
+    console.error('Supabase insertAuditLog error:', err);
+  }
 
   addAuditLog({
     adminId: log.admin_id,

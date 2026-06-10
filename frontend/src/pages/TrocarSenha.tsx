@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   AlertCircle,
   CheckCircle2,
@@ -12,6 +12,7 @@ import { supabase } from "../services/supabase";
 
 const TrocarSenha: React.FC = () => {
   const navigate = useNavigate();
+  const redirectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -37,6 +38,10 @@ const TrocarSenha: React.FC = () => {
     };
 
     verificarSessao();
+
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
   }, []);
 
   const validarSenha = () => {
@@ -107,7 +112,7 @@ const TrocarSenha: React.FC = () => {
 
       setSuccess("Senha alterada com sucesso! Redirecionando...");
 
-      setTimeout(() => {
+      redirectTimer.current = setTimeout(() => {
         navigate("/", { replace: true });
       }, 1500);
     } catch {

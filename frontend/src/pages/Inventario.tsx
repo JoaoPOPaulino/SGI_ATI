@@ -407,7 +407,7 @@ const Inventario: React.FC = () => {
     }
   };
 
-  const handleExportInvetarioCsv = () => {
+  const handleExportInventarioCsv = () => {
     const data = filteredItens;
     let csv = "ID,Nome,Tipo,Categoria,Condição,Status,Patrimônio,Serie,Polo,Localização\n";
     data.forEach(i => {
@@ -442,7 +442,7 @@ const Inventario: React.FC = () => {
             </button>
           )}
           <button
-            onClick={handleExportInvetarioCsv}
+            onClick={handleExportInventarioCsv}
             className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold rounded-xl text-xs shadow-sm transition-all"
           >
             <Download size={14} />

@@ -124,7 +124,7 @@ export interface AuditLog {
   timestamp: string;
 }
 
-export type StatusSolicitacao = 'PENDENTE' | 'APROVADO' | 'REJEITADO';
+export type StatusSolicitacao = StatusAprovacao;
 
 export interface SolicitacaoCadastro {
   id: string;

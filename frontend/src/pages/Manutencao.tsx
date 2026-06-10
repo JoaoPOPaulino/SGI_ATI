@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { Item, StatusItem, Movimentacao } from '../services/bancoMock';
+import { Item, StatusItem, Movimentacao, CondicaoItem } from '../services/bancoMock';
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer } from 'lucide-react';
-import { CondicaoItem } from '../services/bancoMock';
 import StatusBadge from '../components/DistintivoStatus';
+import { getReversedStatus } from '../services/utilidades';
 
 const Manutencao: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -108,28 +108,7 @@ const Manutencao: React.FC = () => {
         .filter(m => m.item_id === item.id && m.status_aprovacao === 'APROVADO' && m.tipo !== 'BAIXA')
         .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
 
-      let revertedStatus: StatusItem = 'ATIVO';
-      if (itemMovs.length > 0) {
-        const lastMov = itemMovs[0];
-        switch (lastMov.tipo) {
-          case 'CHECK_IN':
-            revertedStatus = lastMov.destino.includes('Almoxarifado') ? 'GUARDADO' : 'ATIVO';
-            break;
-          case 'CHECK_OUT':
-            revertedStatus = 'GUARDADO';
-            break;
-          case 'MANUTENCAO':
-            revertedStatus = 'EM_MANUTENCAO';
-            break;
-          case 'TRANSFERENCIA':
-          case 'EMPRESTIMO':
-          case 'VIAGEM':
-            revertedStatus = 'ATIVO';
-            break;
-          default:
-            revertedStatus = 'ATIVO';
-        }
-      }
+      const revertedStatus = getReversedStatus(itemMovs) as StatusItem;
 
       await updateItem(item.id, {
         status: revertedStatus,
