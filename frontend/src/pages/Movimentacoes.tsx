@@ -74,6 +74,13 @@ const Movimentacoes: React.FC = () => {
       setFormDestinoSala('');
       setFormDestinoSetor('');
       setFormDestinoEstacao('');
+    } else if (formTipo === 'CHECK_OUT') {
+      setFormTipoDoc('CONTROLE_ENTRADA_SAIDA');
+      setFormDestinoPolo('');
+      setFormDestinoAndar('');
+      setFormDestinoSala('');
+      setFormDestinoSetor('');
+      setFormDestinoEstacao('');
     } else {
       setFormDestinoLivre('');
     }
@@ -171,6 +178,17 @@ const Movimentacoes: React.FC = () => {
       } else if (formTipo === 'CHECK_IN') {
         await updateItem(item.id, {
           status: 'GUARDADO',
+          localizacao_atual: destinoFinal,
+          updated_at: now,
+          polo: formDestinoPolo,
+          andar: formDestinoAndar,
+          setor: formDestinoSetor,
+          sala: formDestinoSala,
+          estacao: formDestinoEstacao
+        });
+      } else if (formTipo === 'CHECK_OUT') {
+        await updateItem(item.id, {
+          status: 'ATIVO',
           localizacao_atual: destinoFinal,
           updated_at: now,
           polo: formDestinoPolo,
@@ -328,6 +346,7 @@ const Movimentacoes: React.FC = () => {
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                 >
                   <option value="TRANSFERENCIA">Transferência (Local)</option>
+                  <option value="CHECK_OUT">Saída / Entrega (Almox → Local)</option>
                   <option value="MANUTENCAO">Envio p/ Manutenção</option>
                   <option value="VIAGEM">Viagem Externa</option>
                 </select>
