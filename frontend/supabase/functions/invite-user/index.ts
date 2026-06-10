@@ -55,12 +55,13 @@ serve(async (req: Request) => {
       throw new Error("Configuração do servidor incompleta.");
     }
 
-    // Usar a chave anon para verificar o token (mais simples)
+    // Clientes Supabase
     const supabaseAnon = createClient(supabaseUrl, anonKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const supabasePublic = createClient(supabaseUrl, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
     });
 
     // Verificar o token de diferentes formas
@@ -161,25 +162,25 @@ serve(async (req: Request) => {
       );
     }
 
-    // Criar usuário no Auth
+    // Criar usuário no Auth (signUp envia e-mail de confirmação automaticamente)
     const { data: newAuthUser, error: signUpError } =
-      await supabaseAdmin.auth.admin.createUser({
+      await supabasePublic.auth.signUp({
         email: cleanEmail,
         password: senhaPadrao,
-        email_confirm: false,
-        user_metadata: {
-          nome: cleanNome,
-          cpf: cleanCpf,
-          perfil: perfil,
-          polo: polo || null,
+        options: {
+          emailRedirectTo: "https://sgi-ati.vercel.app/login",
+          data: {
+            nome: cleanNome,
+            cpf: cleanCpf,
+            perfil: perfil,
+            polo: polo || null,
+          },
         },
       });
 
     if (signUpError || !newAuthUser.user) {
       throw new Error(signUpError?.message || "Erro ao criar usuário.");
     }
-
-    console.log("Usuário criado no Auth:", newAuthUser.user.id);
 
     // Criar registro na tabela usuarios
     const { data: usuario, error: insertError } = await supabaseAdmin
