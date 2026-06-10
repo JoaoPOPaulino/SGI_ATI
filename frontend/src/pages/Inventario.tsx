@@ -347,7 +347,9 @@ const Inventario: React.FC = () => {
   // Efetuar Movimentação Rápida
   const handleSaveQuickMove = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!activeQuickMoveItem) return;
+    if (isSaving || !activeQuickMoveItem) return;
+    setIsSaving(true);
+    try {
     if (!moveDestinoPolo.trim()) {
       setMoveError('Informe o Polo de destino.');
       return;
@@ -389,6 +391,9 @@ const Inventario: React.FC = () => {
     setActiveQuickMoveItem(null);
     await loadItens();
     alert('Equipamento transferido de localização com sucesso!');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Exclusão Logística (Somente Admin/Superior)

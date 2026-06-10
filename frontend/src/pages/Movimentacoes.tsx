@@ -37,7 +37,8 @@ const Movimentacoes: React.FC = () => {
   const [formDestinoSetor, setFormDestinoSetor] = useState('');
   const [formDestinoSala, setFormDestinoSala] = useState('');
   const [formDestinoEstacao, setFormDestinoEstacao] = useState('');
-  const [formDestinoLivre, setFormDestinoLivre] = useState(''); // Para viagens externas
+  const [formDestinoLivre, setFormDestinoLivre] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [formObs, setFormObs] = useState('');
   const [signDigitally, setSignDigitally] = useState(false);
   
@@ -93,17 +94,19 @@ const Movimentacoes: React.FC = () => {
   // Enviar Solicitação
   const handleRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     setFormError('');
     setFormSuccess('');
 
     if (!isTecnicoOrHigher) {
       setFormError('Apenas perfis técnicos ou superiores podem emitir movimentações oficiais.');
-      return;
+      setIsSaving(false); return;
     }
 
     if (!selectedItemId) {
       setFormError('Selecione o equipamento que deseja movimentar.');
-      return;
+      setIsSaving(false); return;
     }
 
     let destinoFinal = '';
@@ -112,7 +115,7 @@ const Movimentacoes: React.FC = () => {
     } else if (formTipo === 'VIAGEM') {
       if (!formDestinoLivre.trim()) {
         setFormError('Para viagens, informe o destino externo.');
-        return;
+        setIsSaving(false); return;
       }
       const prefix = formDestinoPolo.trim() ? `${formDestinoPolo} — ` : '';
       destinoFinal = `${prefix}Em Viagem: ${formDestinoLivre}`;
@@ -122,13 +125,13 @@ const Movimentacoes: React.FC = () => {
         .join(' - ');
       if (!destinoFinal) {
         setFormError('Informe o endereço hierárquico de destino.');
-        return;
+        setIsSaving(false); return;
       }
     }
 
     if (!signDigitally) {
       setFormError('A assinatura digital é obrigatória para emissão de guias.');
-      return;
+      setIsSaving(false); return;
     }
 
     try {
@@ -204,6 +207,8 @@ const Movimentacoes: React.FC = () => {
       setActiveGuia(newMov);
     } catch {
       setFormError('Erro ao emitir guia. Verifique a conexão e tente novamente.');
+    } finally {
+      setIsSaving(false);
     }
   };
 

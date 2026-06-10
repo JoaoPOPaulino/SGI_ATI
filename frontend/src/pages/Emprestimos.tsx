@@ -33,6 +33,7 @@ const Emprestimos: React.FC = () => {
   const [formItensSelecionados, setFormItensSelecionados] = useState<string[]>([]);
   const [formEventError, setFormEventError] = useState('');
   const [formEventSuccess, setFormEventSuccess] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const [activeReturnLoan, setActiveReturnLoan] = useState<Loan | null>(null);
   const [returnCondicao, setReturnCondicao] = useState<CondicaoItem>('BOM');
@@ -128,93 +129,108 @@ const Emprestimos: React.FC = () => {
 
   const handleCreateLoan = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     setFormLoanError('');
     setFormLoanSuccess('');
 
     if (isEstagiario) {
       setFormLoanError('Apenas Técnicos e Perfis Superiores podem efetivar empréstimos.');
-      return;
+      setIsSaving(false); return;
     }
-    if (!selectedItemId) { setFormLoanError('Selecione o equipamento.'); return; }
-    if (!formResponsavel.trim()) { setFormLoanError('Informe o nome do responsável.'); return; }
-    if (!formDataRetorno) { setFormLoanError('Informe a data de retorno.'); return; }
+    if (!selectedItemId) { setFormLoanError('Selecione o equipamento.'); setIsSaving(false); return; }
+    if (!formResponsavel.trim()) { setFormLoanError('Informe o nome do responsável.'); setIsSaving(false); return; }
+    if (!formDataRetorno) { setFormLoanError('Informe a data de retorno.'); setIsSaving(false); return; }
 
-    const allItens = await fetchItens();
-    const item = allItens.find(i => i.id === selectedItemId);
-    if (!item) return;
+    try {
+      const allItens = await fetchItens();
+      const item = allItens.find(i => i.id === selectedItemId);
+      if (!item) { setIsSaving(false); return; }
 
-    await updateItem(item.id, {
-      localizacao_atual: `Emprestado para: ${formResponsavel}`,
-      status: 'EMPRESTADO',
-      updated_at: new Date().toISOString()
-    });
+      await updateItem(item.id, {
+        localizacao_atual: `Emprestado para: ${formResponsavel}`,
+        status: 'EMPRESTADO',
+        updated_at: new Date().toISOString()
+      });
 
-    const newLoan: Loan = {
-      id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome,
-      responsavel: formResponsavel, data_retorno_prevista: formDataRetorno, status: 'ATIVO'
-    };
-    await createLoan(newLoan);
+      const newLoan: Loan = {
+        id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome,
+        responsavel: formResponsavel, data_retorno_prevista: formDataRetorno, status: 'ATIVO'
+      };
+      await createLoan(newLoan);
 
-    await createMovimentacao({
-      id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome,
-      tipo: 'EMPRESTIMO', origem: item.localizacao_atual, destino: `Empréstimo: ${formResponsavel}`,
-      solicitante_id: user?.id || '', solicitante_nome: user?.nome || '',
-      status_aprovacao: 'APROVADO', data_movimentacao: new Date().toISOString(),
-      observacao: `Devolução prevista: ${formDataRetorno}`
-    });
+      await createMovimentacao({
+        id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome,
+        tipo: 'EMPRESTIMO', origem: item.localizacao_atual, destino: `Empréstimo: ${formResponsavel}`,
+        solicitante_id: user?.id || '', solicitante_nome: user?.nome || '',
+        status_aprovacao: 'APROVADO', data_movimentacao: new Date().toISOString(),
+        observacao: `Devolução prevista: ${formDataRetorno}`
+      });
 
-    setSelectedItemId(''); setFormResponsavel(''); setFormDataRetorno('');
-    setFormLoanSuccess('Empréstimo registrado com sucesso!');
-    await loadData();
+      setSelectedItemId(''); setFormResponsavel(''); setFormDataRetorno('');
+      setFormLoanSuccess('Empréstimo registrado com sucesso!');
+      await loadData();
+    } catch {
+      setFormLoanError('Erro ao registrar empréstimo. Verifique a conexão.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSaving) return;
+    setIsSaving(true);
     setFormEventError('');
     setFormEventSuccess('');
 
-    if (isEstagiario) { setFormEventError('Apenas Técnicos e Superiores podem criar eventos.'); return; }
-    if (!formNomeEvento.trim()) { setFormEventError('Informe o nome do evento.'); return; }
-    if (!formLocalEvento.trim()) { setFormEventError('Informe o local.'); return; }
-    if (!formDataInicio || !formDataFim) { setFormEventError('Informe as datas.'); return; }
+    if (isEstagiario) { setFormEventError('Apenas Técnicos e Superiores podem criar eventos.'); setIsSaving(false); return; }
+    if (!formNomeEvento.trim()) { setFormEventError('Informe o nome do evento.'); setIsSaving(false); return; }
+    if (!formLocalEvento.trim()) { setFormEventError('Informe o local.'); setIsSaving(false); return; }
+    if (!formDataInicio || !formDataFim) { setFormEventError('Informe as datas.'); setIsSaving(false); return; }
 
-    const newEvent: Evento = {
-      id: crypto.randomUUID(), nome: formNomeEvento, local: formLocalEvento,
-      data_inicio: formDataInicio, data_fim: formDataFim,
-      responsavel_id: user?.id || '', itens_alocados: formItensSelecionados
-    };
-    await createEvento(newEvent);
+    try {
+      const newEvent: Evento = {
+        id: crypto.randomUUID(), nome: formNomeEvento, local: formLocalEvento,
+        data_inicio: formDataInicio, data_fim: formDataFim,
+        responsavel_id: user?.id || '', itens_alocados: formItensSelecionados
+      };
+      await createEvento(newEvent);
 
-    if (formItensSelecionados.length > 0) {
-      const allItens = await fetchItens();
-      for (const itemId of formItensSelecionados) {
-        await updateItem(itemId, {
-          localizacao_atual: `Evento: ${formNomeEvento} (${formLocalEvento})`,
-          status: 'EM_EVENTO',
-          updated_at: new Date().toISOString()
-        });
-      }
-
-      for (const itemId of formItensSelecionados) {
-        const it = allItens.find(i => i.id === itemId);
-        if (it) {
-          await createMovimentacao({
-            id: crypto.randomUUID(), item_id: itemId, item_nome: it.nome,
-            tipo: 'TRANSFERENCIA', origem: it.localizacao_atual, destino: `Evento: ${formNomeEvento}`,
-            solicitante_id: user?.id || '', solicitante_nome: user?.nome || '',
-            status_aprovacao: 'APROVADO', data_movimentacao: new Date().toISOString(),
-            observacao: `Alocado para evento "${formNomeEvento}"`
+      if (formItensSelecionados.length > 0) {
+        const allItens = await fetchItens();
+        for (const itemId of formItensSelecionados) {
+          await updateItem(itemId, {
+            localizacao_atual: `Evento: ${formNomeEvento} (${formLocalEvento})`,
+            status: 'EM_EVENTO',
+            updated_at: new Date().toISOString()
           });
         }
+        for (const itemId of formItensSelecionados) {
+          const it = allItens.find(i => i.id === itemId);
+          if (it) {
+            await createMovimentacao({
+              id: crypto.randomUUID(), item_id: itemId, item_nome: it.nome,
+              tipo: 'TRANSFERENCIA', origem: it.localizacao_atual, destino: `Evento: ${formNomeEvento}`,
+              solicitante_id: user?.id || '', solicitante_nome: user?.nome || '',
+              status_aprovacao: 'APROVADO', data_movimentacao: new Date().toISOString(),
+              observacao: `Alocado para evento "${formNomeEvento}"`
+            });
+          }
+        }
       }
-    }
 
-    setFormNomeEvento(''); setFormLocalEvento(''); setFormDataInicio(''); setFormDataFim('');
-    setFormItensSelecionados([]);
-    setFormEventSuccess(formItensSelecionados.length > 0
-      ? `Evento criado com ${formItensSelecionados.length} equipamento(s) alocado(s)!`
-      : 'Evento cadastrado com sucesso!');
-    await loadData();
+      setFormNomeEvento(''); setFormLocalEvento(''); setFormDataInicio(''); setFormDataFim('');
+      setFormItensSelecionados([]);
+      setFormEventSuccess(formItensSelecionados.length > 0
+        ? `Evento criado com ${formItensSelecionados.length} equipamento(s) alocado(s)!`
+        : 'Evento criado com sucesso!');
+      await loadData();
+    } catch {
+      setFormEventError('Erro ao criar evento. Verifique a conexão.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const addItemToEvent = async () => {
