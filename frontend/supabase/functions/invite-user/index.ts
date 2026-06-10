@@ -10,10 +10,10 @@ declare const Deno: {
 };
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://sgi-ati.vercel.app",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-user-id, x-user-perfil",
-  "Access-Control-Allow-Methods": "POST, OPTIONS, GET",
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 type PerfilUsuario = "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
@@ -69,31 +69,21 @@ serve(async (req: Request) => {
 
     if (authHeader) {
       const token = authHeader.replace("Bearer ", "");
-      console.log(
-        "Token recebido (primeiros 20 chars):",
-        token.substring(0, 20),
-      );
 
-      // Tentativa 1: Verificar token com getUser
       const { data: userData, error: userError } =
         await supabaseAnon.auth.getUser(token);
 
       if (!userError && userData.user) {
         userId = userData.user.id;
         userEmail = userData.user.email;
-        console.log("Token válido! Usuário:", userEmail);
       } else {
-        console.error("Erro ao validar token:", userError?.message);
-
-        // Tentativa 2: Se falhou, tentar com admin client
-        const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+        const supabaseAdminAlt = createClient(supabaseUrl, serviceRoleKey);
         const { data: adminUserData, error: adminUserError } =
-          await supabaseAdmin.auth.getUser(token);
+          await supabaseAdminAlt.auth.getUser(token);
 
         if (!adminUserError && adminUserData.user) {
           userId = adminUserData.user.id;
           userEmail = adminUserData.user.email;
-          console.log("Token validado via admin! Usuário:", userEmail);
         } else {
           throw new Error("Token inválido ou expirado. Faça login novamente.");
         }
@@ -117,9 +107,7 @@ serve(async (req: Request) => {
 
     if (adminByAuthId) {
       adminUser = adminByAuthId;
-      console.log("Admin encontrado por auth_id");
     } else {
-      // Tentar encontrar por email
       const { data: adminByEmail } = await supabaseAdmin
         .from("usuarios")
         .select("id, perfil, ativo")
@@ -129,9 +117,7 @@ serve(async (req: Request) => {
 
       if (adminByEmail) {
         adminUser = adminByEmail;
-        console.log("Admin encontrado por email");
 
-        // Atualizar auth_id
         await supabaseAdmin
           .from("usuarios")
           .update({ auth_id: userId })
@@ -140,27 +126,21 @@ serve(async (req: Request) => {
     }
 
     if (!adminUser) {
-      console.error("Admin não encontrado. Email:", userEmail);
       throw new Error("Usuário não autorizado. Contate o administrador.");
     }
 
     if (adminUser.perfil !== "ADMIN") {
-      console.error("Usuário não é ADMIN. Perfil:", adminUser.perfil);
       throw new Error("Apenas ADMIN pode criar usuários.");
     }
 
-    console.log("Admin autorizado:", adminUser.id);
-
-    // Obter dados do novo usuário
     const { nome, email, cpf, perfil, polo } = await req.json();
-    console.log("Criando usuário:", { nome, email, perfil, polo });
 
     const cleanCpf = String(cpf || "").replace(/\D/g, "");
     const cleanEmail = String(email || "")
       .trim()
       .toLowerCase();
     const cleanNome = String(nome || "").trim();
-    const senhaPadrao = `${cleanCpf.slice(0, 3)}@ati`;
+    const senhaPadrao = crypto.randomUUID();
 
     if (!cleanNome || !cleanEmail || cleanCpf.length !== 11 || !perfil) {
       throw new Error("Dados obrigatórios inválidos.");
@@ -196,7 +176,6 @@ serve(async (req: Request) => {
       });
 
     if (signUpError || !newAuthUser.user) {
-      console.error("Erro ao criar usuário no Auth:", signUpError);
       throw new Error(signUpError?.message || "Erro ao criar usuário.");
     }
 
@@ -219,8 +198,6 @@ serve(async (req: Request) => {
       .single();
 
     if (insertError) {
-      console.error("Erro ao inserir na tabela usuarios:", insertError);
-      // Rollback: deletar usuário do auth
       await supabaseAdmin.auth.admin.deleteUser(newAuthUser.user.id);
       throw new Error("Erro ao salvar dados do usuário.");
     }
@@ -231,8 +208,8 @@ serve(async (req: Request) => {
       JSON.stringify({
         success: true,
         user: usuario,
-        senhaPadrao: senhaPadrao,
-        message: "Usuário criado com sucesso! Email de acesso enviado.",
+        senhaPadrao,
+        message: "Usuário criado com sucesso!",
       }),
       {
         status: 200,

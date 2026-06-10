@@ -2,10 +2,8 @@
 -- SCRIPT DE ATIVACAO SGI-ATI - Execute no SQL Editor do Supabase
 -- ================================================================
 
--- 0. Adicionar coluna senha nos usuarios existentes
+-- 0. Adicionar coluna senha nos usuarios existentes (legado, nao utilizado mais)
 ALTER TABLE public.usuarios ADD COLUMN IF NOT EXISTS senha TEXT;
-UPDATE public.usuarios SET senha = 'admin123' WHERE cpf = '00000000000';
-UPDATE public.usuarios SET senha = '123456' WHERE cpf IN ('11111111111', '22222222222', '33333333333');
 
 -- 1. Tabela Locais
 CREATE TABLE IF NOT EXISTS public.locais (

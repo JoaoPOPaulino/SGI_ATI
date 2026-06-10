@@ -7,8 +7,8 @@ verify_jwt = false
 
 [functions.invite-user]
 enabled = true
-verify_jwt = false
+verify_jwt = true
 
 [functions.delete-user]
 enabled = true
-verify_jwt = false
+verify_jwt = true
