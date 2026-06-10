@@ -137,25 +137,20 @@ const Manutencao: React.FC = () => {
           ) : (
             <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1">
               {maintenanceItens.map(item => (
-                <div key={item.id} className="p-3.5 bg-surface border border-outline-variant/10 rounded-xl flex items-center justify-between hover:border-outline-variant/30 transition-all group">
-                  <div>
-                    <span className="text-[9px] font-mono font-bold text-outline block mb-1">{item.numero_patrimonio || 'S/N: ' + item.numero_serie || 'Consumível'}</span>
+                <div key={item.id} className="p-3.5 bg-surface border border-outline-variant/10 rounded-xl flex items-center gap-3 hover:border-outline-variant/30 transition-all group">
+                  <StatusBadge type="condicao" value={item.condicao} />
+                  <div className="flex-1 min-w-0">
+                    <span className="text-[9px] font-mono font-bold text-outline block mb-0.5">{item.numero_patrimonio || 'S/N: ' + item.numero_serie || 'Consumível'}</span>
                     <h3 className="text-[11px] font-bold text-on-surface truncate">{item.nome}</h3>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide">{item.categoria}</span>
-                      <StatusBadge type="condicao" value={item.condicao} />
-                    </div>
+                    <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide mt-1 inline-block">{item.categoria}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {canModify ? (
-                      <button onClick={() => { setRepairTarget(item); setRepairCondicao(item.condicao); }} className="flex items-center gap-1 px-4 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm">
-                        <Hammer size={12} />Concluir Reparo
-                      </button>
-                    ) : (
-                      <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg">Em Reparo — LABIN</span>
-                    )}
-                    <StatusBadge type="condicao" value={item.condicao} />
-                  </div>
+                  {canModify ? (
+                    <button onClick={() => { setRepairTarget(item); setRepairCondicao(item.condicao); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
+                      <Hammer size={12} />Concluir Reparo
+                    </button>
+                  ) : (
+                    <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">Em Reparo — LABIN</span>
+                  )}
                 </div>
               ))}
             </div>
