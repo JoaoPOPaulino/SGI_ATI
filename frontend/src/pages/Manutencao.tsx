@@ -56,34 +56,38 @@ const Manutencao: React.FC = () => {
       return;
     }
 
-    const allItens = await fetchItens();
-    const item = allItens.find(i => i.id === selectedItemId);
-    if (!item) return;
+    try {
+      const allItens = await fetchItens();
+      const item = allItens.find(i => i.id === selectedItemId);
+      if (!item) return;
 
-    await updateItem(item.id, {
-      status: 'AGUARDANDO_BAIXA',
-      updated_at: new Date().toISOString()
-    });
+      await updateItem(item.id, {
+        status: 'AGUARDANDO_BAIXA',
+        updated_at: new Date().toISOString()
+      });
 
-    const newMov: Movimentacao = {
-      id: crypto.randomUUID(),
-      item_id: item.id,
-      item_nome: item.nome,
-      tipo: 'BAIXA',
-      origem: item.localizacao_atual,
-      destino: 'Depósito de Sucata / Descarte',
-      solicitante_id: user?.id || 'usr-anon',
-      solicitante_nome: user?.nome || 'Anônimo',
-      status_aprovacao: isSuperiorOrAdmin ? 'APROVADO' : 'PENDENTE',
-      data_movimentacao: new Date().toISOString(),
-      observacao: `Solicitação de baixa. Motivo: ${formMotivoBaixa}`
-    };
-    await createMovimentacao(newMov);
+      const newMov: Movimentacao = {
+        id: crypto.randomUUID(),
+        item_id: item.id,
+        item_nome: item.nome,
+        tipo: 'BAIXA',
+        origem: item.localizacao_atual,
+        destino: 'Depósito de Sucata / Descarte',
+        solicitante_id: user?.id || 'usr-anon',
+        solicitante_nome: user?.nome || 'Anônimo',
+        status_aprovacao: isSuperiorOrAdmin ? 'APROVADO' : 'PENDENTE',
+        data_movimentacao: new Date().toISOString(),
+        observacao: `Solicitação de baixa. Motivo: ${formMotivoBaixa}`
+      };
+      await createMovimentacao(newMov);
 
-    setSelectedItemId('');
-    setFormMotivoBaixa('');
-    setFormSuccess('Solicitação de baixa enviada para a fila de homologação!');
-    await loadData();
+      setSelectedItemId('');
+      setFormMotivoBaixa('');
+      setFormSuccess('Solicitação de baixa enviada para a fila de homologação!');
+      await loadData();
+    } catch {
+      setFormError('Erro ao solicitar baixa. Verifique a conexão e tente novamente.');
+    }
   };
 
   // Rejeitar Solicitação de Baixa (RF14b) - Reverte AGUARDANDO_BAIXA para o último status ativo
@@ -96,55 +100,59 @@ const Manutencao: React.FC = () => {
     const motivo = prompt('Informe o motivo da rejeição da baixa:');
     if (!motivo) return;
 
-    const currentMovs = await fetchMovimentacoes();
+    try {
+      const currentMovs = await fetchMovimentacoes();
 
-    // Inspeciona o histórico para determinar o último status correto do item
-    const itemMovs = currentMovs
-      .filter(m => m.item_id === item.id && m.status_aprovacao === 'APROVADO' && m.tipo !== 'BAIXA')
-      .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
+      // Inspeciona o histórico para determinar o último status correto do item
+      const itemMovs = currentMovs
+        .filter(m => m.item_id === item.id && m.status_aprovacao === 'APROVADO' && m.tipo !== 'BAIXA')
+        .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
 
-    let revertedStatus: StatusItem = 'ATIVO';
-    if (itemMovs.length > 0) {
-      const lastMov = itemMovs[0];
-      switch (lastMov.tipo) {
-        case 'CHECK_IN':
-          revertedStatus = lastMov.destino.includes('Almoxarifado') ? 'GUARDADO' : 'ATIVO';
-          break;
-        case 'CHECK_OUT':
-          revertedStatus = 'GUARDADO';
-          break;
-        case 'MANUTENCAO':
-          revertedStatus = 'EM_MANUTENCAO';
-          break;
-        case 'TRANSFERENCIA':
-        case 'EMPRESTIMO':
-        case 'VIAGEM':
-          revertedStatus = 'ATIVO';
-          break;
-        default:
-          revertedStatus = 'ATIVO';
+      let revertedStatus: StatusItem = 'ATIVO';
+      if (itemMovs.length > 0) {
+        const lastMov = itemMovs[0];
+        switch (lastMov.tipo) {
+          case 'CHECK_IN':
+            revertedStatus = lastMov.destino.includes('Almoxarifado') ? 'GUARDADO' : 'ATIVO';
+            break;
+          case 'CHECK_OUT':
+            revertedStatus = 'GUARDADO';
+            break;
+          case 'MANUTENCAO':
+            revertedStatus = 'EM_MANUTENCAO';
+            break;
+          case 'TRANSFERENCIA':
+          case 'EMPRESTIMO':
+          case 'VIAGEM':
+            revertedStatus = 'ATIVO';
+            break;
+          default:
+            revertedStatus = 'ATIVO';
+        }
       }
-    }
 
-    await updateItem(item.id, {
-      status: revertedStatus,
-      updated_at: new Date().toISOString()
-    });
-
-    // Marca a movimentação de BAIXA como REJEITADA
-    const baixaMov = currentMovs.find(m => m.item_id === item.id && m.tipo === 'BAIXA' && m.status_aprovacao !== 'REJEITADO');
-    if (baixaMov) {
-      await updateMovimentacao(baixaMov.id, {
-        status_aprovacao: 'REJEITADO',
-        aprovador_id: user?.id,
-        aprovador_nome: user?.nome,
-        observacao: baixaMov.observacao + ` | REJEITADO: ${motivo}`,
-        data_movimentacao: new Date().toISOString()
+      await updateItem(item.id, {
+        status: revertedStatus,
+        updated_at: new Date().toISOString()
       });
-    }
 
-    await loadData();
-    alert(`Baixa rejeitada. Item restaurado para o status "${revertedStatus}".`);
+      // Marca a movimentação de BAIXA como REJEITADA
+      const baixaMov = currentMovs.find(m => m.item_id === item.id && m.tipo === 'BAIXA' && m.status_aprovacao !== 'REJEITADO');
+      if (baixaMov) {
+        await updateMovimentacao(baixaMov.id, {
+          status_aprovacao: 'REJEITADO',
+          aprovador_id: user?.id,
+          aprovador_nome: user?.nome,
+          observacao: baixaMov.observacao + ` | REJEITADO: ${motivo}`,
+          data_movimentacao: new Date().toISOString()
+        });
+      }
+
+      await loadData();
+      alert(`Baixa rejeitada. Item restaurado para o status "${revertedStatus}".`);
+    } catch {
+      alert('Erro ao rejeitar baixa. Verifique a conexão e tente novamente.');
+    }
   };
 
   // Efetivar Baixa Definitiva (RF14)
@@ -155,28 +163,32 @@ const Manutencao: React.FC = () => {
     }
 
     if (confirm(`Deseja homologar a BAIXA DEFINITIVA do equipamento "${item.nome}"? Esta ação é irreversível no patrimônio.`)) {
-      await updateItem(item.id, {
-        status: 'BAIXADO',
-        localizacao_atual: 'Baixado / Descartado Definitivamente',
-        updated_at: new Date().toISOString()
-      });
-
-      const currentMovs = await fetchMovimentacoes();
-      const now = new Date().toISOString();
-
-      // Aprova movimentação de BAIXA pendente
-      const pendingBaixa = currentMovs.find(m => m.item_id === item.id && m.tipo === 'BAIXA' && m.status_aprovacao === 'PENDENTE');
-      if (pendingBaixa) {
-        await updateMovimentacao(pendingBaixa.id, {
-          status_aprovacao: 'APROVADO',
-          aprovador_id: user?.id,
-          aprovador_nome: user?.nome,
-          data_movimentacao: now
+      try {
+        await updateItem(item.id, {
+          status: 'BAIXADO',
+          localizacao_atual: 'Baixado / Descartado Definitivamente',
+          updated_at: new Date().toISOString()
         });
-      }
 
-      await loadData();
-      alert('Baixa patrimonial do ativo concluída com sucesso!');
+        const currentMovs = await fetchMovimentacoes();
+        const now = new Date().toISOString();
+
+        // Aprova movimentação de BAIXA pendente
+        const pendingBaixa = currentMovs.find(m => m.item_id === item.id && m.tipo === 'BAIXA' && m.status_aprovacao === 'PENDENTE');
+        if (pendingBaixa) {
+          await updateMovimentacao(pendingBaixa.id, {
+            status_aprovacao: 'APROVADO',
+            aprovador_id: user?.id,
+            aprovador_nome: user?.nome,
+            data_movimentacao: now
+          });
+        }
+
+        await loadData();
+        alert('Baixa patrimonial do ativo concluída com sucesso!');
+      } catch {
+        alert('Erro ao efetivar baixa. Verifique a conexão e tente novamente.');
+      }
     }
   };
 
@@ -184,34 +196,38 @@ const Manutencao: React.FC = () => {
   const handleCompleteRepair = async () => {
     if (!repairTarget || !canModify) return;
 
-    const now = new Date().toISOString();
-    await updateItem(repairTarget.id, {
-      status: 'GUARDADO',
-      condicao: repairCondicao,
-      localizacao_atual: 'Almoxarifado Central (Manutenção Concluída)',
-      updated_at: now
-    });
+    try {
+      const now = new Date().toISOString();
+      await updateItem(repairTarget.id, {
+        status: 'GUARDADO',
+        condicao: repairCondicao,
+        localizacao_atual: 'Almoxarifado Central (Manutenção Concluída)',
+        updated_at: now
+      });
 
-    await createMovimentacao({
-      id: crypto.randomUUID(),
-      item_id: repairTarget.id,
-      item_nome: repairTarget.nome,
-      tipo: 'CHECK_IN',
-      origem: 'Oficina / Laboratório',
-      destino: 'Almoxarifado Central (Manutenção Concluída)',
-      solicitante_id: user?.id || 'usr-anon',
-      solicitante_nome: user?.nome || 'Anônimo',
-      aprovador_id: user?.id,
-      aprovador_nome: user?.nome,
-      status_aprovacao: 'APROVADO',
-      data_movimentacao: now,
-      observacao: `Reparo concluído. Condição pós-reparo: ${repairCondicao}. Item disponível para retirada.`,
-      tipo_documento: 'CONTROLE_ENTRADA_SAIDA',
-      signature_token: `sha256-${Math.random().toString(36).substring(2, 15)}`
-    });
+      await createMovimentacao({
+        id: crypto.randomUUID(),
+        item_id: repairTarget.id,
+        item_nome: repairTarget.nome,
+        tipo: 'CHECK_IN',
+        origem: 'Oficina / Laboratório',
+        destino: 'Almoxarifado Central (Manutenção Concluída)',
+        solicitante_id: user?.id || 'usr-anon',
+        solicitante_nome: user?.nome || 'Anônimo',
+        aprovador_id: user?.id,
+        aprovador_nome: user?.nome,
+        status_aprovacao: 'APROVADO',
+        data_movimentacao: now,
+        observacao: `Reparo concluído. Condição pós-reparo: ${repairCondicao}. Item disponível para retirada.`,
+        tipo_documento: 'CONTROLE_ENTRADA_SAIDA',
+        signature_token: `sha256-${Math.random().toString(36).substring(2, 15)}`
+      });
 
-    setRepairTarget(null);
-    await loadData();
+      setRepairTarget(null);
+      await loadData();
+    } catch {
+      alert('Erro ao concluir reparo. Verifique a conexão e tente novamente.');
+    }
   };
 
   return (

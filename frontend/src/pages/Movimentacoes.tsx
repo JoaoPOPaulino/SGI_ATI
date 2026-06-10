@@ -120,76 +120,80 @@ const Movimentacoes: React.FC = () => {
       return;
     }
 
-    const allItens = await fetchItens();
-    const item = allItens.find(i => i.id === selectedItemId);
-    if (!item) return;
+    try {
+      const allItens = await fetchItens();
+      const item = allItens.find(i => i.id === selectedItemId);
+      if (!item) return;
 
-    const now = new Date().toISOString();
+      const now = new Date().toISOString();
 
-    const newMov: Movimentacao = {
-      id: crypto.randomUUID(),
-      item_id: item.id,
-      item_nome: item.nome,
-      tipo: formTipo,
-      origem: item.localizacao_atual,
-      destino: destinoFinal,
-      solicitante_id: user?.id || 'usr-anon',
-      solicitante_nome: user?.nome || 'Anônimo',
-      aprovador_id: user?.id || 'usr-anon',
-      aprovador_nome: user?.nome || 'Anônimo',
-      status_aprovacao: 'APROVADO',
-      data_movimentacao: now,
-      observacao: formObs,
-      tipo_documento: formTipoDoc,
-      signature_token: `sha256-${crypto.randomUUID()}${crypto.randomUUID()}`
-    };
+      const newMov: Movimentacao = {
+        id: crypto.randomUUID(),
+        item_id: item.id,
+        item_nome: item.nome,
+        tipo: formTipo,
+        origem: item.localizacao_atual,
+        destino: destinoFinal,
+        solicitante_id: user?.id || 'usr-anon',
+        solicitante_nome: user?.nome || 'Anônimo',
+        aprovador_id: user?.id || 'usr-anon',
+        aprovador_nome: user?.nome || 'Anônimo',
+        status_aprovacao: 'APROVADO',
+        data_movimentacao: now,
+        observacao: formObs,
+        tipo_documento: formTipoDoc,
+        signature_token: `sha256-${crypto.randomUUID()}${crypto.randomUUID()}`
+      };
 
-    await createMovimentacao(newMov);
+      await createMovimentacao(newMov);
 
-    // Atualiza localização/status do item
-    if (formTipo === 'MANUTENCAO') {
-      await updateItem(item.id, {
-        status: 'EM_MANUTENCAO',
-        localizacao_atual: 'Laboratório (Em Manutenção)',
-        updated_at: now
-      });
-    } else if (formTipo === 'CHECK_IN') {
-      await updateItem(item.id, {
-        status: 'GUARDADO',
-        localizacao_atual: destinoFinal,
-        updated_at: now,
-        polo: formDestinoPolo,
-        andar: formDestinoAndar,
-        setor: formDestinoSetor,
-        sala: formDestinoSala,
-        estacao: formDestinoEstacao
-      });
-    } else {
-      await updateItem(item.id, {
-        localizacao_atual: destinoFinal,
-        updated_at: now,
-        polo: formTipo === 'VIAGEM' ? 'Viagem Externa' : formDestinoPolo,
-        andar: formTipo === 'VIAGEM' ? '' : formDestinoAndar,
-        setor: formTipo === 'VIAGEM' ? '' : formDestinoSetor,
-        sala: formTipo === 'VIAGEM' ? '' : formDestinoSala,
-        estacao: formTipo === 'VIAGEM' ? '' : formDestinoEstacao
-      });
+      // Atualiza localização/status do item
+      if (formTipo === 'MANUTENCAO') {
+        await updateItem(item.id, {
+          status: 'EM_MANUTENCAO',
+          localizacao_atual: 'Laboratório (Em Manutenção)',
+          updated_at: now
+        });
+      } else if (formTipo === 'CHECK_IN') {
+        await updateItem(item.id, {
+          status: 'GUARDADO',
+          localizacao_atual: destinoFinal,
+          updated_at: now,
+          polo: formDestinoPolo,
+          andar: formDestinoAndar,
+          setor: formDestinoSetor,
+          sala: formDestinoSala,
+          estacao: formDestinoEstacao
+        });
+      } else {
+        await updateItem(item.id, {
+          localizacao_atual: destinoFinal,
+          updated_at: now,
+          polo: formTipo === 'VIAGEM' ? 'Viagem Externa' : formDestinoPolo,
+          andar: formTipo === 'VIAGEM' ? '' : formDestinoAndar,
+          setor: formTipo === 'VIAGEM' ? '' : formDestinoSetor,
+          sala: formTipo === 'VIAGEM' ? '' : formDestinoSala,
+          estacao: formTipo === 'VIAGEM' ? '' : formDestinoEstacao
+        });
+      }
+
+      setSelectedItemId('');
+      setFormDestinoPolo('');
+      setFormDestinoAndar('');
+      setFormDestinoSetor('');
+      setFormDestinoSala('');
+      setFormDestinoEstacao('');
+      setFormDestinoLivre('');
+      setFormObs('');
+      setSignDigitally(false);
+      setFormSuccess('Guia emitida com sucesso!');
+      await loadData();
+      
+      // Auto abrir para impressão
+      setActiveGuia(newMov);
+    } catch {
+      setFormError('Erro ao emitir guia. Verifique a conexão e tente novamente.');
     }
-
-    setSelectedItemId('');
-    setFormDestinoPolo('');
-    setFormDestinoAndar('');
-    setFormDestinoSetor('');
-    setFormDestinoSala('');
-    setFormDestinoEstacao('');
-    setFormDestinoLivre('');
-    setFormObs('');
-    setSignDigitally(false);
-    setFormSuccess('Guia emitida com sucesso!');
-    await loadData();
-    
-    // Auto abrir para impressão
-    setActiveGuia(newMov);
   };
 
   // Aprovar movimentação PENDENTE (Superior/Admin)

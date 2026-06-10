@@ -153,6 +153,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       return { success: false, error: "Informe a senha." };
     }
 
+    let requirePasswordChange = false;
+
+    try {
+      const { data: fnData, error: fnError } = await supabase.functions.invoke("login-cpf", {
+        body: { cpf: cleanCpf, senha },
+      });
+
+      if (!fnError && fnData?.success) {
+        if (fnData.session) {
+          await supabase.auth.setSession({
+            access_token: fnData.session.access_token,
+            refresh_token: fnData.session.refresh_token,
+          });
+        }
+        const profile = await loadUserProfile(fnData.user.auth_id || fnData.user.id);
+        if (profile) {
+          requirePasswordChange = profile.primeiro_acesso || false;
+        }
+        if (!profile) {
+          return { success: false, error: "Erro ao carregar perfil. Tente novamente." };
+        }
+        return { success: true, requirePasswordChange };
+      }
+
+      if (fnData?.error?.includes("Confirme seu e-mail")) {
+        return { success: false, error: fnData.error };
+      }
+    } catch {}
+
     try {
       const { data, error } = await supabase
         .from('usuarios')
@@ -161,42 +190,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         .eq('ativo', true)
         .single();
 
-      if (!error && data) {
-        if (data.senha) {
-          if (data.salt) {
-            const { verifyPassword } = await import('../services/utilidadesSenha');
-            const valid = await verifyPassword(senha || '', data.salt, data.senha);
-            if (!valid) {
-              return { success: false, error: 'Senha incorreta.' };
-            }
-          } else {
-            if (data.senha !== senha) {
-              return { success: false, error: 'Senha incorreta.' };
-            }
+      if (error || !data) {
+        return { success: false, error: 'Usuário não encontrado ou inativo.' };
+      }
+
+      if (data.senha) {
+        if (data.salt) {
+          const { verifyPassword } = await import('../services/utilidadesSenha');
+          const valid = await verifyPassword(senha, data.salt, data.senha);
+          if (!valid) {
+            return { success: false, error: 'Senha incorreta.' };
+          }
+        } else {
+          if (data.senha !== senha) {
+            return { success: false, error: 'Senha incorreta.' };
           }
         }
-        const mappedUser: Usuario = {
-          id: data.id,
-          nome: data.nome,
-          email: data.email,
-          cpf: data.cpf,
-          perfil: data.perfil,
-          ativo: data.ativo ?? true,
-          polo: data.polo || undefined,
-          foto: data.foto || undefined,
-        };
-        setUser(mappedUser);
-        localStorage.setItem('sgi_ati_session', JSON.stringify(mappedUser));
-        return { 
-          success: true, 
-          requirePasswordChange: data.primeiro_acesso || false
-        };
+      } else {
+        return { success: false, error: 'Use o link de acesso enviado por e-mail para ativar sua conta.' };
       }
+
+      const mappedUser: Usuario = {
+        id: data.id,
+        nome: data.nome,
+        email: data.email,
+        cpf: data.cpf,
+        perfil: data.perfil,
+        ativo: data.ativo ?? true,
+        polo: data.polo || undefined,
+        foto: data.foto || undefined,
+      };
+      setUser(mappedUser);
+      localStorage.setItem('sgi_ati_session', JSON.stringify(mappedUser));
+      return {
+        success: true,
+        requirePasswordChange: data.primeiro_acesso || false,
+      };
     } catch {
       return { success: false, error: 'Serviço de autenticação indisponível. Tente novamente.' };
     }
-
-    return { success: false, error: 'Usuário não encontrado ou inativo.' };
   };
 
   const logout = async () => {

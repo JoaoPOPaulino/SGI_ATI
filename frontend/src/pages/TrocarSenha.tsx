@@ -51,8 +51,16 @@ const TrocarSenha: React.FC = () => {
     setError("");
 
     try {
+      const { error: authError } = await supabase.auth.updateUser({
+        password: senhaNova,
+      });
+
+      if (authError) {
+        throw authError;
+      }
+
       const { hash, salt } = await hashPasswordWithNewSalt(senhaNova);
-      const { error: updateError } = await supabase
+      await supabase
         .from("usuarios")
         .update({
           senha: hash,
@@ -60,10 +68,6 @@ const TrocarSenha: React.FC = () => {
           primeiro_acesso: false,
         })
         .eq("id", user?.id);
-
-      if (updateError) {
-        throw updateError;
-      }
 
       localStorage.setItem('sgi_ati_ultima_troca_senha', new Date().toISOString());
 
