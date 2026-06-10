@@ -1,12 +1,13 @@
 import { supabase } from './supabase';
 import type { Movimentacao } from './bancoMock';
 
-export async function fetchMovimentacoes(): Promise<Movimentacao[]> {
+export async function fetchMovimentacoes(limit = 100): Promise<Movimentacao[]> {
   try {
     const { data, error } = await supabase
       .from('movimentacoes')
       .select('*')
-      .order('data_movimentacao', { ascending: false });
+      .order('data_movimentacao', { ascending: false })
+      .limit(limit);
 
     if (error) {
       console.error('Erro ao buscar movimentações:', error);

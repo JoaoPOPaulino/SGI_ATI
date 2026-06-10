@@ -1,12 +1,13 @@
-import { supabase } from './supabase';
-import type { Loan } from './bancoMock';
+import { supabase } from "./supabase";
+import type { Loan } from "./bancoMock";
 
-export async function fetchLoans(): Promise<Loan[]> {
+export async function fetchLoans(limit = 100): Promise<Loan[]> {
   try {
     const { data, error } = await supabase
       .from('loans')
       .select('*')
-      .order('data_retorno_prevista', { ascending: false });
+      .order('data_retorno_prevista', { ascending: false })
+      .limit(limit);
 
     if (error) {
       console.error('Erro ao buscar empréstimos:', error);
@@ -23,40 +24,43 @@ export async function fetchLoans(): Promise<Loan[]> {
 export async function createLoan(loan: Loan): Promise<Loan | null> {
   try {
     const { data, error } = await supabase
-      .from('loans')
+      .from("loans")
       .insert(loan)
       .select()
       .single();
 
     if (error) {
-      console.error('Erro ao criar empréstimo:', error);
+      console.error("Erro ao criar empréstimo:", error);
       return null;
     }
 
     return data as Loan;
   } catch (err) {
-    console.error('Falha ao criar empréstimo:', err);
+    console.error("Falha ao criar empréstimo:", err);
     return null;
   }
 }
 
-export async function updateLoan(id: string, updates: Partial<Loan>): Promise<Loan | null> {
+export async function updateLoan(
+  id: string,
+  updates: Partial<Loan>,
+): Promise<Loan | null> {
   try {
     const { data, error } = await supabase
-      .from('loans')
+      .from("loans")
       .update(updates)
-      .eq('id', id)
+      .eq("id", id)
       .select()
       .single();
 
     if (error) {
-      console.error('Erro ao atualizar empréstimo:', error);
+      console.error("Erro ao atualizar empréstimo:", error);
       return null;
     }
 
     return data as Loan;
   } catch (err) {
-    console.error('Falha ao atualizar empréstimo:', err);
+    console.error("Falha ao atualizar empréstimo:", err);
     return null;
   }
 }
