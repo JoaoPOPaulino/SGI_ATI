@@ -256,3 +256,28 @@ CREATE INDEX IF NOT EXISTS idx_solicitacoes_status ON public.solicitacoes(status
 CREATE INDEX IF NOT EXISTS idx_locais_polo ON public.locais(polo);
 
 CREATE INDEX IF NOT EXISTS idx_evento_itens_item_id ON public.evento_itens(item_id);
+
+-- =====================================================
+-- RLS: evento_itens
+-- =====================================================
+ALTER TABLE public.evento_itens ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "evento_itens_select" ON public.evento_itens;
+DROP POLICY IF EXISTS "evento_itens_insert" ON public.evento_itens;
+DROP POLICY IF EXISTS "evento_itens_update" ON public.evento_itens;
+DROP POLICY IF EXISTS "evento_itens_delete" ON public.evento_itens;
+
+CREATE POLICY "evento_itens_select" ON public.evento_itens
+  FOR SELECT USING (auth.uid() IS NOT NULL);
+
+CREATE POLICY "evento_itens_insert" ON public.evento_itens
+  FOR INSERT WITH CHECK (
+    auth.uid() IS NOT NULL
+    AND public.get_auth_perfil() IN ('TECNICO', 'SUPERIOR', 'ADMIN')
+  );
+
+CREATE POLICY "evento_itens_delete" ON public.evento_itens
+  FOR DELETE USING (
+    auth.uid() IS NOT NULL
+    AND public.get_auth_perfil() IN ('TECNICO', 'SUPERIOR', 'ADMIN')
+  );
