@@ -63,18 +63,13 @@ const Movimentacoes: React.FC = () => {
     if (formTipo === 'MANUTENCAO') {
       setFormTipoDoc('GUIA_MOVIMENTACAO');
       setFormDestinoPolo('Laboratório');
-      setFormDestinoAndar('');
-      setFormDestinoSala('');
-      setFormDestinoSetor('');
-      setFormDestinoEstacao('');
+      setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
       setFormDestinoLivre('');
     } else if (formTipo === 'VIAGEM') {
       setFormTipoDoc('CONTROLE_ENTRADA_SAIDA');
-      setFormDestinoAndar('');
-      setFormDestinoSala('');
-      setFormDestinoSetor('');
-      setFormDestinoEstacao('');
+      setFormDestinoAndar(''); setFormDestinoSala(''); setFormDestinoSetor(''); setFormDestinoEstacao('');
     } else {
+      setFormTipoDoc('GUIA_MOVIMENTACAO');
       setFormDestinoLivre('');
     }
   }, [formTipo]);
@@ -319,7 +314,7 @@ const Movimentacoes: React.FC = () => {
               </select>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 gap-3">
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Tipo de Movimentação</label>
                 <select
@@ -330,17 +325,6 @@ const Movimentacoes: React.FC = () => {
                   <option value="TRANSFERENCIA">Transferência (Local)</option>
                   <option value="MANUTENCAO">Envio p/ Manutenção</option>
                   <option value="VIAGEM">Viagem Externa</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Tipo de Documento</label>
-                <select
-                  value={formTipoDoc}
-                  onChange={(e) => setFormTipoDoc(e.target.value as any)}
-                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-                >
-                  <option value="GUIA_MOVIMENTACAO">Guia de Movimentação</option>
-                  <option value="CONTROLE_ENTRADA_SAIDA">Controle de Entrada/Saída</option>
                 </select>
               </div>
             </div>
