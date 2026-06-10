@@ -121,7 +121,7 @@ const Manutencao: React.FC = () => {
   return (
     <div className="space-y-6 animate-fade-in text-on-surface font-body">
       <div>
-        <h1 className="text-xl font-extrabold tracking-tight text-primary">Manutenção & Baixas</h1>
+        <h1 className="text-lg font-extrabold tracking-tight text-primary">Manutenção & Baixas</h1>
         <p className="text-[10px] text-outline font-semibold">Controle de reparos e processo de descarte definitivo de ativos.</p>
       </div>
 
@@ -152,7 +152,7 @@ const Manutencao: React.FC = () => {
                         <Hammer size={12} />Concluir Reparo
                       </button>
                     ) : (
-                      <span className="text-[9px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg">Em Reparo — LABIN</span>
+                      <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg">Em Reparo — LABIN</span>
                     )}
                     <StatusBadge type="condicao" value={item.condicao} />
                   </div>
@@ -193,7 +193,7 @@ const Manutencao: React.FC = () => {
                           </button>
                         </div>
                       ) : (
-                        <span className="text-[9px] font-bold text-outline uppercase italic">Aguard. Nível Superior</span>
+                        <span className="text-[10px] font-bold text-outline uppercase italic">Aguard. Nível Superior</span>
                       )}
                     </div>
                   </div>
