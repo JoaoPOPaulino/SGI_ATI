@@ -234,50 +234,47 @@ export async function inviteUser(payload: {
   perfil: string;
   polo?: string;
 }) {
+  const cleanCpf = payload.cpf.replace(/\D/g, "");
+  const cleanEmail = payload.email.trim().toLowerCase();
+
   try {
-    const response = await fetch("/api/convidar-usuario", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const { data, error } = await supabase.functions.invoke("invite-user", {
+      body: {
+        ...payload,
+        cpf: cleanCpf,
+        email: cleanEmail,
       },
-      body: JSON.stringify(payload),
     });
 
-    const rawText = await response.text();
-
-    let data: any = null;
-
-    if (rawText) {
-      try {
-        data = JSON.parse(rawText);
-      } catch {
-        return {
-          success: false,
-          error: `A API respondeu algo que não é JSON. Status: ${response.status}. Resposta: ${rawText.slice(0, 200)}`,
-        };
-      }
+    if (!error && data?.success) {
+      return { success: true, user: data.user };
     }
 
-    if (!response.ok) {
-      return {
-        success: false,
-        error:
-          data?.error ||
-          `Erro ao convidar usuário. Status HTTP: ${response.status}`,
-      };
-    }
-
-    return {
-      success: true,
-      user: data?.user,
-    };
-  } catch (error) {
     return {
       success: false,
-      error:
-        error instanceof Error
-          ? error.message
-          : "Erro inesperado ao chamar a API de convite.",
+      error: data?.error || error?.message || "Erro ao convidar usuário.",
     };
+  } catch (err) {
+    console.error('invite-user Edge Function error:', err);
   }
+
+  const usuarios = getUsuarios();
+  const cpfExistente = usuarios.find((u) => u.cpf.replace(/\D/g, "") === cleanCpf);
+  if (cpfExistente) return { success: false, error: "CPF já cadastrado." };
+
+  const emailExistente = usuarios.find((u) => u.email.trim().toLowerCase() === cleanEmail);
+  if (emailExistente) return { success: false, error: "E-mail já cadastrado." };
+
+  const newUser: Usuario = {
+    id: `usr-${Date.now()}`,
+    nome: payload.nome.trim(),
+    email: cleanEmail,
+    cpf: cleanCpf,
+    perfil: payload.perfil as Usuario["perfil"],
+    ativo: true,
+    polo: payload.polo || undefined,
+  };
+
+  saveUsuarios([...usuarios, newUser]);
+  return { success: true, user: { id: newUser.id } };
 }
