@@ -95,70 +95,70 @@ DO $$ BEGIN
     ADD CONSTRAINT movimentacoes_solicitante_id_fkey 
     FOREIGN KEY (solicitante_id) REFERENCES public.usuarios(id);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.movimentacoes 
     ADD CONSTRAINT movimentacoes_aprovador_id_fkey 
     FOREIGN KEY (aprovador_id) REFERENCES public.usuarios(id);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.eventos 
     ADD CONSTRAINT eventos_responsavel_id_fkey 
     FOREIGN KEY (responsavel_id) REFERENCES public.usuarios(id);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.laudos 
     ADD CONSTRAINT laudos_item_id_fkey 
     FOREIGN KEY (item_id) REFERENCES public.itens(id) ON DELETE RESTRICT;
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.laudos 
     ADD CONSTRAINT laudos_tecnico_id_fkey 
     FOREIGN KEY (tecnico_id) REFERENCES public.usuarios(id);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.loans 
     ADD CONSTRAINT loans_item_id_fkey 
     FOREIGN KEY (item_id) REFERENCES public.itens(id) ON DELETE RESTRICT;
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.audit_logs 
     ADD CONSTRAINT audit_logs_admin_id_fkey 
     FOREIGN KEY (admin_id) REFERENCES public.usuarios(id);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.audit_logs 
     ADD CONSTRAINT audit_logs_target_user_id_fkey 
     FOREIGN KEY (target_user_id) REFERENCES public.usuarios(id);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.solicitacoes 
     ADD CONSTRAINT solicitacoes_aprovado_por_id_fkey 
     FOREIGN KEY (aprovado_por_id) REFERENCES public.usuarios(id);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 DO $$ BEGIN
   ALTER TABLE public.itens 
     ADD CONSTRAINT itens_atribuido_a_id_fkey 
     FOREIGN KEY (atribuido_a_id) REFERENCES public.usuarios(id);
 EXCEPTION WHEN OTHERS THEN NULL;
-END $;
+END $$;
 
 -- =====================================================
 -- P1.3: ADD FK on loans.responsavel → usuarios
