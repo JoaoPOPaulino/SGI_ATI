@@ -1,7 +1,8 @@
 import React, { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { User, Mail, Shield, MapPin, Key, Clock, Camera, MessageSquare, Send, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Shield, MapPin, Key, Clock, Camera, MessageSquare, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { supabase } from '../services/supabase';
 
 function tempoDecorrido(isoDate: string | null): string {
   if (!isoDate) return 'Nunca alterada';
@@ -50,16 +51,33 @@ const Perfil: React.FC = () => {
     } catch {}
   };
 
-  const handleFeedback = (e: React.FormEvent) => {
+  const [fbLoading, setFbLoading] = useState(false);
+
+  const handleFeedback = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!fbMensagem.trim()) { setFbErro('Escreva sua mensagem.'); return; }
     setFbErro('');
-    const subject = `[SGI-ATI] ${fbTipo} - ${user.nome}`;
-    const body = `Usuário: ${user.nome} (${user.perfil} - ${user.polo || 'N/A'})\nEmail: ${user.email}\n\n${fbMensagem}`;
-    window.location.href = `mailto:sgi.ati.to@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    setFbMensagem('');
-    setFbEnviado(true);
-    setTimeout(() => setFbEnviado(false), 3000);
+    setFbLoading(true);
+    try {
+      const { error } = await supabase.functions.invoke('send-feedback', {
+        body: {
+          usuario: user.nome,
+          email: user.email,
+          perfil: user.perfil,
+          polo: user.polo,
+          tipo: fbTipo,
+          mensagem: fbMensagem,
+        },
+      });
+      if (error) throw error;
+      setFbMensagem('');
+      setFbEnviado(true);
+      setTimeout(() => setFbEnviado(false), 3000);
+    } catch {
+      setFbErro('Erro ao enviar. Tente novamente.');
+    } finally {
+      setFbLoading(false);
+    }
   };
 
   return (
@@ -122,9 +140,11 @@ const Perfil: React.FC = () => {
                 <button type="button" onClick={() => setFbTipo('Problema')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${fbTipo === 'Problema' ? 'bg-red-600 text-white' : 'bg-surface border border-outline text-outline'}`}>🐛 Problema</button>
               </div>
               <textarea rows={4} value={fbMensagem} onChange={(e) => setFbMensagem(e.target.value)} placeholder="Descreva seu problema ou sugestão..." className="w-full px-4 py-3 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary resize-none" />
-              {fbErro && <p className="text-[10px] text-red-500">{fbErro}</p>}
-              {fbEnviado && <p className="text-[10px] text-emerald-500 flex items-center gap-1"><CheckCircle2 size={12} /> Abrindo seu cliente de e-mail...</p>}
-              <button type="submit" className="w-full py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2"><Send size={14} />Enviar Feedback</button>
+              {fbErro && <p className="text-[10px] text-red-500 flex items-center gap-1"><AlertCircle size={12} />{fbErro}</p>}
+              {fbEnviado && <p className="text-[10px] text-emerald-500 flex items-center gap-1"><CheckCircle2 size={12} />Feedback enviado com sucesso!</p>}
+              <button type="submit" disabled={fbLoading} className="w-full py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 disabled:opacity-50">
+                {fbLoading ? 'Enviando...' : <><Send size={14} />Enviar Feedback</>}
+              </button>
             </form>
           </div>
         </div>
