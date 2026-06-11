@@ -225,6 +225,7 @@ const Movimentacoes: React.FC = () => {
         });
       } else {
         await updateItem(item.id, {
+          status: item.status === 'GUARDADO' ? 'ATIVO' : item.status,
           localizacao_atual: destinoFinal,
           updated_at: now,
           polo: formTipo === "VIAGEM" ? "Viagem Externa" : formDestinoPolo,
