@@ -97,6 +97,7 @@ const Labin: React.FC = () => {
         acao_realizada: formAcao,
         pecas_utilizadas: formPecas,
         status_servico: formStatusServico,
+        created_at: now,
       });
     } else {
       await createLaudo({
@@ -275,6 +276,9 @@ const Labin: React.FC = () => {
                 <PenTool size={20} />
                 {editingLaudoId ? 'Editar Laudo Técnico' : 'Registrar Laudo Técnico'}
               </h2>
+              {editingLaudoId && (
+                <p className="text-[10px] text-outline mt-0.5">Editando laudo existente. Ao salvar, a data será atualizada mantendo o histórico.</p>
+              )}
               <button
                 onClick={() => setIsFormOpen(false)}
                 className="p-1.5 hover:bg-surface-container-high rounded-full text-outline hover:text-on-surface transition-colors"
