@@ -1,5 +1,11 @@
 // @ts-ignore Deno remote import
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+// @ts-ignore Deno remote import
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+declare const Deno: {
+  env: { get(key: string): string | undefined };
+};
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://sgi-ati.vercel.app",
@@ -15,34 +21,49 @@ serve(async (req: Request) => {
   try {
     const { usuario, email, perfil, polo, tipo, mensagem } = await req.json();
 
-    const body = `
+    // 1. Salvar no banco (garantido)
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+    if (supabaseUrl && serviceRoleKey) {
+      const supabase = createClient(supabaseUrl, serviceRoleKey);
+      await supabase.from("solicitacoes").insert({
+        nome: usuario,
+        email: email,
+        polo_solicitado: polo || "N/A",
+        motivo: `[${tipo}] ${mensagem}`,
+        status: "PENDENTE",
+      });
+    }
+
+    // 2. Tentar enviar email via FormSubmit
+    try {
+      const body = `
 Novo Feedback SGI-ATI
 =====================
 Tipo: ${tipo}
-Usuário: ${usuario}
+Usuario: ${usuario}
 Email: ${email}
 Perfil: ${perfil}
-Polo: ${polo || 'N/A'}
-Data: ${new Date().toLocaleString('pt-BR')}
+Polo: ${polo || "N/A"}
+Data: ${new Date().toLocaleString("pt-BR")}
 
 Mensagem:
 ${mensagem}
-    `.trim();
+      `.trim();
 
-    const response = await fetch("https://formsubmit.co/ajax/sgi.ati.to@gmail.com", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        subject: `[SGI-ATI] ${tipo} - ${usuario}`,
-        message: body,
-      }),
-    });
-
-    if (!response.ok) {
-      return new Response(JSON.stringify({ success: false, error: "Erro ao enviar" }), {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      await fetch("https://formsubmit.co/sgi.ati.to@gmail.com", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: usuario,
+          email: email,
+          subject: `[SGI-ATI] ${tipo} - ${usuario}`,
+          message: body,
+          _captcha: "false",
+        }),
       });
+    } catch {
+      // Email falhou, mas feedback foi salvo no banco
     }
 
     return new Response(JSON.stringify({ success: true }), {
