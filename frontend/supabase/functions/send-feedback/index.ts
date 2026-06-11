@@ -20,10 +20,26 @@ serve(async (req: Request) => {
 
   try {
     const { usuario, email, perfil, polo, tipo, mensagem } = await req.json();
+    const data = new Date().toLocaleString("pt-BR");
 
-    // 1. Salvar no banco (garantido)
+    const body = `
+Novo Feedback SGI-ATI
+=====================
+Tipo: ${tipo}
+Usuario: ${usuario}
+Email: ${email}
+Perfil: ${perfil}
+Polo: ${polo || "N/A"}
+Data: ${data}
+
+Mensagem:
+${mensagem}
+=====================
+    `.trim();
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
     if (supabaseUrl && serviceRoleKey) {
       const supabase = createClient(supabaseUrl, serviceRoleKey);
       await supabase.from("solicitacoes").insert({
@@ -35,38 +51,12 @@ serve(async (req: Request) => {
       });
     }
 
-    // 2. Tentar enviar email via FormSubmit
-    try {
-      const body = `
-Novo Feedback SGI-ATI
-=====================
-Tipo: ${tipo}
-Usuario: ${usuario}
-Email: ${email}
-Perfil: ${perfil}
-Polo: ${polo || "N/A"}
-Data: ${new Date().toLocaleString("pt-BR")}
-
-Mensagem:
-${mensagem}
-      `.trim();
-
-      await fetch("https://formsubmit.co/sgi.ati.to@gmail.com", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: usuario,
-          email: email,
-          subject: `[SGI-ATI] ${tipo} - ${usuario}`,
-          message: body,
-          _captcha: "false",
-        }),
-      });
-    } catch {
-      // Email falhou, mas feedback foi salvo no banco
-    }
-
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify({
+      success: true,
+      mailto: `mailto:sgi.ati.to@gmail.com?subject=${encodeURIComponent("[SGI-ATI] "+tipo+" - "+usuario)}&body=${encodeURIComponent(body)}`,
+      subject: `[SGI-ATI] ${tipo} - ${usuario}`,
+      body: body,
+    }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
