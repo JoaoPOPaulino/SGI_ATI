@@ -1,8 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { User, Mail, Shield, MapPin, Key, Clock, Camera, MessageSquare, Send, CheckCircle2, AlertCircle, Copy, ExternalLink } from 'lucide-react';
-import { supabase } from '../services/supabase';
+import { User, Mail, Shield, MapPin, Key, Clock, Camera } from 'lucide-react';
 
 function tempoDecorrido(isoDate: string | null): string {
   if (!isoDate) return 'Nunca alterada';
@@ -21,11 +20,6 @@ const Perfil: React.FC = () => {
   const { user, updatePhoto } = useAuth();
   const navigate = useNavigate();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [fbTipo, setFbTipo] = useState<'Problema' | 'Sugestão'>('Sugestão');
-  const [fbMensagem, setFbMensagem] = useState('');
-  const [fbEnviado, setFbEnviado] = useState(false);
-  const [fbErro, setFbErro] = useState('');
-
   if (!user) return null;
 
   const ultimaTroca = localStorage.getItem('sgi_ati_ultima_troca_senha');
@@ -49,36 +43,6 @@ const Perfil: React.FC = () => {
       bitmap.close();
       if (fileInputRef.current) fileInputRef.current.value = '';
     } catch {}
-  };
-
-  const [fbLoading, setFbLoading] = useState(false);
-  const [fbResult, setFbResult] = useState<{subject: string; body: string; mailto: string} | null>(null);
-
-  const handleFeedback = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!fbMensagem.trim()) { setFbErro('Escreva sua mensagem.'); return; }
-    setFbErro('');
-    setFbLoading(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('send-feedback', {
-        body: { usuario: user.nome, email: user.email, perfil: user.perfil, polo: user.polo, tipo: fbTipo, mensagem: fbMensagem },
-      });
-      if (error) throw error;
-      setFbMensagem('');
-      setFbResult(data);
-    } catch {
-      setFbErro('Erro ao enviar. Tente novamente.');
-    } finally {
-      setFbLoading(false);
-    }
-  };
-
-  const copyFeedback = () => {
-    if (fbResult) {
-      navigator.clipboard.writeText(`Assunto: ${fbResult.subject}\n\n${fbResult.body}`);
-      setFbEnviado(true);
-      setTimeout(() => { setFbEnviado(false); setFbResult(null); }, 3000);
-    }
   };
 
   return (
@@ -130,45 +94,6 @@ const Perfil: React.FC = () => {
                 <div className="text-xs font-semibold text-outline">{user.ativo ? 'Ativo' : 'Inativo'}</div>
               </div>
             </div>
-          </div>
-
-          <div className="bg-surface-container-lowest rounded-3xl p-8 border border-outline-variant/20 shadow-sm">
-            <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><MessageSquare size={18} className="text-primary" />Feedback & Melhorias</h3>
-
-            {fbResult ? (
-              <div className="space-y-3">
-                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
-                  <p className="font-bold text-emerald-700 flex items-center gap-1"><CheckCircle2 size={14} />Feedback registrado com sucesso!</p>
-                  <p className="text-emerald-600 mt-1">Salvo no banco de dados. Para enviar por e-mail, use uma das opções abaixo:</p>
-                </div>
-                <div className="bg-surface p-3 rounded-xl border border-outline/20 text-[10px] text-on-surface-variant max-h-32 overflow-y-auto font-mono whitespace-pre-wrap">{fbResult.body}</div>
-                <div className="flex gap-2">
-                  <button onClick={copyFeedback} className="flex-1 py-2.5 bg-primary text-white rounded-xl text-xs font-bold flex items-center justify-center gap-1.5">
-                    {fbEnviado ? <><CheckCircle2 size={14} />Copiado!</> : <><Copy size={14} />Copiar Conteúdo</>}
-                  </button>
-                  <a href={fbResult.mailto} className="flex-1 py-2.5 bg-surface border border-outline rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 text-primary hover:bg-primary/5 transition-colors no-underline">
-                    <ExternalLink size={14} />Abrir E-mail
-                  </a>
-                </div>
-                <button onClick={() => setFbResult(null)} className="w-full text-[10px] text-outline hover:text-on-surface transition-colors">Enviar outro feedback</button>
-              </div>
-            ) : (
-            <>
-            <p className="text-xs text-outline mb-4">Encontrou um problema ou tem uma sugestão? Envie diretamente para a equipe.</p>
-            <form onSubmit={handleFeedback} className="space-y-3">
-              <div className="flex gap-2">
-                <button type="button" onClick={() => setFbTipo('Sugestão')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${fbTipo === 'Sugestão' ? 'bg-primary text-white' : 'bg-surface border border-outline text-outline'}`}>💡 Sugestão</button>
-                <button type="button" onClick={() => setFbTipo('Problema')} className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all ${fbTipo === 'Problema' ? 'bg-red-600 text-white' : 'bg-surface border border-outline text-outline'}`}>🐛 Problema</button>
-              </div>
-              <textarea rows={4} value={fbMensagem} onChange={(e) => setFbMensagem(e.target.value)} placeholder="Descreva seu problema ou sugestão..." className="w-full px-4 py-3 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary resize-none" />
-              {fbErro && <p className="text-[10px] text-red-500 flex items-center gap-1"><AlertCircle size={12} />{fbErro}</p>}
-              {fbEnviado && <p className="text-[10px] text-emerald-500 flex items-center gap-1"><CheckCircle2 size={12} />Feedback enviado com sucesso!</p>}
-              <button type="submit" disabled={fbLoading} className="w-full py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 disabled:opacity-50">
-                {fbLoading ? 'Enviando...' : <><Send size={14} />Enviar Feedback</>}
-              </button>
-            </form>
-            </>
-            )}
           </div>
         </div>
       </div>

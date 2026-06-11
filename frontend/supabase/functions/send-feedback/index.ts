@@ -13,6 +13,25 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+async function sendViaResend(subject: string, html: string, text: string) {
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) return false;
+
+  const from = Deno.env.get("RESEND_FROM") || "SGI-ATI <noreply@sgi-ati.vercel.app>";
+  const to = Deno.env.get("RESEND_TO") || "sgi.ati.to@gmail.com";
+
+  const res = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${resendKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ from, to: [to], subject, html, text }),
+  });
+
+  return res.ok;
+}
+
 serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -21,12 +40,13 @@ serve(async (req: Request) => {
   try {
     const { usuario, email, perfil, polo, tipo, mensagem } = await req.json();
     const data = new Date().toLocaleString("pt-BR");
+    const subject = `[SGI-ATI] ${tipo} - ${usuario}`;
 
-    const body = `
+    const textBody = `
 Novo Feedback SGI-ATI
 =====================
 Tipo: ${tipo}
-Usuario: ${usuario}
+Usuário: ${usuario}
 Email: ${email}
 Perfil: ${perfil}
 Polo: ${polo || "N/A"}
@@ -37,6 +57,21 @@ ${mensagem}
 =====================
     `.trim();
 
+    const htmlBody = `
+<h2>Novo Feedback SGI-ATI</h2>
+<table style="border-collapse:collapse;width:100%">
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Tipo</td><td style="padding:6px 12px">${tipo}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Usuário</td><td style="padding:6px 12px">${usuario}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Email</td><td style="padding:6px 12px">${email}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Perfil</td><td style="padding:6px 12px">${perfil}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Polo</td><td style="padding:6px 12px">${polo || "N/A"}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Data</td><td style="padding:6px 12px">${data}</td></tr>
+</table>
+<h3>Mensagem:</h3>
+<p style="white-space:pre-wrap;background:#fafafa;padding:12px;border-radius:8px">${mensagem}</p>
+    `.trim();
+
+    // 1. Save to DB always
     const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
@@ -51,11 +86,25 @@ ${mensagem}
       });
     }
 
+    // 2. Try to send email via Resend
+    let emailEnviado = false;
+    try {
+      emailEnviado = await sendViaResend(subject, htmlBody, textBody);
+    } catch {
+      emailEnviado = false;
+    }
+
+    // 3. Build mailto fallback only if email was NOT sent
+    const mailto = emailEnviado
+      ? null
+      : `mailto:sgi.ati.to@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(textBody)}`;
+
     return new Response(JSON.stringify({
       success: true,
-      mailto: `mailto:sgi.ati.to@gmail.com?subject=${encodeURIComponent("[SGI-ATI] "+tipo+" - "+usuario)}&body=${encodeURIComponent(body)}`,
-      subject: `[SGI-ATI] ${tipo} - ${usuario}`,
-      body: body,
+      emailEnviado,
+      mailto,
+      subject,
+      body: textBody,
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
