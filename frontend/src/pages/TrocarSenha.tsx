@@ -240,7 +240,7 @@ const TrocarSenha: React.FC = () => {
           <button
             type="submit"
             disabled={loading || !!success}
-            className="w-full mt-2 py-4 px-6 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+            className="w-full mt-2 py-4 px-6 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
           >
             {loading ? (
               <>
