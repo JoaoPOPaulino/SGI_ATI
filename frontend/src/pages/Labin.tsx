@@ -5,8 +5,8 @@ import {
 } from '../services/bancoMock';
 import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
-import { fetchLaudos, createLaudo } from '../services/supabaseLaudos';
-import { Wrench, Plus, Info, Printer, PenTool, Search, X } from 'lucide-react';
+import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudos';
+import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil } from 'lucide-react';
 
 const Labin: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -29,6 +29,7 @@ const Labin: React.FC = () => {
   
   // Laudo Ativo para Impressão
   const [activeLaudoPrint, setActiveLaudoPrint] = useState<LaudoTecnico | null>(null);
+  const [editingLaudoId, setEditingLaudoId] = useState<string | null>(null);
 
   const loadData = async () => {
     const [allLaudos, allItens] = await Promise.all([fetchLaudos(), fetchItens()]);
@@ -50,7 +51,18 @@ const Labin: React.FC = () => {
     );
   }, [laudos, searchQuery]);
 
-  // Salvar Laudo
+  // Abrir formulário para editar laudo existente
+  const openEditLaudo = (laudo: LaudoTecnico) => {
+    setEditingLaudoId(laudo.id);
+    setSelectedItemId(laudo.item_id);
+    setFormDescricao(laudo.descricao_problema);
+    setFormAcao(laudo.acao_realizada);
+    setFormPecas(laudo.pecas_utilizadas);
+    setFormStatusServico(laudo.status_servico);
+    setIsFormOpen(true);
+  };
+
+  // Salvar Laudo (criar ou editar)
   const handleSaveLaudo = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
@@ -77,23 +89,30 @@ const Labin: React.FC = () => {
     const item = allItens.find(i => i.id === selectedItemId);
     if (!item) return;
 
-    const newLaudo: LaudoTecnico = {
-      id: crypto.randomUUID(),
-      item_id: item.id,
-      item_nome: item.nome,
-      tecnico_id: user?.id || 'tecnico-anon',
-      tecnico_nome: user?.nome || 'Técnico Anônimo',
-      descricao_problema: formDescricao,
-      diagnostico: '',
-      acao_realizada: formAcao,
-      pecas_utilizadas: formPecas,
-      status_servico: formStatusServico,
-      created_at: new Date().toISOString()
-    };
-
-    await createLaudo(newLaudo);
-
     const now = new Date().toISOString();
+
+    if (editingLaudoId) {
+      await updateLaudo(editingLaudoId, {
+        descricao_problema: formDescricao,
+        acao_realizada: formAcao,
+        pecas_utilizadas: formPecas,
+        status_servico: formStatusServico,
+      });
+    } else {
+      await createLaudo({
+        id: crypto.randomUUID(),
+        item_id: item.id,
+        item_nome: item.nome,
+        tecnico_id: user?.id || 'tecnico-anon',
+        tecnico_nome: user?.nome || 'Técnico Anônimo',
+        descricao_problema: formDescricao,
+        diagnostico: '',
+        acao_realizada: formAcao,
+        pecas_utilizadas: formPecas,
+        status_servico: formStatusServico,
+        created_at: now,
+      });
+    }
     if (formStatusServico === 'FINALIZADO') {
       await updateItem(item.id, {
         status: 'GUARDADO',
@@ -113,7 +132,7 @@ const Labin: React.FC = () => {
         solicitante_nome: user?.nome || 'Anônimo',
         status_aprovacao: 'APROVADO',
         data_movimentacao: now,
-        observacao: `Retorno pós-reparo concluído no LABIN. Laudo: ${newLaudo.id}`,
+        observacao: `Retorno pós-reparo concluído no LABIN. Laudo: ${editingLaudoId || 'novo'}`,
         tipo_documento: 'LAUDO_TECNICO',
         signature_token: `sha256-${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`
       });
@@ -124,7 +143,8 @@ const Labin: React.FC = () => {
     setFormPecas('');
     setSelectedItemId('');
     setFormStatusServico('EM_ANALISE');
-    setFormSuccess('Laudo Técnico salvo e registrado com sucesso!');
+    setEditingLaudoId(null);
+    setFormSuccess(editingLaudoId ? 'Laudo atualizado com sucesso!' : 'Laudo Técnico salvo e registrado com sucesso!');
     setIsFormOpen(false);
     await loadData();
   };
@@ -219,13 +239,24 @@ const Labin: React.FC = () => {
                       {new Date(laudo.created_at).toLocaleDateString()}
                     </td>
                     <td className="px-8 py-4 text-right">
-                      <button
-                        onClick={() => setActiveLaudoPrint(laudo)}
-                        className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-all"
-                        title="Imprimir Laudo Técnico (PDF)"
-                      >
-                        <Printer size={16} />
-                      </button>
+                      <div className="flex items-center gap-1 justify-end">
+                        {laudo.status_servico !== 'FINALIZADO' && (
+                          <button
+                            onClick={() => openEditLaudo(laudo)}
+                            className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
+                            title="Editar Laudo"
+                          >
+                            <Pencil size={16} />
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setActiveLaudoPrint(laudo)}
+                          className="p-2 text-primary hover:bg-primary-fixed rounded-lg transition-all"
+                          title="Imprimir Laudo Técnico"
+                        >
+                          <Printer size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -242,7 +273,7 @@ const Labin: React.FC = () => {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-lg font-bold text-primary flex items-center gap-2">
                 <PenTool size={20} />
-                Registrar Laudo Técnico
+                {editingLaudoId ? 'Editar Laudo Técnico' : 'Registrar Laudo Técnico'}
               </h2>
               <button
                 onClick={() => setIsFormOpen(false)}
@@ -330,7 +361,7 @@ const Labin: React.FC = () => {
               <div className="pt-4 flex justify-end gap-3 border-t border-surface-container-low">
                 <button
                   type="button"
-                  onClick={() => setIsFormOpen(false)}
+                onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); }}
                   className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs"
                 >
                   Cancelar
