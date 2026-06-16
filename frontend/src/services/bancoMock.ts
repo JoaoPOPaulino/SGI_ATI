@@ -1,12 +1,32 @@
 // Mock Database para o SGI-ATI
 
-export type PerfilUsuario = 'ESTAGIARIO' | 'TECNICO' | 'SUPERIOR' | 'ADMIN';
-export type TipoItem = 'PATRIMONIADO' | 'SERIALIZADO' | 'NAO_SERIALIZADO';
+export type PerfilUsuario = "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
+export type TipoItem = "PATRIMONIADO" | "SERIALIZADO" | "NAO_SERIALIZADO";
 export type CategoriaItem = string;
-export type CondicaoItem = 'NOVO' | 'BOM' | 'REGULAR' | 'RUIM' | 'ESTRAGADO';
-export type StatusItem = 'ATIVO' | 'EM_MANUTENCAO' | 'AGUARDANDO_BAIXA' | 'BAIXADO' | 'GUARDADO' | 'EMPRESTADO' | 'EM_EVENTO';
-export type TipoMovimentacao = 'CHECK_OUT' | 'CHECK_IN' | 'TRANSFERENCIA' | 'MANUTENCAO' | 'BAIXA' | 'EMPRESTIMO' | 'VIAGEM';
-export type StatusAprovacao = 'PENDENTE' | 'APROVADO' | 'REJEITADO';
+export type CondicaoItem = "NOVO" | "BOM" | "REGULAR" | "RUIM" | "ESTRAGADO";
+export type StatusItem =
+  | "ATIVO"
+  | "EM_MANUTENCAO"
+  | "AGUARDANDO_BAIXA"
+  | "BAIXADO"
+  | "GUARDADO"
+  | "EMPRESTADO"
+  | "EM_EVENTO";
+export type TipoMovimentacao =
+  | "CHECK_OUT"
+  | "CHECK_IN"
+  | "TRANSFERENCIA"
+  | "MANUTENCAO"
+  | "BAIXA"
+  | "EMPRESTIMO"
+  | "VIAGEM";
+export type StatusAprovacao = "PENDENTE" | "APROVADO" | "REJEITADO";
+export type StatusGuia =
+  | "ABERTA"
+  | "EM_COLETA"
+  | "EM_SERVICO"
+  | "AGUARDANDO_DEVOLUCAO"
+  | "ENCERRADA";
 
 export interface Usuario {
   id: string;
@@ -31,7 +51,7 @@ export interface Item {
   localizacao_atual: string;
   created_at: string;
   updated_at: string;
-  
+
   // Hierarquia física de localização [Issue #12]
   polo?: string;
   predio?: string;
@@ -64,8 +84,13 @@ export interface Movimentacao {
   status_aprovacao: StatusAprovacao;
   data_movimentacao: string;
   observacao: string;
-  tipo_documento?: 'GUIA_MOVIMENTACAO' | 'CONTROLE_ENTRADA_SAIDA' | 'LAUDO_TECNICO'; // [Issue #9, #14]
+  tipo_documento?:
+    | "GUIA_MOVIMENTACAO"
+    | "CONTROLE_ENTRADA_SAIDA"
+    | "LAUDO_TECNICO"; // [Issue #9, #14]
   signature_token?: string; // Token de assinatura digital [Issue #9, #14]
+  chamado?: string;
+  status_guia?: StatusGuia;
 }
 
 export interface Evento {
@@ -88,7 +113,7 @@ export interface LaudoTecnico {
   diagnostico: string;
   acao_realizada: string;
   pecas_utilizadas: string;
-  status_servico: 'EM_ANALISE' | 'AGUARDANDO_PECA' | 'EM_REPARO' | 'FINALIZADO';
+  status_servico: "EM_ANALISE" | "AGUARDANDO_PECA" | "EM_REPARO" | "FINALIZADO";
   created_at: string;
 }
 
@@ -108,10 +133,17 @@ export interface Loan {
   item_nome: string;
   responsavel: string;
   data_retorno_prevista: string;
-  status: 'ATIVO' | 'DEVOLVIDO';
+  status: "ATIVO" | "DEVOLVIDO";
 }
 
-export type AdminAction = 'CREATE_USER' | 'DELETE_USER' | 'CHANGE_PROFILE' | 'TOGGLE_STATUS' | 'CHANGE_POLO' | 'APPROVE_REGISTRATION' | 'REJECT_REGISTRATION';
+export type AdminAction =
+  | "CREATE_USER"
+  | "DELETE_USER"
+  | "CHANGE_PROFILE"
+  | "TOGGLE_STATUS"
+  | "CHANGE_POLO"
+  | "APPROVE_REGISTRATION"
+  | "REJECT_REGISTRATION";
 
 export interface AuditLog {
   id: string;
@@ -143,19 +175,19 @@ export interface SolicitacaoCadastro {
 
 // Chaves do LocalStorage
 const KEYS = {
-  DB_VERSION: 'sgi_ati_db_version',
-  USUARIOS: 'sgi_ati_usuarios',
-  ITENS: 'sgi_ati_itens',
-  MOVIMENTACOES: 'sgi_ati_movimentacoes',
-  EVENTOS: 'sgi_ati_eventos',
-  LAUDOS: 'sgi_ati_laudos',
-  LOCAIS: 'sgi_ati_locais',
-  LOANS: 'sgi_ati_loans',
-  AUDIT_LOG: 'sgi_ati_audit_log',
-  SOLICITACOES: 'sgi_ati_solicitacoes'
+  DB_VERSION: "sgi_ati_db_version",
+  USUARIOS: "sgi_ati_usuarios",
+  ITENS: "sgi_ati_itens",
+  MOVIMENTACOES: "sgi_ati_movimentacoes",
+  EVENTOS: "sgi_ati_eventos",
+  LAUDOS: "sgi_ati_laudos",
+  LOCAIS: "sgi_ati_locais",
+  LOANS: "sgi_ati_loans",
+  AUDIT_LOG: "sgi_ati_audit_log",
+  SOLICITACOES: "sgi_ati_solicitacoes",
 };
 
-const CURRENT_DB_VERSION = '2.0';
+const CURRENT_DB_VERSION = "2.0";
 
 // Dados Iniciais Fictícios
 const INITIAL_USUARIOS: Usuario[] = [];
@@ -167,9 +199,33 @@ const INITIAL_MOVIMENTACOES: Movimentacao[] = [];
 const INITIAL_EVENTOS: Evento[] = [];
 
 const INITIAL_LOCAIS: Local[] = [
-  { id: 'loc-1', polo: 'GSM', predio: 'Bloco A', andar: '3º Andar', setor: 'Tecnologia da Informação', sala: 'Sala 302', estacao: 'Estação A-10' },
-  { id: 'loc-2', polo: 'Laboratório', predio: 'Bloco B', andar: '1º Andar', setor: 'Infraestrutura', sala: 'Laboratório', estacao: 'Bancada B-1' },
-  { id: 'loc-3', polo: 'GSM', predio: 'Anexo I', andar: 'Térreo', setor: 'Atendimento', sala: 'Recepção', estacao: 'Estação R-1' }
+  {
+    id: "loc-1",
+    polo: "GSM",
+    predio: "Bloco A",
+    andar: "3º Andar",
+    setor: "Tecnologia da Informação",
+    sala: "Sala 302",
+    estacao: "Estação A-10",
+  },
+  {
+    id: "loc-2",
+    polo: "Laboratório",
+    predio: "Bloco B",
+    andar: "1º Andar",
+    setor: "Infraestrutura",
+    sala: "Laboratório",
+    estacao: "Bancada B-1",
+  },
+  {
+    id: "loc-3",
+    polo: "GSM",
+    predio: "Anexo I",
+    andar: "Térreo",
+    setor: "Atendimento",
+    sala: "Recepção",
+    estacao: "Estação R-1",
+  },
 ];
 
 const INITIAL_LAUDOS: LaudoTecnico[] = [];
@@ -180,7 +236,7 @@ const INITIAL_LOANS: Loan[] = [];
 export const initDb = () => {
   const storedVersion = localStorage.getItem(KEYS.DB_VERSION);
   if (storedVersion !== CURRENT_DB_VERSION) {
-    Object.values(KEYS).forEach(key => localStorage.removeItem(key));
+    Object.values(KEYS).forEach((key) => localStorage.removeItem(key));
     localStorage.setItem(KEYS.DB_VERSION, CURRENT_DB_VERSION);
   }
   if (!localStorage.getItem(KEYS.USUARIOS)) {
@@ -190,7 +246,10 @@ export const initDb = () => {
     localStorage.setItem(KEYS.ITENS, JSON.stringify(INITIAL_ITENS));
   }
   if (!localStorage.getItem(KEYS.MOVIMENTACOES)) {
-    localStorage.setItem(KEYS.MOVIMENTACOES, JSON.stringify(INITIAL_MOVIMENTACOES));
+    localStorage.setItem(
+      KEYS.MOVIMENTACOES,
+      JSON.stringify(INITIAL_MOVIMENTACOES),
+    );
   }
   if (!localStorage.getItem(KEYS.EVENTOS)) {
     localStorage.setItem(KEYS.EVENTOS, JSON.stringify(INITIAL_EVENTOS));
@@ -215,7 +274,7 @@ export const initDb = () => {
 // Funções Helpers de CRUD
 export const getUsuarios = (): Usuario[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.USUARIOS) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.USUARIOS) || "[]");
 };
 
 export const saveUsuarios = (usuarios: Usuario[]) => {
@@ -224,7 +283,7 @@ export const saveUsuarios = (usuarios: Usuario[]) => {
 
 export const getItens = (): Item[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.ITENS) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.ITENS) || "[]");
 };
 
 export const saveItens = (itens: Item[]) => {
@@ -233,7 +292,7 @@ export const saveItens = (itens: Item[]) => {
 
 export const getMovimentacoes = (): Movimentacao[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.MOVIMENTACOES) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.MOVIMENTACOES) || "[]");
 };
 
 export const saveMovimentacoes = (movimentacoes: Movimentacao[]) => {
@@ -242,7 +301,7 @@ export const saveMovimentacoes = (movimentacoes: Movimentacao[]) => {
 
 export const getEventos = (): Evento[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.EVENTOS) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.EVENTOS) || "[]");
 };
 
 export const saveEventos = (eventos: Evento[]) => {
@@ -251,7 +310,7 @@ export const saveEventos = (eventos: Evento[]) => {
 
 export const getLocais = (): Local[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.LOCAIS) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.LOCAIS) || "[]");
 };
 
 export const saveLocais = (locais: Local[]) => {
@@ -260,7 +319,7 @@ export const saveLocais = (locais: Local[]) => {
 
 export const getLaudos = (): LaudoTecnico[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.LAUDOS) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.LAUDOS) || "[]");
 };
 
 export const saveLaudos = (laudos: LaudoTecnico[]) => {
@@ -269,7 +328,7 @@ export const saveLaudos = (laudos: LaudoTecnico[]) => {
 
 export const getLoans = (): Loan[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.LOANS) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.LOANS) || "[]");
 };
 
 export const saveLoans = (loans: Loan[]) => {
@@ -278,30 +337,30 @@ export const saveLoans = (loans: Loan[]) => {
 
 export const getAuditLogs = (): AuditLog[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.AUDIT_LOG) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.AUDIT_LOG) || "[]");
 };
 
 export const saveAuditLogs = (logs: AuditLog[]) => {
   localStorage.setItem(KEYS.AUDIT_LOG, JSON.stringify(logs));
 };
 
-export const addAuditLog = (log: Omit<AuditLog, 'id' | 'timestamp'>) => {
+export const addAuditLog = (log: Omit<AuditLog, "id" | "timestamp">) => {
   const logs = getAuditLogs();
   const newLog: AuditLog = {
     ...log,
     id: crypto.randomUUID(),
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
   };
   saveAuditLogs([newLog, ...logs]);
 };
 
 export const getAuditLogsByUser = (userId: string): AuditLog[] => {
-  return getAuditLogs().filter(log => log.targetUserId === userId);
+  return getAuditLogs().filter((log) => log.targetUserId === userId);
 };
 
 export const getSolicitacoes = (): SolicitacaoCadastro[] => {
   initDb();
-  return JSON.parse(localStorage.getItem(KEYS.SOLICITACOES) || '[]');
+  return JSON.parse(localStorage.getItem(KEYS.SOLICITACOES) || "[]");
 };
 
 export const saveSolicitacoes = (solicitacoes: SolicitacaoCadastro[]) => {
@@ -309,5 +368,30 @@ export const saveSolicitacoes = (solicitacoes: SolicitacaoCadastro[]) => {
 };
 
 export const getSolicitacoesPendentes = (): SolicitacaoCadastro[] => {
-  return getSolicitacoes().filter(s => s.status === 'PENDENTE');
+  return getSolicitacoes().filter((s) => s.status === "PENDENTE");
 };
+
+export type TipoAssinaturaGuia =
+  | "EMISSAO_GUIA"
+  | "RESPONSAVEL_COLETA"
+  | "ENTREGADOR_ORIGEM"
+  | "RECEBIMENTO_LABORATORIO"
+  | "REQUERENTE_DEVOLUCAO";
+
+export interface AssinaturaGuia {
+  id: string;
+  movimentacao_id: string;
+  tipo_assinatura: TipoAssinaturaGuia;
+  assinante_id?: string;
+  assinante_nome: string;
+  assinante_cpf?: string;
+  assinante_perfil?: string;
+  assinatura_base64: string;
+  data_assinatura: string;
+  localizacao?: string;
+  patrimonio?: string;
+  numero_serie?: string;
+  chamado?: string;
+  observacao?: string;
+  created_at?: string;
+}
