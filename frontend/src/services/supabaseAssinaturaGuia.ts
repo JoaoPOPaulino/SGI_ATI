@@ -1,18 +1,17 @@
-import { AssinaturaGuia, TipoAssinaturaGuia } from './bancoMock';
-import { supabase } from './supabase';
-
+import { supabase } from "./supabase";
+import type { AssinaturaGuia, TipoAssinaturaGuia } from "./bancoMock";
 
 export async function fetchAssinaturasGuia(
   movimentacaoId: string,
 ): Promise<AssinaturaGuia[]> {
   const { data, error } = await supabase
-    .from('assinaturas_guia')
-    .select('*')
-    .eq('movimentacao_id', movimentacaoId)
-    .order('data_assinatura', { ascending: true });
+    .from("assinaturas_guia")
+    .select("*")
+    .eq("movimentacao_id", movimentacaoId)
+    .order("data_assinatura", { ascending: true });
 
   if (error) {
-    console.error('Erro ao buscar assinaturas da guia:', error);
+    console.error("Erro ao buscar assinaturas da guia:", error);
     return [];
   }
 
@@ -34,30 +33,15 @@ export async function createAssinaturaGuia(payload: {
   observacao?: string;
 }): Promise<AssinaturaGuia | null> {
   const { data, error } = await supabase
-    .from('assinaturas_guia')
+    .from("assinaturas_guia")
     .insert(payload)
     .select()
     .single();
 
   if (error) {
-    console.error('Erro ao salvar assinatura da guia:', error);
+    console.error("Erro ao salvar assinatura da guia:", error);
     return null;
   }
 
   return data as AssinaturaGuia;
-}
-
-export async function hasAssinaturaGuia(
-  movimentacaoId: string,
-  tipoAssinatura: TipoAssinaturaGuia,
-): Promise<boolean> {
-  const { count, error } = await supabase
-    .from('assinaturas_guia')
-    .select('id', { count: 'exact', head: true })
-    .eq('movimentacao_id', movimentacaoId)
-    .eq('tipo_assinatura', tipoAssinatura);
-
-  if (error) return false;
-
-  return (count || 0) > 0;
 }

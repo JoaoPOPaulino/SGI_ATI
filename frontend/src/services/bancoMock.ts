@@ -24,6 +24,8 @@ export type StatusAprovacao = "PENDENTE" | "APROVADO" | "REJEITADO";
 export type StatusGuia =
   | "ABERTA"
   | "EM_COLETA"
+  | "EM_ATENDIMENTO"
+  | "ENVIADO_LABORATORIO"
   | "EM_SERVICO"
   | "AGUARDANDO_DEVOLUCAO"
   | "ENCERRADA";
@@ -87,12 +89,19 @@ export interface Movimentacao {
   tipo_documento?:
     | "GUIA_MOVIMENTACAO"
     | "CONTROLE_ENTRADA_SAIDA"
-    | "LAUDO_TECNICO"; // [Issue #9, #14]
-  signature_token?: string; // Token de assinatura digital [Issue #9, #14]
+    | "LAUDO_TECNICO";
+  signature_token?: string;
+
   chamado?: string;
   status_guia?: StatusGuia;
   item_patrimonio?: string;
   item_numero_serie?: string;
+  local_retirada?: string;
+  requerente_nome?: string;
+  requerente_contato?: string;
+  defeito_reclamado?: string;
+  servicos_solicitados?: string[];
+  laudo_tecnico?: string;
 }
 
 export interface Evento {
@@ -376,7 +385,7 @@ export const getSolicitacoesPendentes = (): SolicitacaoCadastro[] => {
 export type TipoAssinaturaGuia =
   | "EMISSAO_GUIA"
   | "RESPONSAVEL_COLETA"
-  | "ENTREGADOR_ORIGEM"
+  | "REQUERENTE_ENTREGA"
   | "RECEBIMENTO_LABORATORIO"
   | "REQUERENTE_DEVOLUCAO";
 

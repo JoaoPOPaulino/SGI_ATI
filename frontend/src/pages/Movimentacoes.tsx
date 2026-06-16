@@ -28,7 +28,10 @@ import {
   X,
 } from "lucide-react";
 import { exportToCsv, getReversedStatus } from "../services/utilidades";
-import { fetchAssinaturasGuia, createAssinaturaGuia } from "../services/supabaseAssinaturaGuia";
+import {
+  fetchAssinaturasGuia,
+  createAssinaturaGuia,
+} from "../services/supabaseAssinaturaGuia";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
   CHECK_OUT: "Saída",
@@ -43,7 +46,7 @@ const TIPO_MOV_LABEL: Record<string, string> = {
 const TIPO_ASSINATURA_LABEL: Record<TipoAssinaturaGuia, string> = {
   EMISSAO_GUIA: "Emissão da Guia",
   RESPONSAVEL_COLETA: "Responsável pela Coleta",
-  ENTREGADOR_ORIGEM: "Entrega na Origem",
+  REQUERENTE_ENTREGA: "Entrega na Origem",
   RECEBIMENTO_LABORATORIO: "Recebimento no Laboratório",
   REQUERENTE_DEVOLUCAO: "Recebimento/Devolução pelo Requerente",
 };
@@ -368,7 +371,7 @@ const Movimentacoes: React.FC = () => {
       await updateMovimentacao(signingMov.id, { status_guia: "EM_COLETA" });
     }
 
-    if (signingTipo === "ENTREGADOR_ORIGEM") {
+    if (signingTipo === "REQUERENTE_ENTREGA") {
       await updateMovimentacao(signingMov.id, {
         status_guia:
           signingMov.tipo === "MANUTENCAO"
@@ -709,7 +712,7 @@ const Movimentacoes: React.FC = () => {
 
       <button
         type="button"
-        onClick={() => openSigningModal(mov, "ENTREGADOR_ORIGEM")}
+        onClick={() => openSigningModal(mov, "REQUERENTE_ENTREGA")}
         className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
         title="Assinar entrega na origem"
       >
@@ -1159,7 +1162,7 @@ const Movimentacoes: React.FC = () => {
                     </div>
 
                     <div className="space-y-3">
-                      {selectedHistory.map((m) => (
+                      {selectedHistory.map((m, index) => (
                         <div
                           key={m.id}
                           className="p-4 bg-surface-container-lowest border border-outline-variant/20 rounded-xl"
@@ -1167,6 +1170,10 @@ const Movimentacoes: React.FC = () => {
                           <div className="flex items-start justify-between gap-4">
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-[10px] font-black shrink-0">
+                                  {index + 1}º
+                                </span>
+
                                 <span className="text-[10px] font-bold text-outline">
                                   {new Date(m.data_movimentacao).toLocaleString(
                                     "pt-BR",
