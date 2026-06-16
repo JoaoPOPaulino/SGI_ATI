@@ -22,21 +22,22 @@ import {
   FileText,
   PenLine,
   Printer,
+  Search,
   ShieldCheck,
   Wrench,
   X,
 } from "lucide-react";
 import { exportToCsv, getReversedStatus } from "../services/utilidades";
-import { fetchAssinaturasGuia, createAssinaturaGuia } from "../services/supabaseAssinaturasGuia";
+import { fetchAssinaturasGuia, createAssinaturaGuia } from "../services/supabaseAssinaturaGuia";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
   CHECK_OUT: "Saída",
   CHECK_IN: "Entrada",
   TRANSFERENCIA: "Transferência",
-  MANUTENCAO: "Manutenção",
+  MANUTENCAO: "Controle de Entrada e Saída",
   BAIXA: "Baixa",
   EMPRESTIMO: "Empréstimo",
-  VIAGEM: "Viagem",
+  VIAGEM: "Viagem Externa",
 };
 
 const TIPO_ASSINATURA_LABEL: Record<TipoAssinaturaGuia, string> = {
@@ -98,7 +99,6 @@ const CaixaAssinatura: React.FC<CaixaAssinaturaProps> = ({
     if (!ctx) return;
 
     const point = getPoint(event);
-
     ctx.lineWidth = 2.4;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -185,12 +185,15 @@ const Movimentacoes: React.FC = () => {
   const [itens, setItens] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [selectedMovId, setSelectedMovId] = useState<string>("");
+
   const [selectedItemId, setSelectedItemId] = useState("");
   const [formChamado, setFormChamado] = useState("");
   const [formTipo, setFormTipo] = useState<TipoMovimentacao>("TRANSFERENCIA");
   const [formTipoDoc, setFormTipoDoc] = useState<
     "GUIA_MOVIMENTACAO" | "CONTROLE_ENTRADA_SAIDA" | "LAUDO_TECNICO"
   >("GUIA_MOVIMENTACAO");
+
   const [formDestinoPolo, setFormDestinoPolo] = useState("");
   const [formDestinoAndar, setFormDestinoAndar] = useState("");
   const [formDestinoSetor, setFormDestinoSetor] = useState("");
@@ -222,8 +225,8 @@ const Movimentacoes: React.FC = () => {
 
   const loadData = async () => {
     const [allMovs, allItens] = await Promise.all([
-      fetchMovimentacoes(100),
-      fetchItens(100),
+      fetchMovimentacoes(200),
+      fetchItens(200),
     ]);
 
     setMovs(allMovs);
@@ -258,25 +261,53 @@ const Movimentacoes: React.FC = () => {
   }, [formTipo]);
 
   const filteredMovs = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+
+    const result = movs.filter((m) => {
+      if (!query) return true;
+
+      return (
+        m.item_nome.toLowerCase().includes(query) ||
+        m.destino.toLowerCase().includes(query) ||
+        m.solicitante_nome.toLowerCase().includes(query) ||
+        (m.chamado || "").toLowerCase().includes(query) ||
+        (m.item_patrimonio || "").toLowerCase().includes(query) ||
+        (m.item_numero_serie || "").toLowerCase().includes(query)
+      );
+    });
+
+    return result.sort(
+      (a, b) =>
+        new Date(b.data_movimentacao).getTime() -
+        new Date(a.data_movimentacao).getTime(),
+    );
+  }, [movs, searchQuery]);
+
+  const selectedMov = useMemo(() => {
+    return movs.find((m) => m.id === selectedMovId) || filteredMovs[0] || null;
+  }, [filteredMovs, movs, selectedMovId]);
+
+  const selectedHistory = useMemo(() => {
+    if (!selectedMov) return [];
+
     return movs
-      .filter(
-        (m) =>
-          m.item_nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          m.destino.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          m.solicitante_nome
-            .toLowerCase()
-            .includes(searchQuery.toLowerCase()) ||
-          (m.chamado || "").toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+      .filter((m) => m.item_id === selectedMov.item_id)
       .sort(
         (a, b) =>
           new Date(b.data_movimentacao).getTime() -
           new Date(a.data_movimentacao).getTime(),
       );
-  }, [movs, searchQuery]);
+  }, [movs, selectedMov]);
 
-  const getItemById = (itemId: string) =>
-    itens.find((item) => item.id === itemId);
+  const getItemSnapshot = (mov: Movimentacao) => {
+    const item = itens.find((i) => i.id === mov.item_id);
+
+    return {
+      patrimonio: item?.numero_patrimonio || mov.item_patrimonio,
+      numeroSerie: item?.numero_serie || mov.item_numero_serie,
+      localizacao: item?.localizacao_atual || mov.destino,
+    };
+  };
 
   const reloadAssinaturas = async (movimentacaoId: string) => {
     const assinaturas = await fetchAssinaturasGuia(movimentacaoId);
@@ -311,7 +342,7 @@ const Movimentacoes: React.FC = () => {
       return;
     }
 
-    const item = getItemById(signingMov.item_id);
+    const snapshot = getItemSnapshot(signingMov);
 
     const saved = await createAssinaturaGuia({
       movimentacao_id: signingMov.id,
@@ -322,8 +353,8 @@ const Movimentacoes: React.FC = () => {
       assinante_perfil: user?.perfil,
       assinatura_base64: signingAssinatura,
       localizacao: signingLocalizacao.trim() || signingMov.destino,
-      patrimonio: item?.numero_patrimonio,
-      numero_serie: item?.numero_serie,
+      patrimonio: snapshot.patrimonio,
+      numero_serie: snapshot.numeroSerie,
       chamado: signingMov.chamado,
       observacao: signingObservacao.trim() || undefined,
     });
@@ -337,6 +368,15 @@ const Movimentacoes: React.FC = () => {
       await updateMovimentacao(signingMov.id, { status_guia: "EM_COLETA" });
     }
 
+    if (signingTipo === "ENTREGADOR_ORIGEM") {
+      await updateMovimentacao(signingMov.id, {
+        status_guia:
+          signingMov.tipo === "MANUTENCAO"
+            ? "EM_COLETA"
+            : "AGUARDANDO_DEVOLUCAO",
+      });
+    }
+
     if (signingTipo === "RECEBIMENTO_LABORATORIO") {
       await updateMovimentacao(signingMov.id, { status_guia: "EM_SERVICO" });
     }
@@ -345,11 +385,13 @@ const Movimentacoes: React.FC = () => {
       await updateMovimentacao(signingMov.id, { status_guia: "ENCERRADA" });
     }
 
+    const signedMovId = signingMov.id;
     setSigningMov(null);
+
     await loadData();
 
-    if (activeGuia?.id === signingMov.id) {
-      await reloadAssinaturas(signingMov.id);
+    if (activeGuia?.id === signedMovId) {
+      await reloadAssinaturas(signedMovId);
     }
   };
 
@@ -369,7 +411,7 @@ const Movimentacoes: React.FC = () => {
       return;
     }
 
-    if (!formChamado.trim()) {
+    if (formTipo !== "VIAGEM" && !formChamado.trim()) {
       setFormError("Informe o número do chamado.");
       setIsSaving(false);
       return;
@@ -428,6 +470,10 @@ const Movimentacoes: React.FC = () => {
       }
 
       const now = new Date().toISOString();
+      const chamado =
+        formTipo === "VIAGEM"
+          ? formChamado.trim() || undefined
+          : formChamado.trim();
 
       const newMov: Movimentacao = {
         id: crypto.randomUUID(),
@@ -445,8 +491,10 @@ const Movimentacoes: React.FC = () => {
         observacao: formObs,
         tipo_documento: formTipoDoc,
         signature_token: `sha256-${crypto.randomUUID()}${crypto.randomUUID()}`,
-        chamado: formChamado.trim(),
+        chamado,
         status_guia: "ABERTA",
+        item_patrimonio: item.numero_patrimonio,
+        item_numero_serie: item.numero_serie,
       };
 
       const savedMov = await createMovimentacao(newMov);
@@ -468,7 +516,7 @@ const Movimentacoes: React.FC = () => {
         localizacao: item.localizacao_atual,
         patrimonio: item.numero_patrimonio,
         numero_serie: item.numero_serie,
-        chamado: formChamado.trim(),
+        chamado,
         observacao: "Assinatura realizada na emissão da guia.",
       });
 
@@ -478,9 +526,19 @@ const Movimentacoes: React.FC = () => {
           localizacao_atual: "Laboratório (Em Manutenção)",
           updated_at: now,
         });
-      } else if (formTipo === "CHECK_IN") {
+      } else if (formTipo === "VIAGEM") {
         await updateItem(item.id, {
-          status: "GUARDADO",
+          localizacao_atual: destinoFinal,
+          updated_at: now,
+          polo: "Viagem Externa",
+          andar: "",
+          setor: "",
+          sala: "",
+          estacao: "",
+        });
+      } else {
+        await updateItem(item.id, {
+          status: item.status === "GUARDADO" ? "ATIVO" : item.status,
           localizacao_atual: destinoFinal,
           updated_at: now,
           polo: formDestinoPolo,
@@ -488,17 +546,6 @@ const Movimentacoes: React.FC = () => {
           setor: formDestinoSetor,
           sala: formDestinoSala,
           estacao: formDestinoEstacao,
-        });
-      } else {
-        await updateItem(item.id, {
-          status: item.status === "GUARDADO" ? "ATIVO" : item.status,
-          localizacao_atual: destinoFinal,
-          updated_at: now,
-          polo: formTipo === "VIAGEM" ? "Viagem Externa" : formDestinoPolo,
-          andar: formTipo === "VIAGEM" ? "" : formDestinoAndar,
-          setor: formTipo === "VIAGEM" ? "" : formDestinoSetor,
-          sala: formTipo === "VIAGEM" ? "" : formDestinoSala,
-          estacao: formTipo === "VIAGEM" ? "" : formDestinoEstacao,
         });
       }
 
@@ -515,6 +562,7 @@ const Movimentacoes: React.FC = () => {
       setFormSuccess("Guia emitida com sucesso!");
 
       await loadData();
+      setSelectedMovId(savedMov.id);
       await openGuia(savedMov);
     } catch {
       setFormError(
@@ -592,6 +640,7 @@ const Movimentacoes: React.FC = () => {
             );
 
           const revertedStatus = getReversedStatus(itemMovs) as StatusItem;
+
           await updateItem(mov.item_id, {
             status: revertedStatus,
             updated_at: now,
@@ -613,6 +662,8 @@ const Movimentacoes: React.FC = () => {
     const headers = [
       "ID",
       "Chamado",
+      "Patrimônio",
+      "Série",
       "Equipamento",
       "Tipo",
       "Origem",
@@ -622,9 +673,12 @@ const Movimentacoes: React.FC = () => {
       "Status Guia",
       "Data",
     ];
+
     const rows = data.map((m) => [
       m.id,
       m.chamado || "",
+      m.item_patrimonio || "",
+      m.item_numero_serie || "",
       m.item_nome,
       m.tipo,
       m.origem,
@@ -641,6 +695,57 @@ const Movimentacoes: React.FC = () => {
       `movimentacoes_ati_${new Date().toISOString().slice(0, 10)}`,
     );
   };
+
+  const renderActionButtons = (mov: Movimentacao) => (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => openSigningModal(mov, "RESPONSAVEL_COLETA")}
+        className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
+        title="Assinar coleta"
+      >
+        <PenLine size={15} />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => openSigningModal(mov, "ENTREGADOR_ORIGEM")}
+        className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
+        title="Assinar entrega na origem"
+      >
+        <ShieldCheck size={15} />
+      </button>
+
+      {mov.tipo === "MANUTENCAO" && (
+        <button
+          type="button"
+          onClick={() => openSigningModal(mov, "RECEBIMENTO_LABORATORIO")}
+          className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
+          title="Assinar recebimento no laboratório"
+        >
+          <Wrench size={15} />
+        </button>
+      )}
+
+      <button
+        type="button"
+        onClick={() => openSigningModal(mov, "REQUERENTE_DEVOLUCAO")}
+        className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
+        title="Assinar devolução ao requerente"
+      >
+        <Check size={15} />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => openGuia(mov)}
+        className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
+        title="Imprimir guia"
+      >
+        <Printer size={16} />
+      </button>
+    </div>
+  );
 
   const renderAssinaturaCard = (assinatura: AssinaturaGuia) => (
     <div
@@ -681,11 +786,12 @@ const Movimentacoes: React.FC = () => {
           Movimentações e Guias
         </h1>
         <p className="text-xs text-outline font-semibold">
-          Registre transferências, coletas, entradas, saídas e guias assinadas.
+          Emita guias, registre assinaturas e consulte o histórico de cada
+          equipamento.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-[420px_1fr] gap-8">
         <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest shadow-sm h-fit">
           <h2 className="text-sm font-bold text-primary mb-5 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
             <ArrowLeftRight size={18} />
@@ -695,10 +801,31 @@ const Movimentacoes: React.FC = () => {
           <form onSubmit={handleRequest} className="space-y-4">
             <div>
               <label
+                htmlFor="formTipo"
+                className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+              >
+                Tipo de Guia
+              </label>
+              <select
+                id="formTipo"
+                value={formTipo}
+                onChange={(e) =>
+                  setFormTipo(e.target.value as TipoMovimentacao)
+                }
+                className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+              >
+                <option value="TRANSFERENCIA">Transferência (Local)</option>
+                <option value="MANUTENCAO">Controle de Entrada e Saída</option>
+                <option value="VIAGEM">Viagem Externa</option>
+              </select>
+            </div>
+
+            <div>
+              <label
                 htmlFor="formChamado"
                 className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
               >
-                Nº do Chamado *
+                Nº do Chamado {formTipo === "VIAGEM" ? "(opcional)" : "*"}
               </label>
               <input
                 id="formChamado"
@@ -735,27 +862,6 @@ const Movimentacoes: React.FC = () => {
               </select>
             </div>
 
-            <div>
-              <label
-                htmlFor="formTipo"
-                className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
-              >
-                Tipo de Guia
-              </label>
-              <select
-                id="formTipo"
-                value={formTipo}
-                onChange={(e) =>
-                  setFormTipo(e.target.value as TipoMovimentacao)
-                }
-                className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-              >
-                <option value="TRANSFERENCIA">Transferência (Local)</option>
-                <option value="MANUTENCAO">Controle de Entrada e Saída</option>
-                <option value="VIAGEM">Viagem Externa</option>
-              </select>
-            </div>
-
             <div className="bg-surface p-4 border border-outline-variant/20 rounded-xl space-y-3">
               <h3 className="font-bold text-primary text-xs border-b border-outline-variant/10 pb-1">
                 Destino
@@ -789,6 +895,7 @@ const Movimentacoes: React.FC = () => {
                       className="w-full px-2 py-1.5 bg-surface-container-lowest border border-outline rounded-lg text-xs"
                     />
                   </div>
+
                   <div>
                     <label
                       htmlFor="formDestinoLivre"
@@ -824,6 +931,7 @@ const Movimentacoes: React.FC = () => {
                       className="w-full px-2 py-1.5 bg-surface-container-lowest border border-outline rounded-lg text-xs"
                     />
                   </div>
+
                   <div>
                     <label
                       htmlFor="formDestinoAndar"
@@ -839,6 +947,7 @@ const Movimentacoes: React.FC = () => {
                       className="w-full px-2 py-1.5 bg-surface-container-lowest border border-outline rounded-lg text-xs"
                     />
                   </div>
+
                   <div>
                     <label
                       htmlFor="formDestinoSala"
@@ -884,6 +993,7 @@ const Movimentacoes: React.FC = () => {
                   Assinatura obrigatória do usuário que está emitindo a guia.
                 </p>
               </div>
+
               <CaixaAssinatura
                 value={formAssinatura}
                 onChange={setFormAssinatura}
@@ -914,26 +1024,33 @@ const Movimentacoes: React.FC = () => {
         </div>
 
         <div className="space-y-6">
-          <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest shadow-sm h-full flex flex-col">
-            <div className="flex justify-between items-center mb-5 border-b border-outline-variant/10 pb-3 gap-3">
-              <h2 className="text-sm font-bold text-primary flex items-center gap-2">
-                <FileText size={18} />
-                Histórico de Guias Emitidas
-              </h2>
+          <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest shadow-sm">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 border-b border-outline-variant/10 pb-3">
+              <div>
+                <h2 className="text-sm font-bold text-primary flex items-center gap-2">
+                  <Search size={18} />
+                  Consulta de Guias e Histórico do Equipamento
+                </h2>
+                <p className="text-[10px] text-outline font-semibold mt-1">
+                  Busque por chamado, patrimônio, número de série, equipamento
+                  ou destino.
+                </p>
+              </div>
 
               <div className="flex items-center gap-2">
                 <div className="flex items-center bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/10">
                   <input
                     type="text"
-                    aria-label="Buscar guias emitidas"
-                    placeholder="Buscar guias..."
+                    aria-label="Buscar por chamado, patrimônio ou número de série"
+                    placeholder="Chamado, patrimônio ou série..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-transparent border-none focus:ring-0 text-xs w-48 text-on-surface"
+                    className="bg-transparent border-none focus:ring-0 text-xs w-64 text-on-surface"
                   />
                 </div>
 
                 <button
+                  type="button"
                   onClick={handleExportMovimentacoesCsv}
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
                 >
@@ -943,150 +1060,156 @@ const Movimentacoes: React.FC = () => {
               </div>
             </div>
 
-            {filteredMovs.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center text-center text-outline py-12">
-                <FileText size={36} className="mb-2 opacity-50" />
-                <p className="text-xs font-bold">Nenhum registro encontrado</p>
+            <div className="grid grid-cols-1 2xl:grid-cols-[360px_1fr] gap-6">
+              <div className="space-y-3 max-h-[620px] overflow-y-auto pr-1">
+                {filteredMovs.length === 0 ? (
+                  <div className="text-center text-outline py-12">
+                    <FileText size={36} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-xs font-bold">
+                      Nenhum registro encontrado
+                    </p>
+                  </div>
+                ) : (
+                  filteredMovs.map((m) => {
+                    const isSelected = selectedMov?.id === m.id;
+
+                    return (
+                      <button
+                        type="button"
+                        key={m.id}
+                        onClick={() => setSelectedMovId(m.id)}
+                        className={`w-full text-left p-4 border rounded-xl transition-all ${
+                          isSelected
+                            ? "bg-primary-fixed/50 border-primary/30"
+                            : "bg-surface border-outline-variant/20 hover:bg-surface-container-low"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-[10px] font-bold text-outline">
+                            {new Date(m.data_movimentacao).toLocaleDateString(
+                              "pt-BR",
+                            )}
+                          </span>
+                          <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">
+                            {TIPO_MOV_LABEL[m.tipo] || m.tipo}
+                          </span>
+                        </div>
+
+                        <p className="text-xs font-bold text-on-surface truncate">
+                          {m.item_nome}
+                        </p>
+
+                        <p className="text-[10px] text-outline font-semibold mt-1">
+                          Chamado:{" "}
+                          <span className="text-on-surface-variant">
+                            {m.chamado || "Sem chamado"}
+                          </span>
+                        </p>
+
+                        <p className="text-[10px] text-outline font-semibold">
+                          Patrimônio/Série:{" "}
+                          <span className="text-on-surface-variant">
+                            {m.item_patrimonio ||
+                              m.item_numero_serie ||
+                              "Não informado"}
+                          </span>
+                        </p>
+                      </button>
+                    );
+                  })
+                )}
               </div>
-            ) : (
-              <div className="space-y-3 overflow-y-auto pr-1 flex-1 min-h-0">
-                {filteredMovs.map((m) => (
-                  <div
-                    key={m.id}
-                    className="p-4 bg-surface border border-outline-variant/20 rounded-xl flex items-center justify-between hover:bg-surface-container-low transition-all group gap-4"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-[10px] font-bold text-outline">
-                          {new Date(m.data_movimentacao).toLocaleDateString()}
-                        </span>
-                        <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">
-                          {TIPO_MOV_LABEL[m.tipo] || m.tipo}
-                        </span>
-                        <span className="text-[10px] font-semibold text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">
-                          {m.status_guia || "ABERTA"}
-                        </span>
-                      </div>
 
-                      <h3 className="text-xs font-bold text-on-surface mb-1 truncate">
-                        {m.item_nome}
-                      </h3>
+              <div className="bg-surface border border-outline-variant/20 rounded-xl p-5 min-h-[420px]">
+                {!selectedMov ? (
+                  <div className="h-full flex flex-col items-center justify-center text-outline text-center">
+                    <FileText size={36} className="mb-2 opacity-50" />
+                    <p className="text-xs font-bold">
+                      Selecione uma guia para ver o histórico.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-5">
+                    <div className="border-b border-outline-variant/20 pb-4">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <p className="text-[10px] font-black text-outline uppercase">
+                            Histórico do Equipamento
+                          </p>
+                          <h3 className="text-lg font-black text-primary">
+                            {selectedMov.item_nome}
+                          </h3>
+                          <p className="text-xs text-outline font-semibold mt-1">
+                            Chamado selecionado:{" "}
+                            <span className="text-on-surface">
+                              {selectedMov.chamado || "Sem chamado"}
+                            </span>
+                          </p>
+                        </div>
 
-                      <p className="text-[10px] text-outline font-semibold mb-1">
-                        Chamado:{" "}
-                        <span className="text-on-surface-variant">
-                          {m.chamado || "Não informado"}
-                        </span>
-                      </p>
-
-                      <div className="flex items-center gap-1.5 text-[10px] font-semibold text-on-surface-variant">
-                        <ArrowLeftRight size={10} className="text-outline" />
-                        <span
-                          className="truncate max-w-[220px]"
-                          title={m.destino}
+                        <button
+                          type="button"
+                          onClick={() => openGuia(selectedMov)}
+                          className="px-3 py-2 bg-primary text-white rounded-xl text-[10px] font-bold flex items-center gap-1.5"
                         >
-                          {m.destino}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1 mt-1 text-[9px] text-outline">
-                        <span>
-                          Solicitado por:{" "}
-                          <strong className="text-on-surface-variant">
-                            {m.solicitante_nome}
-                          </strong>
-                        </span>
+                          <Printer size={13} />
+                          Abrir Guia
+                        </button>
                       </div>
                     </div>
 
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                      {m.status_aprovacao === "PENDENTE" ? (
-                        <>
-                          <span className="px-2 py-0.5 rounded border text-[9px] font-black uppercase bg-amber-50 text-amber-700 border-amber-200">
-                            Pendente
-                          </span>
+                    <div className="space-y-3">
+                      {selectedHistory.map((m) => (
+                        <div
+                          key={m.id}
+                          className="p-4 bg-surface-container-lowest border border-outline-variant/20 rounded-xl"
+                        >
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <span className="text-[10px] font-bold text-outline">
+                                  {new Date(m.data_movimentacao).toLocaleString(
+                                    "pt-BR",
+                                  )}
+                                </span>
+                                <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">
+                                  {TIPO_MOV_LABEL[m.tipo] || m.tipo}
+                                </span>
+                                <span className="text-[10px] font-semibold text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">
+                                  {m.status_guia || "ABERTA"}
+                                </span>
+                              </div>
 
-                          {hasPermission("SUPERIOR") && m.tipo === "BAIXA" && (
-                            <div className="flex items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => handleApproveMovement(m)}
-                                className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
-                                title="Aprovar Baixa"
-                              >
-                                <Check size={14} />
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleRejectMovement(m)}
-                                className="p-1 text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                                title="Rejeitar Baixa"
-                              >
-                                <X size={14} />
-                              </button>
+                              <p className="text-xs font-bold text-on-surface">
+                                {m.chamado || "Sem chamado"}
+                              </p>
+
+                              <div className="flex items-center gap-1.5 text-[10px] font-semibold text-on-surface-variant mt-1">
+                                <ArrowLeftRight
+                                  size={10}
+                                  className="text-outline"
+                                />
+                                <span className="truncate" title={m.destino}>
+                                  {m.origem} → {m.destino}
+                                </span>
+                              </div>
+
+                              <p className="text-[9px] text-outline mt-1">
+                                Solicitado por: {m.solicitante_nome}
+                              </p>
                             </div>
-                          )}
-                        </>
-                      ) : m.status_aprovacao === "REJEITADO" ? (
-                        <span className="px-2 py-0.5 rounded border text-[9px] font-black uppercase bg-red-50 text-red-700 border-red-200">
-                          Rejeitado
-                        </span>
-                      ) : (
-                        <span className="px-2 py-0.5 rounded border text-[9px] font-black uppercase bg-emerald-50 text-emerald-700 border-emerald-200">
-                          Aprovado
-                        </span>
-                      )}
 
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openSigningModal(m, "RESPONSAVEL_COLETA")
-                          }
-                          className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
-                          title="Assinar coleta"
-                        >
-                          <PenLine size={15} />
-                        </button>
-
-                        {m.tipo === "MANUTENCAO" && (
-                          <button
-                            type="button"
-                            onClick={() =>
-                              openSigningModal(m, "RECEBIMENTO_LABORATORIO")
-                            }
-                            className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
-                            title="Assinar recebimento no laboratório"
-                          >
-                            <Wrench size={15} />
-                          </button>
-                        )}
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            openSigningModal(m, "REQUERENTE_DEVOLUCAO")
-                          }
-                          className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
-                          title="Assinar devolução ao requerente"
-                        >
-                          <ShieldCheck size={15} />
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => openGuia(m)}
-                          className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
-                          title="Imprimir Guia"
-                        >
-                          <Printer size={16} />
-                        </button>
-                      </div>
+                            <div className="shrink-0">
+                              {renderActionButtons(m)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
@@ -1267,12 +1390,23 @@ const Movimentacoes: React.FC = () => {
                   Dados do Equipamento
                 </h2>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="col-span-2">
+                  <div>
                     <span className="text-[10px] text-slate-500 block">
                       Equipamento:
                     </span>
                     <span className="font-bold text-slate-900">
                       {activeGuia.item_nome}
+                    </span>
+                  </div>
+
+                  <div>
+                    <span className="text-[10px] text-slate-500 block">
+                      Patrimônio / Série:
+                    </span>
+                    <span className="font-bold text-slate-900">
+                      {activeGuia.item_patrimonio ||
+                        activeGuia.item_numero_serie ||
+                        "Não informado"}
                     </span>
                   </div>
                 </div>

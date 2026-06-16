@@ -91,6 +91,8 @@ export interface Movimentacao {
   signature_token?: string; // Token de assinatura digital [Issue #9, #14]
   chamado?: string;
   status_guia?: StatusGuia;
+  item_patrimonio?: string;
+  item_numero_serie?: string;
 }
 
 export interface Evento {
