@@ -28,10 +28,7 @@ import {
   X,
 } from "lucide-react";
 import { exportToCsv, getReversedStatus } from "../services/utilidades";
-import {
-  fetchAssinaturasGuia,
-  createAssinaturaGuia,
-} from "../services/supabaseAssinaturaGuia";
+import { fetchAssinaturasGuia, createAssinaturaGuia } from "../services/supabaseAssinaturaGuia";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
   CHECK_OUT: "Saída",
@@ -46,7 +43,7 @@ const TIPO_MOV_LABEL: Record<string, string> = {
 const TIPO_ASSINATURA_LABEL: Record<TipoAssinaturaGuia, string> = {
   EMISSAO_GUIA: "Emissão da Guia",
   RESPONSAVEL_COLETA: "Responsável pela Coleta",
-  REQUERENTE_ENTREGA: "Entrega na Origem",
+  REQUERENTE_ENTREGA: "Assinatura do Requerente",
   RECEBIMENTO_LABORATORIO: "Recebimento no Laboratório",
   REQUERENTE_DEVOLUCAO: "Recebimento/Devolução pelo Requerente",
 };
@@ -102,6 +99,7 @@ const CaixaAssinatura: React.FC<CaixaAssinaturaProps> = ({
     if (!ctx) return;
 
     const point = getPoint(event);
+
     ctx.lineWidth = 2.4;
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
@@ -188,7 +186,7 @@ const Movimentacoes: React.FC = () => {
   const [itens, setItens] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const [selectedMovId, setSelectedMovId] = useState<string>("");
+  const [selectedMovId, setSelectedMovId] = useState("");
 
   const [selectedItemId, setSelectedItemId] = useState("");
   const [formChamado, setFormChamado] = useState("");
@@ -245,7 +243,7 @@ const Movimentacoes: React.FC = () => {
   useEffect(() => {
     if (formTipo === "MANUTENCAO") {
       setFormTipoDoc("CONTROLE_ENTRADA_SAIDA");
-      setFormDestinoPolo("Laboratório");
+      setFormDestinoPolo("");
       setFormDestinoAndar("");
       setFormDestinoSala("");
       setFormDestinoSetor("");
@@ -263,6 +261,10 @@ const Movimentacoes: React.FC = () => {
     }
   }, [formTipo]);
 
+  const selectedFormItem = useMemo(() => {
+    return itens.find((item) => item.id === selectedItemId) || null;
+  }, [itens, selectedItemId]);
+
   const filteredMovs = useMemo(() => {
     const query = searchQuery.toLowerCase().trim();
 
@@ -272,6 +274,7 @@ const Movimentacoes: React.FC = () => {
       return (
         m.item_nome.toLowerCase().includes(query) ||
         m.destino.toLowerCase().includes(query) ||
+        m.origem.toLowerCase().includes(query) ||
         m.solicitante_nome.toLowerCase().includes(query) ||
         (m.chamado || "").toLowerCase().includes(query) ||
         (m.item_patrimonio || "").toLowerCase().includes(query) ||
@@ -308,7 +311,7 @@ const Movimentacoes: React.FC = () => {
     return {
       patrimonio: item?.numero_patrimonio || mov.item_patrimonio,
       numeroSerie: item?.numero_serie || mov.item_numero_serie,
-      localizacao: item?.localizacao_atual || mov.destino,
+      localizacao: item?.localizacao_atual || mov.local_retirada || mov.origem,
     };
   };
 
@@ -327,7 +330,7 @@ const Movimentacoes: React.FC = () => {
     setSigningTipo(tipo);
     setSigningNome(user?.nome || "");
     setSigningCpf(user?.cpf || "");
-    setSigningLocalizacao(mov.destino || "");
+    setSigningLocalizacao(mov.local_retirada || mov.origem || mov.destino);
     setSigningObservacao("");
     setSigningAssinatura("");
   };
@@ -355,7 +358,10 @@ const Movimentacoes: React.FC = () => {
       assinante_cpf: signingCpf.trim() || undefined,
       assinante_perfil: user?.perfil,
       assinatura_base64: signingAssinatura,
-      localizacao: signingLocalizacao.trim() || signingMov.destino,
+      localizacao:
+        signingLocalizacao.trim() ||
+        signingMov.local_retirada ||
+        signingMov.origem,
       patrimonio: snapshot.patrimonio,
       numero_serie: snapshot.numeroSerie,
       chamado: signingMov.chamado,
@@ -375,7 +381,7 @@ const Movimentacoes: React.FC = () => {
       await updateMovimentacao(signingMov.id, {
         status_guia:
           signingMov.tipo === "MANUTENCAO"
-            ? "EM_COLETA"
+            ? "EM_ATENDIMENTO"
             : "AGUARDANDO_DEVOLUCAO",
       });
     }
@@ -432,37 +438,6 @@ const Movimentacoes: React.FC = () => {
       return;
     }
 
-    let destinoFinal = "";
-
-    if (formTipo === "MANUTENCAO") {
-      destinoFinal = "Laboratório (Em Manutenção)";
-    } else if (formTipo === "VIAGEM") {
-      if (!formDestinoLivre.trim()) {
-        setFormError("Para viagens, informe o destino externo.");
-        setIsSaving(false);
-        return;
-      }
-
-      const prefix = formDestinoPolo.trim() ? `${formDestinoPolo} - ` : "";
-      destinoFinal = `${prefix}Em Viagem: ${formDestinoLivre}`;
-    } else {
-      destinoFinal = [
-        formDestinoPolo,
-        formDestinoAndar,
-        formDestinoSetor,
-        formDestinoSala,
-        formDestinoEstacao,
-      ]
-        .filter(Boolean)
-        .join(" - ");
-
-      if (!destinoFinal) {
-        setFormError("Informe o endereço hierárquico de destino.");
-        setIsSaving(false);
-        return;
-      }
-    }
-
     try {
       const item = itens.find((i) => i.id === selectedItemId);
 
@@ -470,6 +445,37 @@ const Movimentacoes: React.FC = () => {
         setFormError("Equipamento não encontrado ou indisponível.");
         setIsSaving(false);
         return;
+      }
+
+      let destinoFinal = "";
+
+      if (formTipo === "MANUTENCAO") {
+        destinoFinal = item.localizacao_atual;
+      } else if (formTipo === "VIAGEM") {
+        if (!formDestinoLivre.trim()) {
+          setFormError("Para viagens, informe o destino externo.");
+          setIsSaving(false);
+          return;
+        }
+
+        const prefix = formDestinoPolo.trim() ? `${formDestinoPolo} - ` : "";
+        destinoFinal = `${prefix}Em Viagem: ${formDestinoLivre}`;
+      } else {
+        destinoFinal = [
+          formDestinoPolo,
+          formDestinoAndar,
+          formDestinoSetor,
+          formDestinoSala,
+          formDestinoEstacao,
+        ]
+          .filter(Boolean)
+          .join(" - ");
+
+        if (!destinoFinal) {
+          setFormError("Informe o endereço hierárquico de destino.");
+          setIsSaving(false);
+          return;
+        }
       }
 
       const now = new Date().toISOString();
@@ -498,6 +504,7 @@ const Movimentacoes: React.FC = () => {
         status_guia: "ABERTA",
         item_patrimonio: item.numero_patrimonio,
         item_numero_serie: item.numero_serie,
+        local_retirada: item.localizacao_atual,
       };
 
       const savedMov = await createMovimentacao(newMov);
@@ -526,7 +533,7 @@ const Movimentacoes: React.FC = () => {
       if (formTipo === "MANUTENCAO") {
         await updateItem(item.id, {
           status: "EM_MANUTENCAO",
-          localizacao_atual: "Laboratório (Em Manutenção)",
+          localizacao_atual: `Em atendimento - retirado de ${item.localizacao_atual}`,
           updated_at: now,
         });
       } else if (formTipo === "VIAGEM") {
@@ -714,12 +721,12 @@ const Movimentacoes: React.FC = () => {
         type="button"
         onClick={() => openSigningModal(mov, "REQUERENTE_ENTREGA")}
         className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all"
-        title="Assinar entrega na origem"
+        title="Assinatura do requerente"
       >
         <ShieldCheck size={15} />
       </button>
 
-      {mov.tipo === "MANUTENCAO" && (
+      {mov.tipo === "MANUTENCAO" && mov.destino.includes("Laboratório") && (
         <button
           type="button"
           onClick={() => openSigningModal(mov, "RECEBIMENTO_LABORATORIO")}
@@ -867,18 +874,32 @@ const Movimentacoes: React.FC = () => {
 
             <div className="bg-surface p-4 border border-outline-variant/20 rounded-xl space-y-3">
               <h3 className="font-bold text-primary text-xs border-b border-outline-variant/10 pb-1">
-                Destino
+                {formTipo === "MANUTENCAO" ? "Dados da Retirada" : "Destino"}
               </h3>
 
               {formTipo === "MANUTENCAO" ? (
-                <div className="p-3 bg-primary/5 border border-primary/10 rounded-lg">
-                  <p className="text-xs font-bold text-primary flex items-center gap-2">
-                    <Wrench size={14} /> Laboratório (Em Manutenção)
-                  </p>
-                  <p className="text-[10px] text-primary/70 mt-1">
-                    A guia exigirá assinatura de coleta, entrega na origem,
-                    recebimento no laboratório e devolução ao requerente.
-                  </p>
+                <div className="space-y-3">
+                  <div className="p-3 bg-primary/5 border border-primary/10 rounded-lg">
+                    <p className="text-xs font-bold text-primary flex items-center gap-2">
+                      <Wrench size={14} />
+                      Controle de Entrada e Saída
+                    </p>
+                    <p className="text-[10px] text-primary/70 mt-1">
+                      A guia registra a retirada do equipamento no local atual.
+                      O envio ao laboratório será registrado depois, se
+                      necessário.
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">
+                      Local de retirada
+                    </label>
+                    <div className="w-full px-3 py-2 bg-surface-container-lowest border border-outline rounded-lg text-xs text-on-surface">
+                      {selectedFormItem?.localizacao_atual ||
+                        "Selecione um equipamento"}
+                    </div>
+                  </div>
                 </div>
               ) : formTipo === "VIAGEM" ? (
                 <div className="space-y-3">
@@ -1035,8 +1056,8 @@ const Movimentacoes: React.FC = () => {
                   Consulta de Guias e Histórico do Equipamento
                 </h2>
                 <p className="text-[10px] text-outline font-semibold mt-1">
-                  Busque por chamado, patrimônio, número de série, equipamento
-                  ou destino.
+                  Busque por chamado, patrimônio, número de série, equipamento,
+                  local de retirada ou destino.
                 </p>
               </div>
 
@@ -1179,9 +1200,11 @@ const Movimentacoes: React.FC = () => {
                                     "pt-BR",
                                   )}
                                 </span>
+
                                 <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">
                                   {TIPO_MOV_LABEL[m.tipo] || m.tipo}
                                 </span>
+
                                 <span className="text-[10px] font-semibold text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">
                                   {m.status_guia || "ABERTA"}
                                 </span>
@@ -1197,7 +1220,9 @@ const Movimentacoes: React.FC = () => {
                                   className="text-outline"
                                 />
                                 <span className="truncate" title={m.destino}>
-                                  {m.origem} → {m.destino}
+                                  {m.tipo === "MANUTENCAO"
+                                    ? `Retirado de ${m.local_retirada || m.origem}`
+                                    : `${m.origem} → ${m.destino}`}
                                 </span>
                               </div>
 
@@ -1421,8 +1446,11 @@ const Movimentacoes: React.FC = () => {
 
               <div>
                 <h2 className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">
-                  Trajeto / Destinação
+                  {activeGuia.tipo === "MANUTENCAO"
+                    ? "Retirada / Controle de Entrada e Saída"
+                    : "Trajeto / Destinação"}
                 </h2>
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <span className="text-[10px] text-slate-500 block">
@@ -1462,10 +1490,14 @@ const Movimentacoes: React.FC = () => {
 
                   <div className="col-span-2 bg-emerald-50 p-2 border border-emerald-100 rounded">
                     <span className="text-[10px] text-emerald-700 block font-bold">
-                      Destino Oficial:
+                      {activeGuia.tipo === "MANUTENCAO"
+                        ? "Local de Retirada:"
+                        : "Destino Oficial:"}
                     </span>
                     <span className="font-bold text-emerald-900">
-                      {activeGuia.destino}
+                      {activeGuia.tipo === "MANUTENCAO"
+                        ? activeGuia.local_retirada || activeGuia.origem
+                        : activeGuia.destino}
                     </span>
                   </div>
                 </div>
