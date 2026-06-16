@@ -14,10 +14,7 @@ import {
   fetchMovimentacoes,
   updateMovimentacao,
 } from "../services/supabaseMovimentacoes";
-import {
-  createAssinaturaGuia,
-  fetchAssinaturasGuia,
-} from "../services/supabaseAssinaturasGuia";
+
 import {
   ArrowLeftRight,
   Check,
@@ -31,6 +28,7 @@ import {
   X,
 } from "lucide-react";
 import { exportToCsv, getReversedStatus } from "../services/utilidades";
+import { fetchAssinaturasGuia, createAssinaturaGuia } from "../services/supabaseAssinaturasGuia";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
   CHECK_OUT: "Saída",
