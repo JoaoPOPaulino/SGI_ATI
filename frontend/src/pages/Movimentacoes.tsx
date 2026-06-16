@@ -291,6 +291,15 @@ const Movimentacoes: React.FC = () => {
     );
   }, [movs, searchQuery]);
 
+  const normalizeChamado = (value?: string | null) => {
+    const normalized = (value || "").trim().toLowerCase();
+    return normalized || null;
+  };
+
+  const sameChamado = (a?: string | null, b?: string | null) => {
+    return normalizeChamado(a) === normalizeChamado(b);
+  };
+
   const selectedMov = useMemo(() => {
     return movs.find((m) => m.id === selectedMovId) || filteredMovs[0] || null;
   }, [filteredMovs, movs, selectedMovId]);
@@ -298,8 +307,18 @@ const Movimentacoes: React.FC = () => {
   const selectedHistory = useMemo(() => {
     if (!selectedMov) return [];
 
+    const chamadoSelecionado = normalizeChamado(selectedMov.chamado);
+
     return movs
-      .filter((m) => m.item_id === selectedMov.item_id)
+      .filter((m) => {
+        if (m.item_id !== selectedMov.item_id) return false;
+
+        if (!chamadoSelecionado) {
+          return m.id === selectedMov.id;
+        }
+
+        return sameChamado(m.chamado, selectedMov.chamado);
+      })
       .sort(
         (a, b) =>
           new Date(b.data_movimentacao).getTime() -
@@ -1160,11 +1179,14 @@ const Movimentacoes: React.FC = () => {
                       <div className="flex items-start justify-between gap-4">
                         <div>
                           <p className="text-[10px] font-black text-outline uppercase">
-                            Histórico do Equipamento
+                            Histórico do Chamado
                           </p>
-                          <h3 className="text-lg font-black text-primary">
-                            {selectedMov.item_nome}
-                          </h3>
+                          <p className="text-xs text-outline font-semibold mt-1">
+                            Equipamento:{" "}
+                            <span className="text-on-surface">
+                              {selectedMov.item_nome}
+                            </span>
+                          </p>
                           <p className="text-xs text-outline font-semibold mt-1">
                             Chamado selecionado:{" "}
                             <span className="text-on-surface">
