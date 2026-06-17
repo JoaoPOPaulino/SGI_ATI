@@ -937,24 +937,6 @@ const Movimentacoes: React.FC = () => {
                       O equipamento será enviado para o Laboratório de Manutenção.
                     </p>
                   </div>
-
-                  <div>
-                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">
-                      Destino
-                    </label>
-                    <div className="w-full px-3 py-2 bg-surface-container-lowest border border-outline rounded-lg text-xs text-on-surface">
-                      Bloco B - Terreo - Manutencao - Oficina - Bancada M-1
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">
-                      Polo de Origem
-                    </label>
-                    <div className="w-full px-3 py-2 bg-surface-container-lowest border border-outline rounded-lg text-xs text-on-surface">
-                      {selectedFormItem?.polo || "Selecione um equipamento"}
-                    </div>
-                  </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3">
@@ -1121,11 +1103,10 @@ const Movimentacoes: React.FC = () => {
                         type="button"
                         key={m.id}
                         onClick={() => setSelectedMovId(m.id)}
-                        className={`w-full text-left p-4 border rounded-xl transition-all ${
-                          isSelected
+                        className={`w-full text-left p-4 border rounded-xl transition-all ${isSelected
                             ? "bg-primary-fixed/50 border-primary/30"
                             : "bg-surface border-outline-variant/20 hover:bg-surface-container-low"
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="text-[10px] font-bold text-outline">

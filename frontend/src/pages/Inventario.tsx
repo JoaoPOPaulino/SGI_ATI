@@ -282,15 +282,20 @@ const Inventario: React.FC = () => {
         setFormError("O Setor é obrigatório.");
         return;
       }
-      if (
-        formTipo === "PATRIMONIADO" &&
-        !formPatrimonio.trim() &&
-        !formSerie.trim()
-      ) {
-        setFormError(
-          "Itens patrimoniados exigem o Nº de Patrimônio ou o Número de Série.",
-        );
-        return;
+      if (formTipo === "PATRIMONIADO") {
+        const patDigits = formPatrimonio.replace(/\D/g, "");
+        if (patDigits.length > 0 && patDigits.length < 6) {
+          setFormError(
+            "O Nº de Patrimônio deve conter exatamente 6 dígitos (ex: PAT-123456)."
+          );
+          return;
+        }
+        if (patDigits.length === 0 && !formSerie.trim()) {
+          setFormError(
+            "Itens patrimoniados exigem o Nº de Patrimônio ou o Número de Série."
+          );
+          return;
+        }
       }
       if (formTipo === "SERIALIZADO" && !formSerie.trim()) {
         setFormError("Itens serializados exigem o Número de Série.");
@@ -328,7 +333,7 @@ const Inventario: React.FC = () => {
           condicao: formCondicao,
           status: formStatus,
           numero_patrimonio:
-            formTipo === "PATRIMONIADO" ? formPatrimonio : undefined,
+            formTipo === "PATRIMONIADO" && formPatrimonio ? formPatrimonio : undefined,
           numero_serie: formTipo !== "NAO_SERIALIZADO" ? formSerie : undefined,
           localizacao_atual: localConcatenado,
           updated_at: now,
@@ -373,7 +378,7 @@ const Inventario: React.FC = () => {
           condicao: formCondicao,
           status: formStatus,
           numero_patrimonio:
-            formTipo === "PATRIMONIADO" ? formPatrimonio : undefined,
+            formTipo === "PATRIMONIADO" && formPatrimonio ? formPatrimonio : undefined,
           numero_serie: formTipo !== "NAO_SERIALIZADO" ? formSerie : undefined,
           localizacao_atual: localConcatenado,
           created_at: now,
@@ -1339,26 +1344,26 @@ const Inventario: React.FC = () => {
                   <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
                     Categoria *
                   </label>
-                  <input
-                    type="text"
-                    list="categoria-opcoes"
+                  <select
                     value={formCategoria}
                     onChange={(e) => setFormCategoria(e.target.value)}
-                    placeholder="Digite ou selecione..."
                     className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
-                  />
-                  <datalist id="categoria-opcoes">
-                    {[...new Set(itens.map((i) => i.categoria))].map((c) => (
-                      <option key={c} value={c} />
-                    ))}
-                  </datalist>
+                  >
+                    <option value="NOTEBOOK">Notebook</option>
+                    <option value="COMPUTADOR">Computador</option>
+                    <option value="MONITOR">Monitor</option>
+                    <option value="IMPRESSORA">Impressora</option>
+                    <option value="FERRAMENTA">Ferramenta</option>
+                    <option value="ACESSORIO">Acessório</option>
+                    <option value="OUTROS">Outros</option>
+                  </select>
                 </div>
               </div>
 
               {/* Campos Condicionais: Patrimônio e Série */}
               {(formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO") && (
                 <div className="grid grid-cols-2 gap-4">
-                  {formTipo === "PATRIMONIADO" && (
+                  {formTipo === "PATRIMONIADO" ? (
                     <div>
                       <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
                         Nº de Patrimônio *
@@ -1367,25 +1372,21 @@ const Inventario: React.FC = () => {
                         type="text"
                         value={formPatrimonio}
                         onChange={(e) => {
-                          let val = e.target.value
-                            .toUpperCase()
-                            .replace(/[^A-Z0-9-]/g, "");
-                          if (!val.startsWith("PAT-"))
-                            val = "PAT-" + val.replace(/^PAT/, "");
-                          const digits = val
-                            .replace("PAT-", "")
-                            .replace(/\D/g, "")
-                            .slice(0, 6);
-                          if (digits) val = "PAT-" + digits;
-                          else if (val === "PAT-") val = "PAT-";
-                          else val = "PAT-";
-                          setFormPatrimonio(val);
+                          const inputVal = e.target.value;
+                          const digits = inputVal.replace(/\D/g, "").slice(0, 6);
+                          if (digits.length > 0) {
+                            setFormPatrimonio(`PAT-${digits}`);
+                          } else {
+                            setFormPatrimonio("");
+                          }
                         }}
                         placeholder="000000"
                         maxLength={10}
                         className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface font-mono"
                       />
                     </div>
+                  ) : (
+                    <div />
                   )}
                   <div>
                     <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
