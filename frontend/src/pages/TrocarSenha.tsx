@@ -85,16 +85,6 @@ const TrocarSenha: React.FC = () => {
         return;
       }
 
-      const { error: updatePasswordError } = await supabase.auth.updateUser({
-        password: novaSenha,
-      });
-
-      if (updatePasswordError) {
-        setError(updatePasswordError.message || "Erro ao atualizar senha.");
-        setLoading(false);
-        return;
-      }
-
       const { error: updateProfileError } = await supabase
         .from("usuarios")
         .update({
@@ -103,9 +93,17 @@ const TrocarSenha: React.FC = () => {
         .eq("auth_id", userData.user.id);
 
       if (updateProfileError) {
-        setError(
-          "Senha alterada, mas houve erro ao atualizar o perfil do usuário.",
-        );
+        setError("Erro ao atualizar o perfil do usuário.");
+        setLoading(false);
+        return;
+      }
+
+      const { error: updatePasswordError } = await supabase.auth.updateUser({
+        password: novaSenha,
+      });
+
+      if (updatePasswordError) {
+        setError(updatePasswordError.message || "Erro ao atualizar senha.");
         setLoading(false);
         return;
       }
