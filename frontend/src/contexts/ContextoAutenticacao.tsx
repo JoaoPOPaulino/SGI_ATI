@@ -35,6 +35,7 @@ const mapUsuario = (data: any): Usuario => ({
   ativo: data.ativo ?? true,
   polo: data.polo || undefined,
   foto: data.foto || undefined,
+  primeiro_acesso: data.primeiro_acesso ?? false,
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({

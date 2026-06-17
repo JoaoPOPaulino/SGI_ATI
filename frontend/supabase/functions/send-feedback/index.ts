@@ -38,55 +38,90 @@ serve(async (req: Request) => {
   }
 
   try {
+    const authHeader = req.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ success: false, error: "Autenticacao necessaria." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+    const supabaseUser = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: `Bearer ${token}` } } });
+
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ success: false, error: "Sessao invalida ou expirada." }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { usuario, email, perfil, polo, tipo, mensagem } = await req.json();
+
+    const sanitize = (s: string) => s?.replace(/[<>&"']/g, '') ?? '';
+
+    const usuarioClean = sanitize(usuario);
+    const emailClean = sanitize(email);
+    const perfilClean = sanitize(perfil);
+    const poloClean = sanitize(polo);
+    const tipoClean = sanitize(tipo);
+    const mensagemSanitized = sanitize(mensagem);
+
+    if (!mensagemSanitized || mensagemSanitized.length < 3 || mensagemSanitized.length > 2000) {
+      return new Response(JSON.stringify({ success: false, error: "Mensagem invalida (3-2000 caracteres)." }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const data = new Date().toLocaleString("pt-BR");
-    const subject = `[SGI-ATI] ${tipo} - ${usuario}`;
+    const subject = `[SGI-ATI] ${tipoClean} - ${usuarioClean}`;
 
     const textBody = `
 Novo Feedback SGI-ATI
 =====================
-Tipo: ${tipo}
-Usuário: ${usuario}
-Email: ${email}
-Perfil: ${perfil}
-Polo: ${polo || "N/A"}
+Tipo: ${tipoClean}
+Usuario: ${usuarioClean}
+Email: ${emailClean}
+Perfil: ${perfilClean}
+Polo: ${poloClean || "N/A"}
 Data: ${data}
 
 Mensagem:
-${mensagem}
+${mensagemSanitized}
 =====================
     `.trim();
 
     const htmlBody = `
 <h2>Novo Feedback SGI-ATI</h2>
 <table style="border-collapse:collapse;width:100%">
-<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Tipo</td><td style="padding:6px 12px">${tipo}</td></tr>
-<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Usuário</td><td style="padding:6px 12px">${usuario}</td></tr>
-<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Email</td><td style="padding:6px 12px">${email}</td></tr>
-<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Perfil</td><td style="padding:6px 12px">${perfil}</td></tr>
-<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Polo</td><td style="padding:6px 12px">${polo || "N/A"}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Tipo</td><td style="padding:6px 12px">${tipoClean}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Usuario</td><td style="padding:6px 12px">${usuarioClean}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Email</td><td style="padding:6px 12px">${emailClean}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Perfil</td><td style="padding:6px 12px">${perfilClean}</td></tr>
+<tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Polo</td><td style="padding:6px 12px">${poloClean || "N/A"}</td></tr>
 <tr><td style="padding:6px 12px;font-weight:bold;background:#f0f0f0">Data</td><td style="padding:6px 12px">${data}</td></tr>
 </table>
 <h3>Mensagem:</h3>
-<p style="white-space:pre-wrap;background:#fafafa;padding:12px;border-radius:8px">${mensagem}</p>
+<p style="white-space:pre-wrap;background:#fafafa;padding:12px;border-radius:8px">${mensagemSanitized}</p>
     `.trim();
 
-    // 1. Save to DB always
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
     if (supabaseUrl && serviceRoleKey) {
       const supabase = createClient(supabaseUrl, serviceRoleKey);
       await supabase.from("solicitacoes").insert({
-        nome: usuario,
-        email: email,
-        polo_solicitado: polo || "N/A",
-        motivo: `[${tipo}] ${mensagem}`,
+        nome: usuarioClean,
+        email: emailClean,
+        polo_solicitado: poloClean || "N/A",
+        motivo: `[${tipoClean}] ${mensagemSanitized}`,
         status: "PENDENTE",
       });
     }
 
-    // 2. Try to send email via Resend
     let emailEnviado = false;
     try {
       emailEnviado = await sendViaResend(subject, htmlBody, textBody);
@@ -94,7 +129,6 @@ ${mensagem}
       emailEnviado = false;
     }
 
-    // 3. Build mailto fallback only if email was NOT sent
     const mailto = emailEnviado
       ? null
       : `mailto:sgi.ati.to@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(textBody)}`;

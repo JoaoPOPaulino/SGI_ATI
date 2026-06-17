@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { PerfilUsuario } from '../services/bancoMock';
 import { ShieldAlert } from 'lucide-react';
@@ -12,6 +12,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPerfil, requiredPolo }) => {
   const { user, hasPermission, isLoading } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -26,6 +27,10 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPerfi
 
   if (!user) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (user.primeiro_acesso && location.pathname !== '/trocar-senha') {
+    return <Navigate to="/trocar-senha" replace />;
   }
 
   if (requiredPerfil && !hasPermission(requiredPerfil)) {

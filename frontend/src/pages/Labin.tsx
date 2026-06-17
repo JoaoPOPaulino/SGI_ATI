@@ -118,7 +118,7 @@ const Labin: React.FC = () => {
       await updateItem(item.id, {
         status: 'GUARDADO',
         condicao: 'BOM',
-        localizacao_atual: 'Almoxarifado Central (Reparado no LABIN)',
+        localizacao_atual: 'LABIN',
         updated_at: now
       });
 
@@ -128,7 +128,7 @@ const Labin: React.FC = () => {
         item_nome: item.nome,
         tipo: 'CHECK_IN',
         origem: item.localizacao_atual,
-        destino: 'Almoxarifado Central (Reparado no LABIN)',
+        destino: 'LABIN',
         solicitante_id: user?.id || 'usr-anon',
         solicitante_nome: user?.nome || 'Anônimo',
         status_aprovacao: 'APROVADO',

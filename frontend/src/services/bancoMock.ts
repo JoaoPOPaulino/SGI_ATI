@@ -17,6 +17,7 @@ export interface Usuario {
   ativo: boolean;
   polo?: string;
   foto?: string;
+  primeiro_acesso?: boolean;
 }
 
 export interface Item {
