@@ -30,7 +30,7 @@ const TIPO_MOV_LABEL: Record<string, { label: string; color: string }> = {
   MANUTENCAO: { label: "Manutenção", color: "text-orange-400" },
   BAIXA: { label: "Baixa", color: "text-red-400" },
   EMPRESTIMO: { label: "Empréstimo", color: "text-cyan-400" },
-  VIAGEM: { label: "Viagem", color: "text-indigo-400" },
+  VIAGEM: { label: "Laboratório", color: "text-indigo-400" },
 };
 
 const INITIAL_STATS: DashboardStats = {

@@ -37,7 +37,7 @@ const TIPO_MOV_LABEL: Record<string, string> = {
   MANUTENCAO: "Controle de Entrada e Saída",
   BAIXA: "Baixa",
   EMPRESTIMO: "Empréstimo",
-  VIAGEM: "Viagem Externa",
+  VIAGEM: "Enviar p/ Laboratório",
 };
 
 const TIPO_ASSINATURA_LABEL: Record<TipoAssinaturaGuia, string> = {
@@ -251,10 +251,12 @@ const Movimentacoes: React.FC = () => {
       setFormDestinoLivre("");
     } else if (formTipo === "VIAGEM") {
       setFormTipoDoc("CONTROLE_ENTRADA_SAIDA");
-      setFormDestinoAndar("");
-      setFormDestinoSala("");
-      setFormDestinoSetor("");
-      setFormDestinoEstacao("");
+      setFormDestinoPolo("Laboratorio");
+      setFormDestinoAndar("Terreo");
+      setFormDestinoSala("Oficina");
+      setFormDestinoSetor("Manutencao");
+      setFormDestinoEstacao("Bancada M-1");
+      setFormDestinoLivre("");
     } else {
       setFormTipoDoc("GUIA_MOVIMENTACAO");
       setFormDestinoLivre("");
@@ -471,14 +473,21 @@ const Movimentacoes: React.FC = () => {
       if (formTipo === "MANUTENCAO") {
         destinoFinal = item.localizacao_atual;
       } else if (formTipo === "VIAGEM") {
-        if (!formDestinoLivre.trim()) {
-          setFormError("Para viagens, informe o destino externo.");
+        destinoFinal = [
+          formDestinoPolo,
+          formDestinoAndar,
+          formDestinoSetor,
+          formDestinoSala,
+          formDestinoEstacao,
+        ]
+          .filter(Boolean)
+          .join(" - ");
+
+        if (!destinoFinal) {
+          setFormError("Informe o destino do laboratório.");
           setIsSaving(false);
           return;
         }
-
-        const prefix = formDestinoPolo.trim() ? `${formDestinoPolo} - ` : "";
-        destinoFinal = `${prefix}Em Viagem: ${formDestinoLivre}`;
       } else {
         destinoFinal = [
           formDestinoPolo,
@@ -498,10 +507,7 @@ const Movimentacoes: React.FC = () => {
       }
 
       const now = new Date().toISOString();
-      const chamado =
-        formTipo === "VIAGEM"
-          ? formChamado.trim() || undefined
-          : formChamado.trim();
+      const chamado = formChamado.trim();
 
       const newMov: Movimentacao = {
         id: crypto.randomUUID(),
@@ -559,11 +565,11 @@ const Movimentacoes: React.FC = () => {
         await updateItem(item.id, {
           localizacao_atual: destinoFinal,
           updated_at: now,
-          polo: "Viagem Externa",
-          andar: "",
-          setor: "",
-          sala: "",
-          estacao: "",
+          polo: formDestinoPolo,
+          andar: formDestinoAndar,
+          setor: formDestinoSetor,
+          sala: formDestinoSala,
+          estacao: formDestinoEstacao,
         });
       } else {
         await updateItem(item.id, {
@@ -845,7 +851,7 @@ const Movimentacoes: React.FC = () => {
               >
                 <option value="TRANSFERENCIA">Transferência (Local)</option>
                 <option value="MANUTENCAO">Controle de Entrada e Saída</option>
-                <option value="VIAGEM">Viagem Externa</option>
+                <option value="VIAGEM">Enviar p/ Laboratório</option>
               </select>
             </div>
 
@@ -854,7 +860,7 @@ const Movimentacoes: React.FC = () => {
                 htmlFor="formChamado"
                 className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
               >
-                Nº do Chamado {formTipo === "VIAGEM" ? "(opcional)" : "*"}
+                Nº do Chamado *
               </label>
               <input
                 id="formChamado"
@@ -922,38 +928,32 @@ const Movimentacoes: React.FC = () => {
                 </div>
               ) : formTipo === "VIAGEM" ? (
                 <div className="space-y-3">
-                  <div>
-                    <label
-                      htmlFor="formDestinoPoloViagem"
-                      className="block text-[9px] font-bold text-outline uppercase mb-1"
-                    >
-                      Polo de Origem
-                    </label>
-                    <input
-                      id="formDestinoPoloViagem"
-                      type="text"
-                      value={formDestinoPolo}
-                      onChange={(e) => setFormDestinoPolo(e.target.value)}
-                      placeholder="Ex: GSM, Laboratório"
-                      className="w-full px-2 py-1.5 bg-surface-container-lowest border border-outline rounded-lg text-xs"
-                    />
+                  <div className="p-3 bg-indigo-500/5 border border-indigo-500/10 rounded-lg">
+                    <p className="text-xs font-bold text-indigo-600 flex items-center gap-2">
+                      <Wrench size={14} />
+                      Enviar para o Laboratório
+                    </p>
+                    <p className="text-[10px] text-indigo-600/70 mt-1">
+                      O equipamento será enviado para o Laboratório de Manutenção.
+                    </p>
                   </div>
 
                   <div>
-                    <label
-                      htmlFor="formDestinoLivre"
-                      className="block text-[9px] font-bold text-outline uppercase mb-1"
-                    >
-                      Destino da Viagem *
+                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">
+                      Destino
                     </label>
-                    <input
-                      id="formDestinoLivre"
-                      type="text"
-                      value={formDestinoLivre}
-                      onChange={(e) => setFormDestinoLivre(e.target.value)}
-                      placeholder="Ex: Rio de Janeiro - Reunião Diretoria"
-                      className="w-full px-3 py-2 bg-surface-container-lowest border border-outline rounded-lg text-xs text-on-surface"
-                    />
+                    <div className="w-full px-3 py-2 bg-surface-container-lowest border border-outline rounded-lg text-xs text-on-surface">
+                      Bloco B - Terreo - Manutencao - Oficina - Bancada M-1
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[9px] font-bold text-outline uppercase mb-1">
+                      Polo de Origem
+                    </label>
+                    <div className="w-full px-3 py-2 bg-surface-container-lowest border border-outline rounded-lg text-xs text-on-surface">
+                      {selectedFormItem?.polo || "Selecione um equipamento"}
+                    </div>
                   </div>
                 </div>
               ) : (

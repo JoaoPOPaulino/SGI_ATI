@@ -173,7 +173,7 @@ if (guardados.length > 1) {
   movimentacoes.push({
     id: uid(), item_id: guardados[1].id, item_nome: guardados[1].nome,
     tipo: "VIAGEM", origem: guardados[1].localizacao_atual,
-    destino: "Em Viagem: Sao Paulo - Reuniao com Fornecedores",
+    destino: "Laboratorio - Terreo - Manutencao - Oficina - Bancada M-1",
     solicitante_id: U[1].id, solicitante_nome: U[1].nome,
     aprovador_id: U[5].id, aprovador_nome: U[5].nome,
     status_aprovacao: "APROVADO", data_movimentacao: now(),
