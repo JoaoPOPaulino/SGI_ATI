@@ -92,6 +92,18 @@ export async function deleteItem(
   id: string,
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const { error: e1 } = await supabase.from("movimentacoes").delete().eq("item_id", id);
+    if (e1) { console.error("Erro ao excluir movimentacoes:", e1); return { success: false, error: e1.message }; }
+
+    const { error: e2 } = await supabase.from("laudos").delete().eq("item_id", id);
+    if (e2) { console.error("Erro ao excluir laudos:", e2); return { success: false, error: e2.message }; }
+
+    const { error: e3 } = await supabase.from("loans").delete().eq("item_id", id);
+    if (e3) { console.error("Erro ao excluir loans:", e3); return { success: false, error: e3.message }; }
+
+    const { error: e4 } = await supabase.from("evento_itens").delete().eq("item_id", id);
+    if (e4) { console.error("Erro ao excluir evento_itens:", e4); return { success: false, error: e4.message }; }
+
     const { error } = await supabase.from("itens").delete().eq("id", id);
 
     if (error) {
