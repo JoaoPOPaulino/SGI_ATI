@@ -38,9 +38,9 @@ CREATE POLICY "Itens - Tecnico atualiza" ON public.itens
     EXISTS (SELECT 1 FROM public.usuarios WHERE auth_id = auth.uid() AND perfil IN ('TECNICO','SUPERIOR','ADMIN'))
   );
 
-CREATE POLICY "Itens - Superior deleta" ON public.itens
+CREATE POLICY "Itens - Admin deleta" ON public.itens
   FOR DELETE USING (
-    EXISTS (SELECT 1 FROM public.usuarios WHERE auth_id = auth.uid() AND perfil IN ('SUPERIOR','ADMIN'))
+    EXISTS (SELECT 1 FROM public.usuarios WHERE auth_id = auth.uid() AND perfil = 'ADMIN')
   );
 
 -- 3. MOVIMENTACOES: Autenticados leem; TECNICO+ escreve

@@ -522,10 +522,10 @@ const Inventario: React.FC = () => {
     }
   };
 
-  // Exclusão Logística (Somente Admin/Superior)
+  // Exclusão Logística (Somente Admin)
   const handleDelete = async (id: string) => {
-    if (!hasPermission("SUPERIOR")) {
-      alert("Somente usuários de nível Superior ou Admin podem deletar itens.");
+    if (!hasPermission("ADMIN")) {
+      alert("Somente usuários Administradores podem deletar itens permanentemente.");
       return;
     }
     if (
@@ -919,7 +919,7 @@ const Inventario: React.FC = () => {
                             </button>
                           </>
                         )}
-                        {hasPermission("SUPERIOR") && (
+                        {hasPermission("ADMIN") && (
                           <button
                             onClick={() => handleDelete(item.id)}
                             className="p-1.5 hover:bg-red-50 text-error rounded-lg transition-all"
