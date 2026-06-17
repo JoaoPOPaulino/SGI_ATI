@@ -967,7 +967,7 @@ const Inventario: React.FC = () => {
               </div>
 
               <div className="pt-4 border-t border-surface-container-low flex items-center justify-between text-[11px] font-semibold text-outline">
-                <span className="truncate max-w-[150px] flex items-center gap-1">
+                <span className="truncate max-w-37.5 flex items-center gap-1">
                   <MapPin size={12} />
                   {item.polo || "GSM"}
                 </span>

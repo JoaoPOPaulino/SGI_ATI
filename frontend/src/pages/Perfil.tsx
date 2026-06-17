@@ -64,7 +64,7 @@ const Perfil: React.FC = () => {
             <h2 className="text-xl font-bold text-primary mb-1 truncate px-4">{user.nome}</h2>
             <div className="inline-flex px-2 py-0.5 rounded uppercase tracking-widest font-black text-[10px] bg-primary/10 text-primary border border-primary/20 mb-6">{user.perfil}</div>
             <div className="w-full space-y-4 text-left">
-              <div className="flex items-center gap-3 text-sm"><Mail size={16} className="text-outline" /><span className="text-on-surface-variant truncate max-w-[220px]">{user.email}</span></div>
+              <div className="flex items-center gap-3 text-sm"><Mail size={16} className="text-outline" /><span className="text-on-surface-variant truncate max-w-55">{user.email}</span></div>
               <div className="flex items-center gap-3 text-sm"><Shield size={16} className="text-outline" /><span className="text-on-surface-variant">Nível de Acesso: {user.perfil}</span></div>
               <div className="flex items-center gap-3 text-sm"><MapPin size={16} className="text-outline" /><span className="text-on-surface-variant truncate">Polo: {user.polo || 'Geral'}</span></div>
             </div>
