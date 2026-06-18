@@ -3,26 +3,37 @@
 import { supabase } from "./supabase";
 
 interface EmailPayload {
-    to: string | string[];
-    subject: string;
-    html: string;
+  to: string | string[];
+  subject: string;
+  html: string;
 }
 
 async function sendEmail(payload: EmailPayload): Promise<void> {
-    try {
-        const { error } = await supabase.functions.invoke("send-email", {
-            body: payload,
-        });
-        if (error) console.error("Erro ao enviar e-mail:", error);
-    } catch (err) {
-        console.error("Falha no envio de e-mail:", err);
+  try {
+    const { data, error } = await supabase.functions.invoke("send-email", {
+      body: payload,
+    });
+
+    if (error) {
+      console.error("Erro ao enviar e-mail:", error);
+      // Tenta extrair o corpo real do erro
+      const context = (error as any).context;
+      if (context) {
+        const text = await context.text?.();
+        console.error("Resposta da Edge Function:", text);
+      }
+    } else {
+      console.log("E-mail enviado:", data);
     }
+  } catch (err) {
+    console.error("Falha no envio de e-mail:", err);
+  }
 }
 
 // ─── Layout base ─────────────────────────────────────────────────────────────
 
 function wrapTemplate(title: string, accentColor: string, body: string): string {
-    return `
+  return `
 <div style="max-width: 480px; margin: 0 auto; font-family: Arial, sans-serif; color: #1e293b;">
   <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 32px 24px; border-radius: 16px 16px 0 0; text-align: center;">
     <h1 style="color: #fff; margin: 0; font-size: 24px;">SGI-ATI</h1>
@@ -39,7 +50,7 @@ function wrapTemplate(title: string, accentColor: string, body: string): string 
 }
 
 function infoRow(label: string, value: string, highlight = false): string {
-    return `
+  return `
   <tr>
     <td style="padding: 8px 12px; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #64748b; white-space: nowrap; background: ${highlight ? "#f1f5f9" : "#fff"};">${label}</td>
     <td style="padding: 8px 12px; font-size: 13px; color: #1e293b; background: ${highlight ? "#f1f5f9" : "#fff"};">${value}</td>
@@ -49,19 +60,19 @@ function infoRow(label: string, value: string, highlight = false): string {
 // ─── 1. Comprovante de coleta → enviado ao REQUERENTE ────────────────────────
 
 export async function enviarEmailComprovante(params: {
-    requerenteEmail: string;
-    requerenteNome: string;
-    coletorNome: string;
-    coletorCpf?: string;
-    coletorAssinaturaBase64: string;
-    itemNome: string;
-    chamado?: string;
-    dataAssinatura: string;
-    usuarioLogadoEmail: string;
+  requerenteEmail: string;
+  requerenteNome: string;
+  coletorNome: string;
+  coletorCpf?: string;
+  coletorAssinaturaBase64: string;
+  itemNome: string;
+  chamado?: string;
+  dataAssinatura: string;
+  usuarioLogadoEmail: string;
 }): Promise<void> {
-    const dataFormatada = new Date(params.dataAssinatura).toLocaleString("pt-BR");
+  const dataFormatada = new Date(params.dataAssinatura).toLocaleString("pt-BR");
 
-    const body = `
+  const body = `
     <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
       Olá, <strong>${params.requerenteNome}</strong>. Seu equipamento foi coletado.
       Abaixo estão os dados de quem realizou a retirada:
@@ -86,36 +97,36 @@ export async function enviarEmailComprovante(params: {
       Este comprovante foi gerado automaticamente. Guarde-o para seus registros.
     </p>`;
 
-    const html = wrapTemplate("Comprovante de Coleta", "#1e3a8a", body);
+  const html = wrapTemplate("Comprovante de Coleta", "#1e3a8a", body);
 
-    const destinatarios = new Set([params.requerenteEmail]);
-    if (params.usuarioLogadoEmail) destinatarios.add(params.usuarioLogadoEmail);
+  const destinatarios = new Set([params.requerenteEmail]);
+  if (params.usuarioLogadoEmail) destinatarios.add(params.usuarioLogadoEmail);
 
-    await sendEmail({
-        to: Array.from(destinatarios),
-        subject: `[SGI-ATI] Comprovante de Coleta — ${params.itemNome}${params.chamado ? ` (${params.chamado})` : ""}`,
-        html,
-    });
+  await sendEmail({
+    to: Array.from(destinatarios),
+    subject: `[SGI-ATI] Comprovante de Coleta — ${params.itemNome}${params.chamado ? ` (${params.chamado})` : ""}`,
+    html,
+  });
 }
 
 // ─── 2. Confirmação de devolução → enviado ao REQUERENTE (e receptor se diferente) ──
 
 export async function enviarEmailDevolucao(params: {
-    requerenteEmail: string;
-    requerenteNome: string;
-    receptorNome: string;
-    receptorEmail?: string;
-    receptorCpf?: string;
-    itemNome: string;
-    chamado?: string;
-    dataAssinatura: string;
-    usuarioLogadoEmail: string;
-    usuarioLogadoNome: string;
+  requerenteEmail: string;
+  requerenteNome: string;
+  receptorNome: string;
+  receptorEmail?: string;
+  receptorCpf?: string;
+  itemNome: string;
+  chamado?: string;
+  dataAssinatura: string;
+  usuarioLogadoEmail: string;
+  usuarioLogadoNome: string;
 }): Promise<void> {
-    const dataFormatada = new Date(params.dataAssinatura).toLocaleString("pt-BR");
-    const outraPessoa = params.receptorNome !== params.requerenteNome;
+  const dataFormatada = new Date(params.dataAssinatura).toLocaleString("pt-BR");
+  const outraPessoa = params.receptorNome !== params.requerenteNome;
 
-    const body = `
+  const body = `
     <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
       Olá, <strong>${params.requerenteNome}</strong>. O equipamento do seu chamado foi devolvido. Confira os detalhes:
     </p>
@@ -142,15 +153,15 @@ export async function enviarEmailDevolucao(params: {
       Este aviso foi gerado automaticamente pelo SGI-ATI.
     </p>`;
 
-    const html = wrapTemplate("Confirmação de Devolução", "#065f46", body);
+  const html = wrapTemplate("Confirmação de Devolução", "#065f46", body);
 
-    const destinatarios = new Set([params.requerenteEmail]);
-    if (params.receptorEmail) destinatarios.add(params.receptorEmail);
-    if (params.usuarioLogadoEmail) destinatarios.add(params.usuarioLogadoEmail);
+  const destinatarios = new Set([params.requerenteEmail]);
+  if (params.receptorEmail) destinatarios.add(params.receptorEmail);
+  if (params.usuarioLogadoEmail) destinatarios.add(params.usuarioLogadoEmail);
 
-    await sendEmail({
-        to: Array.from(destinatarios),
-        subject: `[SGI-ATI] Devolução Confirmada — ${params.itemNome}${params.chamado ? ` (${params.chamado})` : ""}`,
-        html,
-    });
+  await sendEmail({
+    to: Array.from(destinatarios),
+    subject: `[SGI-ATI] Devolução Confirmada — ${params.itemNome}${params.chamado ? ` (${params.chamado})` : ""}`,
+    html,
+  });
 }
