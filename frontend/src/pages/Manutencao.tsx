@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/ContextoAutenticacao';
 import { Item, StatusItem, Movimentacao, CondicaoItem } from '../services/types';
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchAllMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
-import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer } from 'lucide-react';
+import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer, Search, X } from 'lucide-react';
 import StatusBadge from '../components/DistintivoStatus';
 import { getReversedStatus } from '../services/utilidades';
 
@@ -19,6 +19,8 @@ const Manutencao: React.FC = () => {
   const [formSuccess, setFormSuccess] = useState('');
   const [repairTarget, setRepairTarget] = useState<Item | null>(null);
   const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('BOM');
+  const [decomSearch, setDecomSearch] = useState('');
+  const [decomDropdownOpen, setDecomDropdownOpen] = useState(false);
 
   // Estados de Paginação — Fila de Manutenção
   const [paginaManutencao, setPaginaManutencao] = useState(1);
@@ -33,6 +35,12 @@ const Manutencao: React.FC = () => {
   };
 
   useEffect(() => { loadData(); }, []);
+
+  useEffect(() => {
+    const handleClick = () => setDecomDropdownOpen(false);
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, []);
 
   // Resetar paginação ao recarregar dados
   useEffect(() => { setPaginaManutencao(1); }, [maintenanceItens.length]);
@@ -291,10 +299,52 @@ const Manutencao: React.FC = () => {
               <form onSubmit={handleRequestDecommission} className="space-y-3.5">
                 <div>
                   <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1`}>Equipamento</label>
-                  <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-lg text-on-surface text-[11px] focus:outline-none">
-                    <option value="">-- Selecione o Ativo --</option>
-                    {activeItens.map(i => (<option key={i.id} value={i.id}>{i.nome} ({i.numero_patrimonio || 'S/N: ' + i.numero_serie || 'Consumível'})</option>))}
-                  </select>
+                  <div className="relative">
+                    <div className="flex items-center bg-surface border border-outline rounded-lg px-3 py-2">
+                      <Search size={14} className="text-outline-variant shrink-0 mr-2" />
+                      <input
+                        type="text"
+                        placeholder="Buscar equipamento por nome ou patrimônio..."
+                        value={selectedItemId
+                          ? (() => { const found = activeItens.find(i => i.id === selectedItemId); return found ? `${found.nome} (${found.numero_patrimonio || 'S/N: ' + found.numero_serie || 'Consumível'})` : decomSearch; })()
+                          : decomSearch
+                        }
+                        onChange={(e) => { setDecomSearch(e.target.value); setSelectedItemId(''); setDecomDropdownOpen(true); }}
+                        onFocus={() => setDecomDropdownOpen(true)}
+                        className="bg-transparent border-none focus:ring-0 text-[11px] w-full text-on-surface placeholder:text-outline"
+                      />
+                      {selectedItemId && (
+                        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSelectedItemId(''); setDecomSearch(''); }} className="ml-2 text-outline-variant hover:text-outline">
+                          <X size={14} />
+                        </button>
+                      )}
+                    </div>
+                    {decomDropdownOpen && (
+                      <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                        {activeItens
+                          .filter(i => {
+                            const q = decomSearch.toLowerCase();
+                            return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || '').toLowerCase().includes(q) || (i.numero_serie || '').toLowerCase().includes(q);
+                          })
+                          .map(i => (
+                            <button
+                              key={i.id}
+                              type="button"
+                              onMouseDown={() => { setSelectedItemId(i.id); setDecomSearch(''); setDecomDropdownOpen(false); }}
+                              className="w-full text-left px-3 py-2 text-[11px] hover:bg-primary/10 text-on-surface border-b border-outline-variant/10 last:border-0"
+                            >
+                              {i.nome} <span className="text-outline">({i.numero_patrimonio || 'S/N: ' + i.numero_serie || 'Consumível'})</span>
+                            </button>
+                          ))}
+                        {activeItens.filter(i => {
+                          const q = decomSearch.toLowerCase();
+                          return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || '').toLowerCase().includes(q) || (i.numero_serie || '').toLowerCase().includes(q);
+                        }).length === 0 && (
+                          <p className="px-3 py-2 text-[11px] text-outline">Nenhum equipamento encontrado.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div>
                   <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1`}>Justificativa Técnica</label>
