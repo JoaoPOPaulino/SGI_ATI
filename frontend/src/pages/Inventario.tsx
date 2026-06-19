@@ -28,7 +28,6 @@ import {
   Search,
   Plus,
   Table,
-  LayoutGrid,
   Edit2,
   Trash2,
   Folder,
@@ -56,8 +55,6 @@ const Inventario: React.FC = () => {
   const [filterCondicao, setFilterCondicao] = useState<string>("TODAS");
   const [filterPolo, setFilterPolo] = useState<string>("TODOS");
   const [filterLocal, setFilterLocal] = useState("");
-
-  const [viewMode, setViewMode] = useState<"tabela" | "cards">("tabela");
 
   // Estado do Modal de Cadastro/Edição
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -819,22 +816,6 @@ const Inventario: React.FC = () => {
         <p className="text-xs text-on-surface-variant font-semibold">
           Exibindo {itens.length} de {totalCount} ativos (página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))})
         </p>
-        <div className="flex items-center bg-surface-container-low border border-outline rounded-xl p-0.5">
-          <button
-            onClick={() => setViewMode("tabela")}
-            className={`p-1.5 rounded-lg transition-all ${viewMode === "tabela" ? "bg-primary text-white" : "text-outline hover:text-primary"}`}
-            title="Visualização em Tabela"
-          >
-            <Table size={16} />
-          </button>
-          <button
-            onClick={() => setViewMode("cards")}
-            className={`p-1.5 rounded-lg transition-all ${viewMode === "cards" ? "bg-primary text-white" : "text-outline hover:text-primary"}`}
-            title="Visualização em Grade"
-          >
-            <LayoutGrid size={16} />
-          </button>
-        </div>
       </div>
 
       {/* Listagem principal */}
@@ -845,7 +826,7 @@ const Inventario: React.FC = () => {
             Nenhum ativo corresponde aos filtros
           </h3>
         </div>
-      ) : viewMode === "tabela" ? (
+      ) : (
         /* Tabela Premium zebra sem linhas pesadas */
         <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden">
           <div className="overflow-x-auto">
@@ -999,76 +980,6 @@ const Inventario: React.FC = () => {
               </tbody>
             </table>
           </div>
-        </div>
-      ) : (
-        /* Modo Cards / Grade */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredItens.map((item) => (
-            <div
-              key={item.id}
-              className="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-md transition-all group relative"
-            >
-              <input
-                type="checkbox"
-                checked={selectedIds.has(item.id)}
-                onChange={() => toggleSelect(item.id)}
-                className="absolute top-3 right-3 w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer z-10"
-              />
-              <div>
-                <div className="flex justify-between items-start mb-3">
-                  <span className="text-[10px] font-bold font-mono text-outline uppercase">
-                    {item.numero_patrimonio ||
-                      item.numero_serie ||
-                      "Consumível"}
-                  </span>
-                  <StatusBadge type="status" value={item.status} />
-                </div>
-                <h3 className="text-sm font-bold text-primary mb-2 truncate">
-                  {item.nome}
-                </h3>
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <span className="text-[10px] font-semibold text-secondary bg-secondary-container/20 px-2 py-0.5 rounded-full">
-                    {item.categoria}
-                  </span>
-                  <span className="text-[10px] font-bold text-outline">
-                    {item.condicao}
-                  </span>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-surface-container-low flex items-center justify-between text-[11px] font-semibold text-outline">
-                <span className="truncate max-w-37.5 flex items-center gap-1">
-                  <MapPin size={12} />
-                  {item.polo || "GSM"}
-                </span>
-
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button
-                    onClick={() => openDetails(item)}
-                    className="p-1 text-primary hover:bg-primary-fixed rounded-lg"
-                  >
-                    <Eye size={14} />
-                  </button>
-                  {canModify && item.status !== "BAIXADO" && (
-                    <>
-                      <button
-                        onClick={() => openQuickMove(item)}
-                        className="p-1 text-emerald-600 hover:bg-emerald-50 rounded-lg"
-                      >
-                        <ArrowRightLeft size={14} />
-                      </button>
-                      <button
-                        onClick={() => openModal(item)}
-                        className="p-1 text-secondary hover:bg-slate-100 rounded-lg"
-                      >
-                        <Edit2 size={14} />
-                      </button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
         </div>
       )}
 
