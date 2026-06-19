@@ -2,22 +2,18 @@
 
 import { supabase } from "./supabase";
 
+interface InlineImage {
+  cid: string;
+  dataUrl: string;
+}
+
 interface EmailPayload {
   to: string | string[];
   subject: string;
   html: string;
+  inlineImages?: InlineImage[];
 }
 
-/**
- * Remove quebras de linha e espaços redundantes do HTML antes de enviar.
- *
- * Por quê: o SMTP do Gmail (via denomailer) codifica o corpo em
- * quoted-printable. Nesse encoding, toda quebra de linha "soft" vira
- * "=" no fim da linha, e ela só é removida corretamente se o cliente
- * de email decodificar bem. Com HTML multi-linha como template literal,
- * cada quebra de linha do código aparece como "=20" no email renderizado.
- * Minificar para uma única linha elimina o problema na raiz.
- */
 function minifyHtml(html: string): string {
   return html
     .replace(/>\s+</g, "><") // remove espaços entre tags
@@ -26,12 +22,35 @@ function minifyHtml(html: string): string {
     .trim();
 }
 
-async function sendEmail(payload: EmailPayload): Promise<void> {
+
+function extrairImagensInline(html: string): { html: string; inlineImages: InlineImage[] } {
+  const inlineImages: InlineImage[] = [];
+  let contador = 0;
+
+  const htmlComCid = html.replace(
+    /src="(data:image\/[^;]+;base64,[^"]+)"/g,
+    (_match, dataUrl: string) => {
+      contador += 1;
+      const cid = `assinatura${contador}`;
+      inlineImages.push({ cid, dataUrl });
+      return `src="cid:${cid}"`;
+    },
+  );
+
+  return { html: htmlComCid, inlineImages };
+}
+
+async function sendEmail(payload: Omit<EmailPayload, "inlineImages"> & { html: string }): Promise<void> {
   try {
+    const minified = minifyHtml(payload.html);
+    const { html: htmlComCid, inlineImages } = extrairImagensInline(minified);
+
     const { data, error } = await supabase.functions.invoke("send-email", {
       body: {
-        ...payload,
-        html: minifyHtml(payload.html),
+        to: payload.to,
+        subject: payload.subject,
+        html: htmlComCid,
+        inlineImages,
       },
     });
 
