@@ -23,7 +23,7 @@ import {
 import { fetchLocais } from "../services/supabaseLocais";
 import { fetchLaudos } from "../services/supabaseLaudos";
 import StatusBadge from "../components/DistintivoStatus";
-import { exportToCsv } from "../services/utilidades";
+import { exportToExcel } from "../services/utilidades";
 import {
   Search,
   Plus,
@@ -599,10 +599,11 @@ const Inventario: React.FC = () => {
       i.created_at,
       i.updated_at,
     ]);
-    exportToCsv(
+    exportToExcel(
       headers,
       rows,
       `inventario_ati_${new Date().toISOString().slice(0, 10)}`,
+      "Inventário",
     );
   };
 
@@ -634,7 +635,7 @@ const Inventario: React.FC = () => {
             className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold rounded-xl text-xs shadow-sm transition-all"
           >
             <Download size={14} />
-            Exportar CSV
+            Exportar Excel
           </button>
         </div>
       </div>

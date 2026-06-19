@@ -1,4 +1,5 @@
 import type { Movimentacao, StatusAprovacao } from './types';
+import * as XLSX from 'xlsx';
 
 export function buildLocationString(...fields: (string | undefined)[]): string {
   return fields.filter(Boolean).join(' - ');
@@ -20,6 +21,72 @@ export function exportToCsv(
   a.download = `${filename}.csv`;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+export function exportToExcel(
+  headers: string[],
+  rows: string[][],
+  filename: string,
+  sheetName: string = 'Dados',
+): void {
+  const data = [headers, ...rows];
+
+  const ws = XLSX.utils.aoa_to_sheet(data);
+
+  const colWidths = headers.map((h, i) => {
+    const maxLen = Math.max(
+      h.length,
+      ...rows.map(r => String(r[i] || '').length),
+    );
+    return { wch: Math.min(maxLen + 4, 50) };
+  });
+  ws['!cols'] = colWidths;
+
+  const range = XLSX.utils.decode_range(ws['!ref'] || 'A1');
+  for (let C = range.s.c; C <= range.e.c; C++) {
+    const addr = XLSX.utils.encode_cell({ r: 0, c: C });
+    if (!ws[addr]) continue;
+    ws[addr].s = {
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 11 },
+      fill: { fgColor: { rgb: '153A6B' }, patternType: 'solid' },
+      alignment: { horizontal: 'center', vertical: 'center' },
+      border: {
+        top: { style: 'thin', color: { rgb: '0D2D54' } },
+        bottom: { style: 'medium', color: { rgb: '0D2D54' } },
+        left: { style: 'thin', color: { rgb: '0D2D54' } },
+        right: { style: 'thin', color: { rgb: '0D2D54' } },
+      },
+    };
+  }
+
+  for (let R = 1; R <= range.e.r; R++) {
+    for (let C = 0; C <= range.e.c; C++) {
+      const addr = XLSX.utils.encode_cell({ r: R, c: C });
+      if (!ws[addr]) continue;
+      ws[addr].s = {
+        font: { sz: 10 },
+        alignment: { vertical: 'center', wrapText: true },
+        border: {
+          top: { style: 'thin', color: { rgb: 'C3C6D0' } },
+          bottom: { style: 'thin', color: { rgb: 'C3C6D0' } },
+          left: { style: 'thin', color: { rgb: 'C3C6D0' } },
+          right: { style: 'thin', color: { rgb: 'C3C6D0' } },
+        },
+      };
+      if (R % 2 === 0) {
+        ws[addr].s.fill = { fgColor: { rgb: 'F2F4F6' }, patternType: 'solid' };
+      }
+    }
+  }
+
+  ws['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2', activePane: 'bottomLeft' };
+
+  ws['!autofilter'] = { ref: ws['!ref'] || 'A1' };
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, sheetName);
+
+  XLSX.writeFile(wb, `${filename}.xlsx`);
 }
 
 export function createMovimentacaoRecord(

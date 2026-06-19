@@ -29,7 +29,7 @@ import {
   Wrench,
   X,
 } from "lucide-react";
-import { exportToCsv, getReversedStatus } from "../services/utilidades";
+import { exportToExcel, getReversedStatus } from "../services/utilidades";
 import {
   fetchAssinaturasGuia,
   createAssinaturaGuia,
@@ -804,10 +804,11 @@ const Movimentacoes: React.FC = () => {
       m.item_nome, m.tipo, m.origem, m.destino, m.solicitante_nome,
       m.status_aprovacao, m.status_guia || "", m.data_movimentacao,
     ]);
-    exportToCsv(
+    exportToExcel(
       headers,
       rows,
       `movimentacoes_ati_${new Date().toISOString().slice(0, 10)}`,
+      "Movimentações",
     );
   };
 
@@ -1425,7 +1426,7 @@ const Movimentacoes: React.FC = () => {
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
                 >
                   <Download size={12} />
-                  CSV
+                  Excel
                 </button>
               </div>
             </div>
