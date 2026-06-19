@@ -3,9 +3,9 @@ import { useAuth } from '../contexts/ContextoAutenticacao';
 import { Item, StatusItem, Movimentacao, CondicaoItem } from '../services/types';
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchAllMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
-import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer, Download } from 'lucide-react';
+import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer } from 'lucide-react';
 import StatusBadge from '../components/DistintivoStatus';
-import { getReversedStatus, exportToExcel } from '../services/utilidades';
+import { getReversedStatus } from '../services/utilidades';
 
 const Manutencao: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -114,38 +114,6 @@ const Manutencao: React.FC = () => {
     } catch { alert('Erro ao concluir reparo. Verifique a conexão e tente novamente.'); }
   };
 
-  const handleExportManutencaoExcel = () => {
-    const data = maintenanceItens;
-    const headers = ["ID", "Nome", "Status", "Condição", "Tipo", "Categoria", "Patrimônio", "Localização"];
-    const rows = data.map((item) => [
-      item.id,
-      item.nome,
-      item.status,
-      item.condicao,
-      item.tipo || "",
-      item.categoria,
-      item.numero_patrimonio || item.numero_serie || "",
-      item.localizacao_atual,
-    ]);
-    exportToExcel(headers, rows, `manutencao_${new Date().toISOString().slice(0, 10)}`, "Manutenção");
-  };
-
-  const handleExportBaixasExcel = () => {
-    const data = awaitingDecommissionItens;
-    const headers = ["ID", "Nome", "Status", "Condição", "Tipo", "Categoria", "Patrimônio", "Localização"];
-    const rows = data.map((item) => [
-      item.id,
-      item.nome,
-      item.status,
-      item.condicao,
-      item.tipo || "",
-      item.categoria,
-      item.numero_patrimonio || item.numero_serie || "",
-      item.localizacao_atual,
-    ]);
-    exportToExcel(headers, rows, `baixas_pendentes_${new Date().toISOString().slice(0, 10)}`, "Baixas Pendentes");
-  };
-
   const lbl = 'text-[10px]';
   const hdr = 'text-sm font-bold text-on-surface mb-2 flex items-center gap-2 border-b border-outline-variant/20 pb-3';
   const btnSm = 'flex items-center gap-1 px-2.5 py-1.5 font-bold text-[10px] rounded-lg transition-all shrink-0';
@@ -159,15 +127,7 @@ const Manutencao: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-panel p-5 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest flex flex-col min-h-[50vh]">
-          <h2 className={hdr}><Wrench size={16} className="text-primary" />Fila de Manutenção Ativa
-            <button
-              onClick={handleExportManutencaoExcel}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all ml-auto"
-            >
-              <Download size={12} />
-              Excel
-            </button>
-          </h2>
+          <h2 className={hdr}><Wrench size={16} className="text-primary" />Fila de Manutenção Ativa</h2>
           {maintenanceItens.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-outline py-12">
               <CheckCircle2 size={32} className="text-emerald-500/40 mb-2" />
@@ -199,15 +159,7 @@ const Manutencao: React.FC = () => {
 
         <div className="space-y-5">
           <div className="glass-panel p-5 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest flex flex-col min-h-[35vh]">
-            <h2 className={hdr}><Trash2 size={16} className="text-error" />Controle de Baixas Patrimoniais
-            <button
-              onClick={handleExportBaixasExcel}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all ml-auto"
-            >
-              <Download size={12} />
-              Excel
-            </button>
-          </h2>
+            <h2 className={hdr}><Trash2 size={16} className="text-error" />Controle de Baixas Patrimoniais</h2>
             {awaitingDecommissionItens.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center text-center text-outline py-6">
                 <ShieldCheck size={24} className="text-outline mb-2" />
