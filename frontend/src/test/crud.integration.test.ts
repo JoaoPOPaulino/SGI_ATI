@@ -43,7 +43,7 @@ describe('CRUD Integration', () => {
       const mockChain = createChainableMock({
         data: {
           id: 'item-1', nome: 'Monitor Dell 24"', tipo: 'PATRIMONIADO',
-          categoria: 'Monitor', condicao: 'BOM', status: 'ATIVO',
+          categoria: 'Monitor', condicao: 'REGULAR', status: 'ATIVO',
           localizacao_atual: 'Sala 302', created_at: '', updated_at: '',
         },
         error: null,

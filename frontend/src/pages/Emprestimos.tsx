@@ -68,7 +68,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
   const [isSaving, setIsSaving] = useState(false);
 
   const [activeReturnLoan, setActiveReturnLoan] = useState<Loan | null>(null);
-  const [returnCondicao, setReturnCondicao] = useState<CondicaoItem>("BOM");
+  const [returnCondicao, setReturnCondicao] = useState<CondicaoItem>("REGULAR");
 
   const [manageEventId, setManageEventId] = useState<string | null>(null);
   const [showAddItemToEvent, setShowAddItemToEvent] = useState(false);
@@ -1117,7 +1117,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                 >
                   <option value="NOVO">Como Novo</option>
-                  <option value="BOM">Bom (100%)</option>
+                  <option value="REGULAR">Regular</option>
                   <option value="REGULAR">Regular</option>
                   <option value="RUIM">Ruim (Avarias)</option>
                   <option value="ESTRAGADO">

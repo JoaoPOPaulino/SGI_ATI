@@ -336,7 +336,7 @@ const Inventario: React.FC = () => {
       }
       if (
         formStatus === "EM_MANUTENCAO" &&
-        (formCondicao === "NOVO" || formCondicao === "BOM")
+        (formCondicao === "NOVO" || formCondicao === "REGULAR")
       ) {
         setFormError(
           "Equipamento em manutenção deve estar RUIM ou ESTRAGADO. Ajuste a condição.",
@@ -789,7 +789,7 @@ const Inventario: React.FC = () => {
             >
               <option value="TODAS">Condições</option>
               <option value="NOVO">Novo</option>
-              <option value="BOM">Bom</option>
+              <option value="REGULAR">Regular</option>
               <option value="REGULAR">Regular</option>
               <option value="RUIM">Ruim</option>
               <option value="ESTRAGADO">Estragado</option>
@@ -1616,7 +1616,7 @@ const Inventario: React.FC = () => {
                     className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                   >
                     <option value="NOVO">Novo</option>
-                    <option value="BOM">Bom</option>
+                    <option value="REGULAR">Regular</option>
                     <option value="REGULAR">Regular</option>
                     <option value="RUIM">Ruim</option>
                     <option value="ESTRAGADO">Estragado</option>

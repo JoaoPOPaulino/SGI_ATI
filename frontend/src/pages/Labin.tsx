@@ -135,7 +135,7 @@ const Labin: React.FC = () => {
     if (formStatusServico === 'FINALIZADO') {
       await updateItem(item.id, {
         status: 'GUARDADO',
-        condicao: 'BOM',
+        condicao: 'REGULAR',
         localizacao_atual: 'LABIN',
         updated_at: now
       });

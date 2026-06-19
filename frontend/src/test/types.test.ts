@@ -70,7 +70,7 @@ describe('Domain Types Validation', () => {
     it('itens tem todos os campos da tabela', () => {
       const item: Item = {
         id: '1', nome: 'Test', tipo: 'PATRIMONIADO', categoria: 'Computador',
-        condicao: 'BOM', status: 'ATIVO', localizacao_atual: 'Sala 302',
+        condicao: 'REGULAR', status: 'ATIVO', localizacao_atual: 'Sala 302',
         created_at: '', updated_at: '', numero_patrimonio: 'PAT-001',
         numero_serie: 'SN-001', polo: 'GSM', predio: 'A', andar: '3',
         setor: 'TI', sala: '302', estacao: 'A-10', marca: 'Dell',

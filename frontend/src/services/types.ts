@@ -1,7 +1,7 @@
 export type PerfilUsuario = "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
 export type TipoItem = "PATRIMONIADO" | "SERIALIZADO" | "NAO_SERIALIZADO";
 export type CategoriaItem = string;
-export type CondicaoItem = "NOVO" | "BOM" | "REGULAR" | "RUIM" | "ESTRAGADO";
+export type CondicaoItem = "NOVO" | "REGULAR" | "RUIM" | "ESTRAGADO";
 export type StatusItem =
   | "ATIVO"
   | "EM_MANUTENCAO"
