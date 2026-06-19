@@ -6,8 +6,8 @@ import {
   CondicaoItem,
   Loan,
   Movimentacao,
-} from "../services/bancoMock";
-import { fetchItens, updateItem } from "../services/supabaseItens";
+} from "../services/types";
+import { fetchAllItens, updateItem } from "../services/supabaseItens";
 import {
   fetchMovimentacoes,
   createMovimentacao,
@@ -86,7 +86,7 @@ const Emprestimos: React.FC = () => {
 
   const loadData = async () => {
     const [allItens, currentEventos, currentLoans] = await Promise.all([
-      fetchItens(),
+      fetchAllItens(),
       fetchEventos(),
       fetchLoans(),
     ]);
@@ -115,7 +115,7 @@ const Emprestimos: React.FC = () => {
             oldLocal: string;
           }[] = [];
           for (const itemId of evt.itens_alocados) {
-            const allItens = await fetchItens();
+            const allItens = await fetchAllItens();
             const it = allItens.find((i) => i.id === itemId);
             if (it) {
               rollbackSnapshots.push({
@@ -163,7 +163,7 @@ const Emprestimos: React.FC = () => {
 
     if (changed) {
       const [refreshedItens, refreshedEventos] = await Promise.all([
-        fetchItens(),
+        fetchAllItens(),
         fetchEventos(),
       ]);
       setItens(
@@ -237,7 +237,7 @@ const Emprestimos: React.FC = () => {
     }
 
     try {
-      const allItens = await fetchItens();
+      const allItens = await fetchAllItens();
       const item = allItens.find((i) => i.id === selectedItemId);
       if (!item) {
         setIsSaving(false);
@@ -327,7 +327,7 @@ const Emprestimos: React.FC = () => {
       await createEvento(newEvent);
 
       if (formItensSelecionados.length > 0) {
-        const allItens = await fetchItens();
+        const allItens = await fetchAllItens();
         for (const itemId of formItensSelecionados) {
           await updateItem(itemId, {
             localizacao_atual: `Evento: ${formNomeEvento} (${formLocalEvento})`,
@@ -444,7 +444,7 @@ const Emprestimos: React.FC = () => {
     e.preventDefault();
     if (!activeReturnLoan) return;
 
-    const allItens = await fetchItens();
+    const allItens = await fetchAllItens();
     const item = allItens.find((i) => i.id === activeReturnLoan.item_id);
     if (!item) return;
 

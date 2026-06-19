@@ -7,11 +7,12 @@ import {
   StatusItem,
   TipoAssinaturaGuia,
   TipoMovimentacao,
-} from "../services/bancoMock";
-import { fetchItens, updateItem } from "../services/supabaseItens";
+} from "../services/types";
+import { fetchAllItens, fetchItemById, updateItem } from "../services/supabaseItens";
 import {
   createMovimentacao,
   fetchMovimentacoes,
+  fetchMovimentacoesByItemId,
   updateMovimentacao,
 } from "../services/supabaseMovimentacoes";
 
@@ -184,6 +185,9 @@ const Movimentacoes: React.FC = () => {
 
   const [movs, setMovs] = useState<Movimentacao[]>([]);
   const [itens, setItens] = useState<Item[]>([]);
+  const [movsPage, setMovsPage] = useState(1);
+  const [movsPageSize] = useState(20);
+  const [movsTotalCount, setMovsTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
 
   const [selectedMovId, setSelectedMovId] = useState("");
@@ -225,12 +229,19 @@ const Movimentacoes: React.FC = () => {
   const isTecnicoOrHigher = hasPermission("TECNICO");
 
   const loadData = async () => {
-    const [allMovs, allItens] = await Promise.all([
-      fetchMovimentacoes(200),
-      fetchItens(200),
+    const [movsResult, allItens] = await Promise.all([
+      fetchMovimentacoes(movsPage, movsPageSize),
+      fetchAllItens(),
     ]);
 
-    setMovs(allMovs);
+    setMovs(movsResult.data);
+    setMovsTotalCount(movsResult.count);
+
+    if (movsResult.data.length === 0 && movsPage > 1) {
+      setMovsPage(movsPage - 1);
+      return;
+    }
+
     setItens(
       allItens.filter((i) => i.status === "ATIVO" || i.status === "GUARDADO"),
     );
@@ -238,7 +249,7 @@ const Movimentacoes: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [movsPage]);
 
   useEffect(() => {
     if (formTipo === "MANUTENCAO") {
@@ -656,15 +667,13 @@ const Movimentacoes: React.FC = () => {
       });
 
       if (mov.tipo === "BAIXA") {
-        const allItens = await fetchItens(100);
-        const item = allItens.find((i) => i.id === mov.item_id);
+        const item = await fetchItemById(mov.item_id);
 
         if (item) {
-          const allMovs = await fetchMovimentacoes(100);
+          const allMovs = await fetchMovimentacoesByItemId(mov.item_id);
           const itemMovs = allMovs
             .filter(
               (m) =>
-                m.item_id === item.id &&
                 m.status_aprovacao === "APROVADO" &&
                 m.tipo !== "BAIXA",
             )
@@ -1248,6 +1257,47 @@ const Movimentacoes: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {movsTotalCount > movsPageSize && (
+        <div className="flex items-center justify-between pt-4 px-1">
+          <span className="text-xs text-on-surface-variant">
+            Total: {movsTotalCount} movimentações
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setMovsPage(1)}
+              disabled={movsPage <= 1}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Primeira
+            </button>
+            <button
+              onClick={() => setMovsPage((p) => Math.max(1, p - 1))}
+              disabled={movsPage <= 1}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Anterior
+            </button>
+            <span className="text-xs font-bold text-primary px-2">
+              {movsPage}
+            </span>
+            <button
+              onClick={() => setMovsPage((p) => Math.min(Math.ceil(movsTotalCount / movsPageSize), p + 1))}
+              disabled={movsPage >= Math.ceil(movsTotalCount / movsPageSize)}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Próxima
+            </button>
+            <button
+              onClick={() => setMovsPage(Math.ceil(movsTotalCount / movsPageSize))}
+              disabled={movsPage >= Math.ceil(movsTotalCount / movsPageSize)}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Última
+            </button>
+          </div>
+        </div>
+      )}
 
       {signingMov && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">

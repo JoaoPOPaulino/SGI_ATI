@@ -1,11 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../services/supabase";
-import {
-  Usuario,
-  PerfilUsuario,
-  getUsuarios,
-  saveUsuarios,
-} from "../services/bancoMock";
+import type { Usuario, PerfilUsuario } from "../services/types";
 
 interface AuthContextType {
   user: Usuario | null;
@@ -55,20 +50,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     if (error) {
       console.error("Erro ao buscar perfil:", error);
       setUser(null);
-      localStorage.removeItem("sgi_ati_session");
       return null;
     }
 
     if (!data) {
       console.error("Perfil não encontrado para auth_id:", authId);
       setUser(null);
-      localStorage.removeItem("sgi_ati_session");
       return null;
     }
 
     const mappedUser = mapUsuario(data);
     setUser(mappedUser);
-    localStorage.setItem("sgi_ati_session", JSON.stringify(mappedUser));
 
     return data;
   };
@@ -85,7 +77,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (error) {
           console.error("Erro ao carregar sessão:", error);
           setUser(null);
-          localStorage.removeItem("sgi_ati_session");
           return;
         }
 
@@ -93,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (!session?.user) {
           setUser(null);
-          localStorage.removeItem("sgi_ati_session");
           return;
         }
 
@@ -101,7 +91,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       } catch (err) {
         console.error("Erro inesperado ao iniciar sessão:", err);
         setUser(null);
-        localStorage.removeItem("sgi_ati_session");
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -122,7 +111,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
             if (!session?.user) {
               setUser(null);
-              localStorage.removeItem("sgi_ati_session");
               return;
             }
 
@@ -130,7 +118,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           } catch (err) {
             console.error("Erro ao atualizar sessão:", err);
             setUser(null);
-            localStorage.removeItem("sgi_ati_session");
           } finally {
             if (mounted) {
               setIsLoading(false);
@@ -245,16 +232,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const logout = async () => {
     setUser(null);
-    localStorage.removeItem("sgi_ati_session");
     await supabase.auth.signOut();
   };
 
   const changeProfile = (perfil: PerfilUsuario) => {
     if (!user) return;
-
-    const updatedUser = { ...user, perfil };
-    setUser(updatedUser);
-    localStorage.setItem("sgi_ati_session", JSON.stringify(updatedUser));
+    setUser({ ...user, perfil });
   };
 
   const updatePhoto = async (fotoBase64: string) => {
@@ -262,7 +245,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const updatedUser = { ...user, foto: fotoBase64 };
     setUser(updatedUser);
-    localStorage.setItem("sgi_ati_session", JSON.stringify(updatedUser));
 
     try {
       const { error } = await supabase
@@ -272,13 +254,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (error)
         console.warn("Erro ao salvar foto no Supabase:", error.message);
     } catch {
-      console.warn("Supabase offline — foto salva localmente.");
+      console.warn("Supabase offline — foto salva apenas na sessão atual.");
     }
-
-    const usuarios = getUsuarios();
-    saveUsuarios(
-      usuarios.map((u) => (u.id === user.id ? { ...u, foto: fotoBase64 } : u)),
-    );
   };
 
   const hasPermission = (requiredPerfil: PerfilUsuario): boolean => {

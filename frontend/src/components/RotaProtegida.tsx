@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { PerfilUsuario } from '../services/bancoMock';
+import type { PerfilUsuario } from '../services/types';
 import { ShieldAlert } from 'lucide-react';
 
 interface ProtectedRouteProps {

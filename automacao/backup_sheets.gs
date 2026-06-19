@@ -18,7 +18,7 @@
 // CONFIGURAÇÃO - Coloque seus dados aqui antes do setup()
 // ============================================================
 var SUPABASE_URL = 'https://hpprmuxpawtjgyvsiyeb.supabase.co';
-var SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwcHJtdXhwYXd0amd5dnNpeWViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ4ODQ1MiwiZXhwIjoyMDkwMDY0NDUyfQ.SJqzZDj2N2xt-nnu2k-SBrQyDHPfZLF9rVQvABvyOwA';
+var SUPABASE_SERVICE_ROLE_KEY = ''; // Execute setup() para salvar a chave no PropertiesService
 // ============================================================
 
 var SPREADSHEET_ID = SpreadsheetApp.getActiveSpreadsheet().getId();

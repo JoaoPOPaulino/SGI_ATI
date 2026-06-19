@@ -1,5 +1,6 @@
 # Test Data Generator - SGI ATI
-$key = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhwcHJtdXhwYXd0amd5dnNpeWViIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3NDQ4ODQ1MiwiZXhwIjoyMDkwMDY0NDUyfQ.SJqzZDj2N2xt-nnu2k-SBrQyDHPfZLF9rVQvABvyOwA"
+$key = $env:SUPABASE_SERVICE_ROLE_KEY
+if (-not $key) { Write-Host "ERRO: Defina a variavel de ambiente SUPABASE_SERVICE_ROLE_KEY"; exit 1 }
 $headers = @{"apikey"=$key; "Authorization"="Bearer $key"; "Content-Type"="application/json"; "Prefer"="return=representation"}
 $base = "https://hpprmuxpawtjgyvsiyeb.supabase.co/rest/v1"
 

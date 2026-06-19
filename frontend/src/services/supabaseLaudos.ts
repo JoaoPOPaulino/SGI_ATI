@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { LaudoTecnico } from './bancoMock';
+import type { LaudoTecnico } from './types';
 
 export async function fetchLaudos(): Promise<LaudoTecnico[]> {
   try {

@@ -1,44 +1,104 @@
 import { supabase } from "./supabase";
-import type { Item } from "./bancoMock";
-export async function fetchItens(limit = 50): Promise<Item[]> {
+import type { Item } from "./types";
+
+export interface FetchItensResult {
+  data: Item[];
+  count: number;
+}
+
+const ITENS_SELECT = `
+  id,
+  nome,
+  tipo,
+  categoria,
+  condicao,
+  status,
+  numero_patrimonio,
+  numero_serie,
+  localizacao_atual,
+  created_at,
+  updated_at,
+  polo,
+  predio,
+  andar,
+  setor,
+  sala,
+  estacao,
+  marca,
+  modelo,
+  quantidade,
+  atribuido_a_id,
+  atribuido_a_nome
+`;
+
+export async function fetchItens(page = 1, pageSize = 20): Promise<FetchItensResult> {
+  const from = (page - 1) * pageSize;
+  const to = from + pageSize - 1;
+
   try {
-    const { data, error } = await supabase
+    const { data, error, count } = await supabase
       .from("itens")
-      .select(
-        `
-        id,
-        nome,
-        tipo,
-        categoria,
-        condicao,
-        status,
-        numero_patrimonio,
-        numero_serie,
-        localizacao_atual,
-        created_at,
-        updated_at,
-        polo,
-        predio,
-        andar,
-        setor,
-        sala,
-        estacao,
-        marca,
-        modelo,
-        quantidade,
-        atribuido_a_id,
-        atribuido_a_nome
-      `,
-      )
+      .select(ITENS_SELECT, { count: "exact" })
       .order("created_at", { ascending: false })
-      .limit(limit);
+      .range(from, to);
 
     if (error) {
       console.error("Erro ao buscar itens:", error);
-      return [];
+      return { data: [], count: 0 };
     }
 
-    return (data || []) as Item[];
+    return { data: (data || []) as Item[], count: count || 0 };
+  } catch (err) {
+    console.error("Falha ao buscar itens:", err);
+    return { data: [], count: 0 };
+  }
+}
+
+export async function fetchItemById(id: string): Promise<Item | null> {
+  try {
+    const { data, error } = await supabase
+      .from("itens")
+      .select(ITENS_SELECT)
+      .eq("id", id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Erro ao buscar item:", error);
+      return null;
+    }
+
+    return data as Item | null;
+  } catch (err) {
+    console.error("Falha ao buscar item:", err);
+    return null;
+  }
+}
+
+export async function fetchAllItens(): Promise<Item[]> {
+  try {
+    let allData: Item[] = [];
+    let from = 0;
+    const pageSize = 1000;
+
+    while (true) {
+      const { data, error } = await supabase
+        .from("itens")
+        .select(ITENS_SELECT)
+        .order("created_at", { ascending: false })
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        console.error("Erro ao buscar itens:", error);
+        break;
+      }
+
+      if (!data || data.length === 0) break;
+
+      allData = [...allData, ...(data as Item[])];
+      from += pageSize;
+    }
+
+    return allData;
   } catch (err) {
     console.error("Falha ao buscar itens:", err);
     return [];

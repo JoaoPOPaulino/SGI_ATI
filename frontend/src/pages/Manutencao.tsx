@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { Item, StatusItem, Movimentacao, CondicaoItem } from '../services/bancoMock';
-import { fetchItens, updateItem } from '../services/supabaseItens';
-import { fetchMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
+import { Item, StatusItem, Movimentacao, CondicaoItem } from '../services/types';
+import { fetchAllItens, updateItem } from '../services/supabaseItens';
+import { fetchAllMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer } from 'lucide-react';
 import StatusBadge from '../components/DistintivoStatus';
 import { getReversedStatus } from '../services/utilidades';
@@ -21,7 +21,7 @@ const Manutencao: React.FC = () => {
   const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('BOM');
 
   const loadData = async () => {
-    const allItens = await fetchItens();
+    const allItens = await fetchAllItens();
     setMaintenanceItens(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
     setActiveItens(allItens.filter(i => (i.status === 'ATIVO' || i.status === 'GUARDADO') && (i.condicao === 'RUIM' || i.condicao === 'ESTRAGADO')));
@@ -39,7 +39,7 @@ const Manutencao: React.FC = () => {
     if (!selectedItemId) { setFormError('Selecione o equipamento que deseja dar baixa.'); return; }
     if (!formMotivoBaixa.trim()) { setFormError('Informe o motivo técnico detalhado para justificar a baixa.'); return; }
     try {
-      const allItens = await fetchItens();
+      const allItens = await fetchAllItens();
       const item = allItens.find(i => i.id === selectedItemId);
       if (!item) return;
       await updateItem(item.id, { status: 'AGUARDANDO_BAIXA', updated_at: new Date().toISOString() });
@@ -62,7 +62,7 @@ const Manutencao: React.FC = () => {
     const motivo = prompt('Informe o motivo da rejeição da baixa:');
     if (!motivo) return;
     try {
-      const currentMovs = await fetchMovimentacoes();
+      const currentMovs = await fetchAllMovimentacoes();
       const itemMovs = currentMovs
         .filter(m => m.item_id === item.id && m.status_aprovacao === 'APROVADO' && m.tipo !== 'BAIXA')
         .sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
@@ -85,7 +85,7 @@ const Manutencao: React.FC = () => {
     if (confirm(`Deseja homologar a BAIXA DEFINITIVA do equipamento "${item.nome}"? Esta ação é irreversível no patrimônio.`)) {
       try {
         await updateItem(item.id, { status: 'BAIXADO', localizacao_atual: 'Baixado / Descartado Definitivamente', updated_at: new Date().toISOString() });
-        const currentMovs = await fetchMovimentacoes();
+        const currentMovs = await fetchAllMovimentacoes();
         const pendingBaixa = currentMovs.find(m => m.item_id === item.id && m.tipo === 'BAIXA' && m.status_aprovacao === 'PENDENTE');
         if (pendingBaixa) {
           await updateMovimentacao(pendingBaixa.id, { status_aprovacao: 'APROVADO', aprovador_id: user?.id, aprovador_nome: user?.nome, data_movimentacao: new Date().toISOString() });

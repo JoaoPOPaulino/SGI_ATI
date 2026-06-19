@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Mail, Shield, MapPin, Circle, Clock, Users, UserPlus, ToggleLeft, Pencil, Trash2, ClipboardCheck, Ban, Fingerprint } from 'lucide-react';
-import { AdminAction } from '../services/bancoMock';
+import type { AdminAction } from '../services/types';
 import { AuditLogRecord } from '../services/supabaseUsuarios';
 
 interface ModalUser {

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
   LaudoTecnico, Item, Movimentacao
-} from '../services/bancoMock';
-import { fetchItens, updateItem } from '../services/supabaseItens';
+} from '../services/types';
+import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudos';
 import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil } from 'lucide-react';
@@ -32,7 +32,7 @@ const Labin: React.FC = () => {
   const [editingLaudoId, setEditingLaudoId] = useState<string | null>(null);
 
   const loadData = async () => {
-    const [allLaudos, allItens] = await Promise.all([fetchLaudos(), fetchItens()]);
+    const [allLaudos, allItens] = await Promise.all([fetchLaudos(), fetchAllItens()]);
     setLaudos(allLaudos);
     setItensInManutencao(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
   };
@@ -85,7 +85,7 @@ const Labin: React.FC = () => {
       return;
     }
 
-    const allItens = await fetchItens();
+    const allItens = await fetchAllItens();
     const item = allItens.find(i => i.id === selectedItemId);
     if (!item) return;
 

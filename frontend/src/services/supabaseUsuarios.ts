@@ -1,11 +1,5 @@
 import { supabase } from "./supabase";
-import {
-  getUsuarios,
-  saveUsuarios,
-  addAuditLog,
-  getAuditLogsByUser,
-  Usuario,
-} from "./bancoMock";
+import type { Usuario } from "./types";
 
 export interface SupabaseUsuario {
   id: string;
@@ -33,8 +27,6 @@ export interface AuditLogRecord {
 }
 
 export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
-  let supabaseUsers: SupabaseUsuario[] = [];
-
   try {
     const { data, error } = await supabase
       .from("usuarios")
@@ -42,50 +34,13 @@ export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
       .order("created_at", { ascending: false });
 
     if (!error && data && data.length > 0) {
-      supabaseUsers = data as SupabaseUsuario[];
+      return data as SupabaseUsuario[];
     }
   } catch (err) {
     console.error('Supabase fetchUsuarios error:', err);
   }
 
-  const localUsers = getUsuarios();
-  const supabaseCpfs = new Set(
-    supabaseUsers.map((u) => u.cpf.replace(/\D/g, "")),
-  );
-
-  const localOnly = localUsers
-    .filter((u) => !supabaseCpfs.has(u.cpf.replace(/\D/g, "")))
-    .map((u) => ({
-      ...u,
-      auth_id: null,
-      foto: u.foto || null,
-      primeiro_acesso: false,
-      created_at: new Date().toISOString(),
-    })) as SupabaseUsuario[];
-
-  return [...supabaseUsers, ...localOnly];
-}
-
-function updateLocalUser(userId: string, updates: Partial<Usuario>) {
-  const users = getUsuarios();
-  const updated = users.map((u) =>
-    u.id === userId ? { ...u, ...updates } : u,
-  );
-
-  saveUsuarios(updated);
-
-  const session = localStorage.getItem("sgi_ati_session");
-
-  if (session) {
-    const sessionUser = JSON.parse(session) as Usuario;
-
-    if (sessionUser.id === userId) {
-      localStorage.setItem(
-        "sgi_ati_session",
-        JSON.stringify({ ...sessionUser, ...updates }),
-      );
-    }
-  }
+  return [];
 }
 
 export async function toggleUserStatus(
@@ -103,8 +58,7 @@ export async function toggleUserStatus(
     console.error('Supabase toggleUserStatus error:', err);
   }
 
-  updateLocalUser(userId, { ativo });
-  return true;
+  return false;
 }
 
 export async function updateUserRole(
@@ -122,8 +76,7 @@ export async function updateUserRole(
     console.error('Supabase updateUserRole error:', err);
   }
 
-  updateLocalUser(userId, { perfil: perfil as Usuario["perfil"] });
-  return true;
+  return false;
 }
 
 export async function updateUserPolo(
@@ -141,8 +94,7 @@ export async function updateUserPolo(
     console.error('Supabase updateUserPolo error:', err);
   }
 
-  updateLocalUser(userId, { polo: polo || undefined });
-  return true;
+  return false;
 }
 
 export async function deleteUser(userId: string): Promise<boolean> {
@@ -164,10 +116,7 @@ export async function deleteUser(userId: string): Promise<boolean> {
     console.error('Supabase deleteUser error:', err);
   }
 
-  const users = getUsuarios();
-  saveUsuarios(users.filter((u) => u.id !== userId));
-
-  return true;
+  return false;
 }
 
 export async function fetchAuditLogsByUser(
@@ -187,18 +136,7 @@ export async function fetchAuditLogsByUser(
     console.error('Supabase fetchAuditLogs error:', err);
   }
 
-  const logs = getAuditLogsByUser(userId);
-
-  return logs.map((l) => ({
-    id: l.id,
-    admin_id: l.adminId,
-    admin_name: l.adminName,
-    action: l.action,
-    target_user_id: l.targetUserId,
-    target_user_name: l.targetUserName,
-    details: l.details,
-    timestamp: l.timestamp,
-  })) as AuditLogRecord[];
+  return [];
 }
 
 export async function insertAuditLog(log: {
@@ -216,15 +154,6 @@ export async function insertAuditLog(log: {
   } catch (err) {
     console.error('Supabase insertAuditLog error:', err);
   }
-
-  addAuditLog({
-    adminId: log.admin_id,
-    adminName: log.admin_name,
-    action: log.action as any,
-    targetUserId: log.target_user_id,
-    targetUserName: log.target_user_name,
-    details: log.details,
-  });
 }
 
 export async function inviteUser(payload: {
@@ -256,25 +185,6 @@ export async function inviteUser(payload: {
     };
   } catch (err) {
     console.error('invite-user Edge Function error:', err);
+    return { success: false, error: "Serviço indisponível. Tente novamente." };
   }
-
-  const usuarios = getUsuarios();
-  const cpfExistente = usuarios.find((u) => u.cpf.replace(/\D/g, "") === cleanCpf);
-  if (cpfExistente) return { success: false, error: "CPF já cadastrado." };
-
-  const emailExistente = usuarios.find((u) => u.email.trim().toLowerCase() === cleanEmail);
-  if (emailExistente) return { success: false, error: "E-mail já cadastrado." };
-
-  const newUser: Usuario = {
-    id: `usr-${Date.now()}`,
-    nome: payload.nome.trim(),
-    email: cleanEmail,
-    cpf: cleanCpf,
-    perfil: payload.perfil as Usuario["perfil"],
-    ativo: true,
-    polo: payload.polo || undefined,
-  };
-
-  saveUsuarios([...usuarios, newUser]);
-  return { success: true, user: { id: newUser.id } };
 }

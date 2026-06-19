@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import type { PerfilUsuario } from '../services/bancoMock';
+import type { PerfilUsuario } from '../services/types';
 
 function createChainableMock(terminalValue: any = null) {
   const chain: any = {

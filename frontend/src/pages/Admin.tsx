@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
-import { PerfilUsuario } from "../services/bancoMock";
+import type { PerfilUsuario } from "../services/types";
 import {
   fetchUsuarios,
   toggleUserStatus,

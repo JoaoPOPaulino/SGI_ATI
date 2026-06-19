@@ -9,7 +9,7 @@ import {
   Movimentacao,
   Local,
   LaudoTecnico,
-} from "../services/bancoMock";
+} from "../services/types";
 import {
   fetchItens,
   createItem,
@@ -17,7 +17,7 @@ import {
   deleteItem as deleteSupabaseItem,
 } from "../services/supabaseItens";
 import {
-  fetchMovimentacoes,
+  fetchMovimentacoesByItemId,
   createMovimentacao,
 } from "../services/supabaseMovimentacoes";
 import { fetchLocais } from "../services/supabaseLocais";
@@ -109,10 +109,17 @@ const Inventario: React.FC = () => {
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
 
-  // Carregar itens do banco mock
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(20);
+  const [totalCount, setTotalCount] = useState(0);
+
   const loadItens = async () => {
-    const allItens = await fetchItens(50);
-    setItens(allItens);
+    const result = await fetchItens(page, pageSize);
+    setItens(result.data);
+    setTotalCount(result.count);
+    if (result.data.length === 0 && page > 1) {
+      setPage(page - 1);
+    }
   };
 
   const ensureLocaisLoaded = async () => {
@@ -124,7 +131,7 @@ const Inventario: React.FC = () => {
 
   useEffect(() => {
     loadItens();
-  }, []);
+  }, [page]);
 
   useEffect(() => {
     if (formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO") {
@@ -426,18 +433,11 @@ const Inventario: React.FC = () => {
     setSelectedDetailsItem(item);
     setDetailsActiveTab("geral");
 
-    const [allMovs, allLaudos] = await Promise.all([
-      fetchMovimentacoes(),
+    const [filteredMovs, allLaudos] = await Promise.all([
+      fetchMovimentacoesByItemId(item.id),
       fetchLaudos(),
     ]);
 
-    const filteredMovs = allMovs
-      .filter((m) => m.item_id === item.id && m.status_aprovacao === "APROVADO")
-      .sort(
-        (a, b) =>
-          new Date(b.data_movimentacao).getTime() -
-          new Date(a.data_movimentacao).getTime(),
-      );
     setItemHistory(filteredMovs);
 
     const filteredLaudos = allLaudos.filter((l) => l.item_id === item.id);
@@ -774,7 +774,7 @@ const Inventario: React.FC = () => {
       {/* Modo de Visualização e Informações de Linhas */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-on-surface-variant font-semibold">
-          Exibindo {filteredItens.length} de {itens.length} ativos
+          Exibindo {itens.length} de {totalCount} ativos (página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))})
         </p>
         <div className="flex items-center bg-surface-container-low border border-outline rounded-xl p-0.5">
           <button
@@ -1004,6 +1004,47 @@ const Inventario: React.FC = () => {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {totalCount > pageSize && (
+        <div className="flex items-center justify-between pt-4">
+          <span className="text-xs text-on-surface-variant">
+            Total: {totalCount} registros
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setPage(1)}
+              disabled={page <= 1}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Primeira
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Anterior
+            </button>
+            <span className="text-xs font-bold text-primary px-2">
+              {page}
+            </span>
+            <button
+              onClick={() => setPage((p) => Math.min(Math.ceil(totalCount / pageSize), p + 1))}
+              disabled={page >= Math.ceil(totalCount / pageSize)}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Próxima
+            </button>
+            <button
+              onClick={() => setPage(Math.ceil(totalCount / pageSize))}
+              disabled={page >= Math.ceil(totalCount / pageSize)}
+              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+            >
+              Última
+            </button>
+          </div>
         </div>
       )}
 

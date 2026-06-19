@@ -1,4 +1,4 @@
-import type { Movimentacao, StatusAprovacao } from './bancoMock';
+import type { Movimentacao, StatusAprovacao } from './types';
 
 export function buildLocationString(...fields: (string | undefined)[]): string {
   return fields.filter(Boolean).join(' - ');

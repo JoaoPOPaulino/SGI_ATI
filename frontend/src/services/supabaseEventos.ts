@@ -1,5 +1,5 @@
 import { supabase } from './supabase';
-import type { Evento } from './bancoMock';
+import type { Evento } from './types';
 
 export async function fetchEventos(): Promise<Evento[]> {
   try {

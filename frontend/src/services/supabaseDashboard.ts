@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Movimentacao, Loan } from "./bancoMock";
+import type { Movimentacao, Loan } from "./types";
 
 export interface DashboardStats {
   total: number;

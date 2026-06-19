@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { AssinaturaGuia, TipoAssinaturaGuia } from "./bancoMock";
+import type { AssinaturaGuia, TipoAssinaturaGuia } from "./types";
 
 export async function fetchAssinaturasGuia(
   movimentacaoId: string,

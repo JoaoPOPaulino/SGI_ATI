@@ -3,7 +3,7 @@ import type {
   PerfilUsuario, TipoItem, CondicaoItem, StatusItem,
   TipoMovimentacao, StatusAprovacao, Item, Movimentacao,
   Usuario, LaudoTecnico, Loan, Evento, Local, SolicitacaoCadastro,
-} from '../services/bancoMock';
+} from '../services/types';
 
 describe('Domain Types Validation', () => {
   describe('PerfilUsuario hierarchy', () => {
