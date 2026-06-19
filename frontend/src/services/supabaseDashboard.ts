@@ -36,31 +36,35 @@ export interface DashboardChartPoint {
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   try {
-    const { data, error } = await supabase.rpc("get_dashboard_stats");
-
-    if (error) {
-      console.error("Erro ao buscar estatísticas do painel:", error);
-      return {
-        total: 0,
-        estragados: 0,
-        manutencao: 0,
-        emprestados: 0,
-        emEvento: 0,
-        disponiveis: 0,
-        aguardandoBaixa: 0,
-        prontosRetirada: 0,
-      };
-    }
+    const [
+      { count: total },
+      { count: estragados },
+      { count: manutencao },
+      { count: emprestados },
+      { count: emEvento },
+      { count: aguardandoBaixa },
+      { count: disponiveis },
+      { count: prontosRetirada },
+    ] = await Promise.all([
+      supabase.from("itens").select("*", { count: "exact", head: true }),
+      supabase.from("itens").select("*", { count: "exact", head: true }).eq("condicao", "ESTRAGADO"),
+      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "EM_MANUTENCAO"),
+      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "EMPRESTADO"),
+      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "EM_EVENTO"),
+      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "AGUARDANDO_BAIXA"),
+      supabase.from("itens").select("*", { count: "exact", head: true }).in("status", ["ATIVO", "GUARDADO"]),
+      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "GUARDADO"),
+    ]);
 
     return {
-      total: Number(data?.total || 0),
-      estragados: Number(data?.estragados || 0),
-      manutencao: Number(data?.manutencao || 0),
-      emprestados: Number(data?.emprestados || 0),
-      emEvento: Number(data?.emEvento || 0),
-      disponiveis: Number(data?.disponiveis || 0),
-      aguardandoBaixa: Number(data?.aguardandoBaixa || 0),
-      prontosRetirada: Number(data?.prontosRetirada || 0),
+      total: total || 0,
+      estragados: estragados || 0,
+      manutencao: manutencao || 0,
+      emprestados: emprestados || 0,
+      emEvento: emEvento || 0,
+      disponiveis: disponiveis || 0,
+      aguardandoBaixa: aguardandoBaixa || 0,
+      prontosRetirada: prontosRetirada || 0,
     };
   } catch (err) {
     console.error("Falha ao buscar estatísticas do painel:", err);
