@@ -47,10 +47,12 @@ export async function fetchItens(page = 1, pageSize = 20): Promise<FetchItensRes
       return { data: [], count: 0 };
     }
 
-    return { data: (data || []).map((item: any) => ({
-      ...item,
-      condicao: item.condicao === 'BOM' ? 'REGULAR' : item.condicao,
-    })) as Item[], count: count || 0 };
+    return {
+      data: (data || []).map((item: any) => ({
+        ...item,
+        condicao: item.condicao === 'BOM' ? 'REGULAR' : item.condicao,
+      })) as Item[], count: count || 0
+    };
   } catch (err) {
     console.error("Falha ao buscar itens:", err);
     return { data: [], count: 0 };
