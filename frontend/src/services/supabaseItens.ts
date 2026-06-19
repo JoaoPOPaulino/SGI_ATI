@@ -47,7 +47,10 @@ export async function fetchItens(page = 1, pageSize = 20): Promise<FetchItensRes
       return { data: [], count: 0 };
     }
 
-    return { data: (data || []) as Item[], count: count || 0 };
+    return { data: (data || []).map((item: any) => ({
+      ...item,
+      condicao: item.condicao === 'BOM' ? 'REGULAR' : item.condicao,
+    })) as Item[], count: count || 0 };
   } catch (err) {
     console.error("Falha ao buscar itens:", err);
     return { data: [], count: 0 };
@@ -67,7 +70,9 @@ export async function fetchItemById(id: string): Promise<Item | null> {
       return null;
     }
 
-    return data as Item | null;
+    const item = data as Item | null;
+    if (item && item.condicao === 'BOM') item.condicao = 'REGULAR';
+    return item;
   } catch (err) {
     console.error("Falha ao buscar item:", err);
     return null;
@@ -98,7 +103,10 @@ export async function fetchAllItens(): Promise<Item[]> {
       from += pageSize;
     }
 
-    return allData;
+    return allData.map((item) => ({
+      ...item,
+      condicao: item.condicao === 'BOM' ? 'REGULAR' : item.condicao,
+    }));
   } catch (err) {
     console.error("Falha ao buscar itens:", err);
     return [];
