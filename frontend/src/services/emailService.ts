@@ -1,4 +1,4 @@
-// src/services/emailService.ts
+// src/services/emailServices.ts
 
 import { supabase } from "./supabase";
 
@@ -16,7 +16,6 @@ async function sendEmail(payload: EmailPayload): Promise<void> {
 
     if (error) {
       console.error("Erro ao enviar e-mail:", error);
-      // Tenta extrair o corpo real do erro
       const context = (error as any).context;
       if (context) {
         const text = await context.text?.();
