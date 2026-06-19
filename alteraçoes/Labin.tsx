@@ -1,23 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { 
+import {
   LaudoTecnico, Item, Movimentacao
-} from '../services/types';
-import { fetchAllItens, updateItem } from '../services/supabaseItens';
+} from '../services/bancoMock';
+import { fetchItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudos';
-import { exportToExcel } from '../services/utilidades';
-import StatusBadge from '../components/DistintivoStatus';
-import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil, Download } from 'lucide-react';
+import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil } from 'lucide-react';
 
 const Labin: React.FC = () => {
   const { user, hasPermission } = useAuth();
-  
+
   // Estados
   const [laudos, setLaudos] = useState<LaudoTecnico[]>([]);
   const [itensInManutencao, setItensInManutencao] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Estados do Form
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -25,20 +23,20 @@ const Labin: React.FC = () => {
   const [formAcao, setFormAcao] = useState('');
   const [formPecas, setFormPecas] = useState('');
   const [formStatusServico, setFormStatusServico] = useState<'EM_ANALISE' | 'AGUARDANDO_PECA' | 'EM_REPARO' | 'FINALIZADO'>('EM_ANALISE');
-  
+
   // Estados de Paginação — Laudos
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(10);
 
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
-  
+
   // Laudo Ativo para Impressão
   const [activeLaudoPrint, setActiveLaudoPrint] = useState<LaudoTecnico | null>(null);
   const [editingLaudoId, setEditingLaudoId] = useState<string | null>(null);
 
   const loadData = async () => {
-    const [allLaudos, allItens] = await Promise.all([fetchLaudos(), fetchAllItens()]);
+    const [allLaudos, allItens] = await Promise.all([fetchLaudos(), fetchItens()]);
     setLaudos(allLaudos);
     setItensInManutencao(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
   };
@@ -51,7 +49,7 @@ const Labin: React.FC = () => {
 
   // Filtrar laudos
   const filteredLaudos = useMemo(() => {
-    return laudos.filter(l => 
+    return laudos.filter(l =>
       l.item_nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.tecnico_nome.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -103,7 +101,7 @@ const Labin: React.FC = () => {
       return;
     }
 
-    const allItens = await fetchAllItens();
+    const allItens = await fetchItens();
     const item = allItens.find(i => i.id === selectedItemId);
     if (!item) return;
 
@@ -168,26 +166,23 @@ const Labin: React.FC = () => {
     await loadData();
   };
 
-  const handleExportLaudosExcel = () => {
-    const data = filteredLaudos;
-    const headers = ["ID", "Equipamento", "Técnico", "Status Serviço", "Descrição", "Diagnóstico", "Ação Realizada", "Peças", "Data"];
-    const rows = data.map((item) => [
-      item.id,
-      item.item_nome,
-      item.tecnico_nome,
-      item.status_servico,
-      item.descricao_problema,
-      item.diagnostico,
-      item.acao_realizada,
-      item.pecas_utilizadas,
-      new Date(item.created_at).toLocaleDateString("pt-BR"),
-    ]);
-    exportToExcel(headers, rows, `laudos_${new Date().toISOString().slice(0, 10)}`, "Laudos");
+  // Badge de status do laudo com cores consistentes com o sistema
+  const getStatusBadge = (status: LaudoTecnico['status_servico']) => {
+    switch (status) {
+      case 'EM_ANALISE':
+        return <span className="px-2.5 py-0.5 rounded-lg border text-[10px] font-bold bg-sky-50 border-sky-300 text-sky-700">Em Análise Técnica</span>;
+      case 'AGUARDANDO_PECA':
+        return <span className="px-2.5 py-0.5 rounded-lg border text-[10px] font-bold bg-amber-50 border-amber-300 text-amber-700">Aguardando Peça</span>;
+      case 'EM_REPARO':
+        return <span className="px-2.5 py-0.5 rounded-lg border text-[10px] font-bold bg-orange-50 border-orange-300 text-orange-700">Em Reparo</span>;
+      case 'FINALIZADO':
+        return <span className="px-2.5 py-0.5 rounded-lg border text-[10px] font-bold bg-emerald-50 border-emerald-300 text-emerald-700">Finalizado</span>;
+    }
   };
 
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
-      
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -197,29 +192,20 @@ const Labin: React.FC = () => {
             {!canCreateLaudo && ' Visualização disponível para todos os polos.'}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {canCreateLaudo && (
-            <button
-              onClick={() => setIsFormOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md"
-            >
-              <Plus size={16} />
-              Novo Laudo Técnico
-            </button>
-          )}
+        {canCreateLaudo && (
           <button
-            onClick={handleExportLaudosExcel}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
+            onClick={() => setIsFormOpen(true)}
+            className="flex items-center gap-2 px-5 py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md"
           >
-            <Download size={12} />
-            Excel
+            <Plus size={16} />
+            Novo Laudo Técnico
           </button>
-        </div>
+        )}
       </div>
 
       {/* Busca e Tabela */}
       <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10">
-        
+
         {/* Barra de Filtro */}
         <div className="px-8 py-5 border-b border-outline-variant/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <h5 className="text-base font-bold text-primary flex items-center gap-2">
@@ -228,8 +214,8 @@ const Labin: React.FC = () => {
           </h5>
           <div className="flex items-center bg-surface-container-low px-4 py-2 rounded-full w-full md:w-80 border border-outline-variant/10">
             <Search size={16} className="text-outline mr-2" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Buscar por item, técnico ou diagnóstico..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -263,7 +249,7 @@ const Labin: React.FC = () => {
                     <td className="px-8 py-4 font-bold max-w-55 truncate">{laudo.item_nome}</td>
                     <td className="px-8 py-4 font-semibold text-on-surface-variant max-w-40 truncate">{laudo.tecnico_nome}</td>
                     <td className="px-8 py-4">
-                      <StatusBadge type="servico" value={laudo.status_servico} />
+                      {getStatusBadge(laudo.status_servico)}
                     </td>
                     <td className="px-8 py-4 text-outline font-semibold">
                       {new Date(laudo.created_at).toLocaleDateString()}
@@ -465,7 +451,7 @@ const Labin: React.FC = () => {
               <div className="pt-4 flex justify-end gap-3 border-t border-surface-container-low">
                 <button
                   type="button"
-                onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); }}
+                  onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); }}
                   className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs"
                 >
                   Cancelar
