@@ -36,6 +36,7 @@ import {
   AlertTriangle,
   Users,
   Download,
+  Search,
 } from "lucide-react";
 import ConfirmDialog from "../components/DialogoConfirmacao";
 
@@ -74,6 +75,11 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
   const [showAddItemToEvent, setShowAddItemToEvent] = useState(false);
   const [itemToAddToEvent, setItemToAddToEvent] = useState("");
 
+  const [loanSearch, setLoanSearch] = useState("");
+  const [loanDropdownOpen, setLoanDropdownOpen] = useState(false);
+  const [eventItemSearch, setEventItemSearch] = useState("");
+  const [eventItemDropdownOpen, setEventItemDropdownOpen] = useState(false);
+
   const [confirm, setConfirm] = useState<{
     open: boolean;
     title: string;
@@ -87,7 +93,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     message: "",
     variant: "danger",
     confirmLabel: "Confirmar",
-    onConfirm: () => {},
+    onConfirm: () => { },
   });
 
   const loadData = async () => {
@@ -156,7 +162,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
               await updateItem(snap.itemId, {
                 status: snap.oldStatus as any,
                 localizacao_atual: snap.oldLocal,
-              }).catch(() => {});
+              }).catch(() => { });
             }
             throw new Error("Rollback: falha ao atualizar evento");
           }
@@ -191,6 +197,15 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
 
   useEffect(() => {
     loadData();
+  }, []);
+
+  useEffect(() => {
+    const handleClick = () => {
+      setLoanDropdownOpen(false);
+      setEventItemDropdownOpen(false);
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   const canModify = hasPermission("TECNICO");
@@ -571,431 +586,486 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
 
       {/* Linha 1: Empréstimo + Empréstimos Ativos */}
       {section === 'emprestimos' && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
-          <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
-            <UserCheck size={18} /> Registrar Empréstimo
-          </h2>
-          <form onSubmit={handleCreateLoan} className="space-y-4">
-            <div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
+            <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
+              <UserCheck size={18} /> Registrar Empréstimo
+            </h2>
+            <form onSubmit={handleCreateLoan} className="space-y-4">
+              <div>
               <label
                 htmlFor="loan-equipamento"
                 className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
               >
                 Equipamento
               </label>
-              <select
-                id="loan-equipamento"
-                value={selectedItemId}
-                onChange={(e) => setSelectedItemId(e.target.value)}
-                className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-              >
-                <option value="">-- Selecione --</option>
-                {itensDisponiveis.map((i) => (
-                  <option key={i.id} value={i.id}>
-                    {i.nome} ({i.numero_patrimonio || i.numero_serie || "S/N"})
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <div className="flex items-center bg-surface border border-outline rounded-xl px-3 py-2">
+                  <Search size={14} className="text-outline-variant shrink-0 mr-2" />
+                  <input
+                    id="loan-equipamento"
+                    type="text"
+                    placeholder="Buscar equipamento por nome ou patrimônio..."
+                    value={selectedItemId
+                      ? (() => { const found = itensDisponiveis.find((i) => i.id === selectedItemId); return found ? `${found.nome} (${found.numero_patrimonio || found.numero_serie || "S/N"})` : loanSearch; })()
+                      : loanSearch
+                    }
+                    onChange={(e) => { setLoanSearch(e.target.value); setSelectedItemId(""); setLoanDropdownOpen(true); }}
+                    onFocus={() => setLoanDropdownOpen(true)}
+                    className="bg-transparent border-none focus:ring-0 text-xs w-full text-on-surface placeholder:text-outline"
+                  />
+                  {selectedItemId && (
+                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSelectedItemId(""); setLoanSearch(""); }} className="ml-2 text-outline-variant hover:text-outline">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+                {loanDropdownOpen && (
+                  <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-xl shadow-lg max-h-48 overflow-y-auto">
+                    {itensDisponiveis
+                      .filter((i) => {
+                        const q = loanSearch.toLowerCase();
+                        return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || "").toLowerCase().includes(q) || (i.numero_serie || "").toLowerCase().includes(q);
+                      })
+                      .map((i) => (
+                        <button
+                          key={i.id}
+                          type="button"
+                          onMouseDown={() => { setSelectedItemId(i.id); setLoanSearch(""); setLoanDropdownOpen(false); }}
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-primary/10 text-on-surface border-b border-outline-variant/10 last:border-0"
+                        >
+                          {i.nome} <span className="text-outline">({i.numero_patrimonio || i.numero_serie || "S/N"})</span>
+                        </button>
+                      ))}
+                    {itensDisponiveis.filter((i) => {
+                      const q = loanSearch.toLowerCase();
+                      return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || "").toLowerCase().includes(q) || (i.numero_serie || "").toLowerCase().includes(q);
+                    }).length === 0 && (
+                      <p className="px-3 py-2 text-xs text-outline">Nenhum equipamento encontrado.</p>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <label
-                htmlFor="loan-responsavel"
-                className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+              <div>
+                <label
+                  htmlFor="loan-responsavel"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  Responsável
+                </label>
+                <input
+                  id="loan-responsavel"
+                  type="text"
+                  value={formResponsavel}
+                  onChange={(e) => setFormResponsavel(e.target.value)}
+                  placeholder="Nome do colaborador"
+                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="loan-data-retorno"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  Devolução Prevista
+                </label>
+                <input
+                  id="loan-data-retorno"
+                  type="date"
+                  value={formDataRetorno}
+                  onChange={(e) => setFormDataRetorno(e.target.value)}
+                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
+              {formLoanError && (
+                <div
+                  className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[10px] text-red-700 font-semibold"
+                  role="alert"
+                >
+                  {formLoanError}
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="w-full py-3 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md active:scale-95"
               >
-                Responsável
-              </label>
-              <input
-                id="loan-responsavel"
-                type="text"
-                value={formResponsavel}
-                onChange={(e) => setFormResponsavel(e.target.value)}
-                placeholder="Nome do colaborador"
-                className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-              />
-            </div>
-            <div>
-              <label
-                htmlFor="loan-data-retorno"
-                className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                {isSaving ? "Salvando..." : "Efetivar Empréstimo"}
+              </button>
+            </form>
+          </div>
+
+          <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
+            <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
+              <CalendarRange size={18} /> Empréstimos Ativos
+              <button
+                onClick={handleExportEmprestimosExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
               >
-                Devolução Prevista
-              </label>
-              <input
-                id="loan-data-retorno"
-                type="date"
-                value={formDataRetorno}
-                onChange={(e) => setFormDataRetorno(e.target.value)}
-                className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-              />
-            </div>
-            {formLoanError && (
-              <div
-                className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[10px] text-red-700 font-semibold"
-                role="alert"
-              >
-                {formLoanError}
+                <Download size={12} />
+                Excel
+              </button>
+              {loansAtivos.length > 0 && (
+                <span className="ml-auto text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
+                  {loansAtivos.length}
+                </span>
+              )}
+            </h2>
+            {loansAtivos.length === 0 ? (
+              <p className="text-xs text-outline text-center py-8">
+                Nenhum equipamento emprestado.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {loansAtivos.map((l) => {
+                  const overdue = isOverdue(l.data_retorno_prevista);
+                  return (
+                    <div
+                      key={l.id}
+                      className={`p-4 border rounded-2xl hover:border-outline-variant/40 transition-all group ${overdue ? "bg-red-50/30 border-red-200" : "bg-surface border-outline-variant/20"}`}
+                    >
+                      <span
+                        className={`text-[9px] font-bold px-2 py-0.5 rounded border inline-block mb-2 ${overdue ? "text-red-700 bg-red-50 border-red-200" : "text-amber-700 bg-amber-50 border-amber-200"}`}
+                      >
+                        {overdue ? "Devolução Vencida" : "Empréstimo Ativo"}
+                      </span>
+                      <h3 className="text-xs font-bold text-on-surface mb-1 truncate">
+                        {l.item_nome}
+                      </h3>
+                      <p className="text-[10px] text-on-surface-variant font-medium">
+                        Portador:{" "}
+                        <strong className="text-on-surface">
+                          {l.responsavel}
+                        </strong>
+                      </p>
+                      <p
+                        className={`text-[10px] font-medium mt-1 flex items-center gap-1 ${overdue ? "text-red-600" : "text-amber-600"}`}
+                      >
+                        <AlertTriangle size={10} /> Devolução:{" "}
+                        {new Date(l.data_retorno_prevista).toLocaleDateString(
+                          "pt-BR",
+                        )}
+                        {overdue && (
+                          <span className="text-red-500 font-black text-[9px]">
+                            (Vencido)
+                          </span>
+                        )}
+                      </p>
+                      <div className="mt-4 pt-3 border-t border-outline-variant/20 flex justify-end">
+                        <button
+                          onClick={() => setActiveReturnLoan(l)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 border border-primary/20 hover:border-primary/50 text-primary font-bold text-[10px] rounded-lg transition-all"
+                        >
+                          <RotateCcw size={10} /> Registrar Devolução
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="w-full py-3 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md active:scale-95"
-            >
-              {isSaving ? "Salvando..." : "Efetivar Empréstimo"}
-            </button>
-          </form>
+          </div>
         </div>
-
-        <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
-          <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
-            <CalendarRange size={18} /> Empréstimos Ativos
-            <button
-              onClick={handleExportEmprestimosExcel}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
-            >
-              <Download size={12} />
-              Excel
-            </button>
-            {loansAtivos.length > 0 && (
-              <span className="ml-auto text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                {loansAtivos.length}
-              </span>
-            )}
-          </h2>
-          {loansAtivos.length === 0 ? (
-            <p className="text-xs text-outline text-center py-8">
-              Nenhum equipamento emprestado.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {loansAtivos.map((l) => {
-                const overdue = isOverdue(l.data_retorno_prevista);
-                return (
-                  <div
-                    key={l.id}
-                    className={`p-4 border rounded-2xl hover:border-outline-variant/40 transition-all group ${overdue ? "bg-red-50/30 border-red-200" : "bg-surface border-outline-variant/20"}`}
-                  >
-                    <span
-                      className={`text-[9px] font-bold px-2 py-0.5 rounded border inline-block mb-2 ${overdue ? "text-red-700 bg-red-50 border-red-200" : "text-amber-700 bg-amber-50 border-amber-200"}`}
-                    >
-                      {overdue ? "Devolução Vencida" : "Empréstimo Ativo"}
-                    </span>
-                    <h3 className="text-xs font-bold text-on-surface mb-1 truncate">
-                      {l.item_nome}
-                    </h3>
-                    <p className="text-[10px] text-on-surface-variant font-medium">
-                      Portador:{" "}
-                      <strong className="text-on-surface">
-                        {l.responsavel}
-                      </strong>
-                    </p>
-                    <p
-                      className={`text-[10px] font-medium mt-1 flex items-center gap-1 ${overdue ? "text-red-600" : "text-amber-600"}`}
-                    >
-                      <AlertTriangle size={10} /> Devolução:{" "}
-                      {new Date(l.data_retorno_prevista).toLocaleDateString(
-                        "pt-BR",
-                      )}
-                      {overdue && (
-                        <span className="text-red-500 font-black text-[9px]">
-                          (Vencido)
-                        </span>
-                      )}
-                    </p>
-                    <div className="mt-4 pt-3 border-t border-outline-variant/20 flex justify-end">
-                      <button
-                        onClick={() => setActiveReturnLoan(l)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 border border-primary/20 hover:border-primary/50 text-primary font-bold text-[10px] rounded-lg transition-all"
-                      >
-                        <RotateCcw size={10} /> Registrar Devolução
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
       )}
 
       {/* Linha 2: Novo Evento + Eventos e Alocações */}
       {section === 'eventos' && (
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
-          <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
-            <Plus size={18} /> Novo Evento
-          </h2>
-          <form onSubmit={handleCreateEvent} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label
-                  htmlFor="evento-nome"
-                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
-                >
-                  Nome do Evento
-                </label>
-                <input
-                  id="evento-nome"
-                  type="text"
-                  value={formNomeEvento}
-                  onChange={(e) => setFormNomeEvento(e.target.value)}
-                  placeholder="Ex: Hackathon, Palestra TI"
-                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="evento-local"
-                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
-                >
-                  Local
-                </label>
-                <input
-                  id="evento-local"
-                  type="text"
-                  value={formLocalEvento}
-                  onChange={(e) => setFormLocalEvento(e.target.value)}
-                  placeholder="Ex: Auditório Central"
-                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label
-                  htmlFor="evento-data-inicio"
-                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
-                >
-                  Início
-                </label>
-                <input
-                  id="evento-data-inicio"
-                  type="date"
-                  value={formDataInicio}
-                  onChange={(e) => setFormDataInicio(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="evento-data-fim"
-                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
-                >
-                  Fim
-                </label>
-                <input
-                  id="evento-data-fim"
-                  type="date"
-                  value={formDataFim}
-                  onChange={(e) => setFormDataFim(e.target.value)}
-                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
-                Equipamentos ({formItensSelecionados.length} selecionados)
-              </label>
-              <div
-                className="max-h-32 overflow-y-auto border border-outline rounded-xl bg-surface divide-y divide-outline-variant/10"
-                role="group"
-                aria-label="Lista de equipamentos para seleção"
-              >
-                {itensDisponiveis.length === 0 ? (
-                  <p className="p-3 text-[10px] text-outline">
-                    Nenhum item disponível para alocação.
-                  </p>
-                ) : (
-                  itensDisponiveis.map((i) => (
-                    <label
-                      key={i.id}
-                      className="flex items-center gap-3 p-2.5 hover:bg-surface-container-low cursor-pointer transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formItensSelecionados.includes(i.id)}
-                        onChange={() =>
-                          setFormItensSelecionados((prev) =>
-                            prev.includes(i.id)
-                              ? prev.filter((id) => id !== i.id)
-                              : [...prev, i.id],
-                          )
-                        }
-                        className="rounded accent-primary"
-                        aria-label={`Selecionar ${i.nome}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-on-surface truncate">
-                          {i.nome}
-                        </p>
-                        <p className="text-[9px] text-outline">
-                          {i.numero_patrimonio || i.numero_serie || "S/N"} —{" "}
-                          {i.localizacao_atual}
-                        </p>
-                      </div>
-                    </label>
-                  ))
-                )}
-              </div>
-            </div>
-            {formEventError && (
-              <div
-                className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[10px] text-red-700 font-semibold"
-                role="alert"
-              >
-                {formEventError}
-              </div>
-            )}
-            <button
-              type="submit"
-              disabled={isSaving}
-              className="w-full py-3 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md active:scale-95"
-            >
-              {isSaving ? "Salvando..." : "Cadastrar Evento"}
-            </button>
-          </form>
-        </div>
-
-        <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
-          <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
-            <MapPin size={18} /> Eventos e Alocações
-            <button
-              onClick={handleExportEventosExcel}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all ml-auto"
-            >
-              <Download size={12} />
-              Excel
-            </button>
-          </h2>
-          {eventos.length === 0 ? (
-            <p className="text-xs text-outline text-center py-8">
-              Nenhum evento cadastrado.
-            </p>
-          ) : (
-            <div className="space-y-3">
-              {eventos.map((evt) => {
-                const itemsEvento = itens.filter((i) =>
-                  evt.itens_alocados.includes(i.id),
-                );
-                const expired = new Date(evt.data_fim) < today;
-                return (
-                  <div
-                    key={evt.id}
-                    className={`p-4 border rounded-2xl hover:border-outline-variant/40 transition-all ${expired ? "bg-gray-50/50 border-outline-variant/10" : "bg-surface border-outline-variant/20"}`}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+          <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
+            <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
+              <Plus size={18} /> Novo Evento
+            </h2>
+            <form onSubmit={handleCreateEvent} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4">
+                <div>
+                  <label
+                    htmlFor="evento-nome"
+                    className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
                   >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1 min-w-0">
-                        <h3 className="text-xs font-bold text-on-surface mb-1 flex items-center gap-2">
-                          {evt.nome}
-                          {expired && (
-                            <span className="text-[9px] font-bold text-outline bg-surface-container px-1.5 py-0.5 rounded">
-                              Encerrado
-                            </span>
-                          )}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-on-surface-variant">
-                          <span className="flex items-center gap-1">
-                            <MapPin size={10} /> {evt.local}
-                          </span>
-                          <span className={expired ? "text-outline" : ""}>
-                            {new Date(evt.data_inicio).toLocaleDateString(
-                              "pt-BR",
-                            )}{" "}
-                            →{" "}
-                            {new Date(evt.data_fim).toLocaleDateString("pt-BR")}
-                          </span>
-                        </div>
-                        {itemsEvento.length > 0 && (
-                          <div className="mt-2 flex flex-wrap gap-1.5">
-                            {itemsEvento.map((it) => (
-                              <span
-                                key={it.id}
-                                className="inline-flex items-center gap-1 text-[9px] font-semibold bg-primary/5 text-primary px-2 py-0.5 rounded border border-primary/10"
-                              >
-                                <Monitor size={10} />{" "}
-                                {it.nome.length > 25
-                                  ? it.nome.slice(0, 25) + "..."
-                                  : it.nome}
-                              </span>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[9px] font-bold bg-surface-container-high text-on-surface-variant px-2.5 py-1 rounded-full border border-outline-variant/20">
-                          {itemsEvento.length} item
-                          {itemsEvento.length !== 1 ? "s" : ""}
-                        </span>
-                        {canModify && (
-                          <button
-                            onClick={() =>
-                              setManageEventId(
-                                manageEventId === evt.id ? null : evt.id,
-                              )
-                            }
-                            aria-expanded={manageEventId === evt.id}
-                            aria-controls={`manage-event-${evt.id}`}
-                            className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors border border-primary/10"
-                          >
-                            <Users size={12} /> Gerenciar
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {manageEventId === evt.id && (
-                      <div
-                        id={`manage-event-${evt.id}`}
-                        className="mt-4 pt-4 border-t border-outline-variant/20 space-y-3 animate-slide-up"
+                    Nome do Evento
+                  </label>
+                  <input
+                    id="evento-nome"
+                    type="text"
+                    value={formNomeEvento}
+                    onChange={(e) => setFormNomeEvento(e.target.value)}
+                    placeholder="Ex: Hackathon, Palestra TI"
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="evento-local"
+                    className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                  >
+                    Local
+                  </label>
+                  <input
+                    id="evento-local"
+                    type="text"
+                    value={formLocalEvento}
+                    onChange={(e) => setFormLocalEvento(e.target.value)}
+                    placeholder="Ex: Auditório Central"
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="evento-data-inicio"
+                    className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                  >
+                    Início
+                  </label>
+                  <input
+                    id="evento-data-inicio"
+                    type="date"
+                    value={formDataInicio}
+                    onChange={(e) => setFormDataInicio(e.target.value)}
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="evento-data-fim"
+                    className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                  >
+                    Fim
+                  </label>
+                  <input
+                    id="evento-data-fim"
+                    type="date"
+                    value={formDataFim}
+                    onChange={(e) => setFormDataFim(e.target.value)}
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+                  Equipamentos ({formItensSelecionados.length} selecionados)
+                </label>
+                <div
+                  className="max-h-32 overflow-y-auto border border-outline rounded-xl bg-surface divide-y divide-outline-variant/10"
+                  role="group"
+                  aria-label="Lista de equipamentos para seleção"
+                >
+                  {itensDisponiveis.length === 0 ? (
+                    <p className="p-3 text-[10px] text-outline">
+                      Nenhum item disponível para alocação.
+                    </p>
+                  ) : (
+                    itensDisponiveis.map((i) => (
+                      <label
+                        key={i.id}
+                        className="flex items-center gap-3 p-2.5 hover:bg-surface-container-low cursor-pointer transition-colors"
                       >
-                        <div className="flex items-center justify-between">
-                          <h4 className="text-[11px] font-bold text-on-surface">
-                            Itens Alocados
-                          </h4>
+                        <input
+                          type="checkbox"
+                          checked={formItensSelecionados.includes(i.id)}
+                          onChange={() =>
+                            setFormItensSelecionados((prev) =>
+                              prev.includes(i.id)
+                                ? prev.filter((id) => id !== i.id)
+                                : [...prev, i.id],
+                            )
+                          }
+                          className="rounded accent-primary"
+                          aria-label={`Selecionar ${i.nome}`}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[10px] font-semibold text-on-surface truncate">
+                            {i.nome}
+                          </p>
+                          <p className="text-[9px] text-outline">
+                            {i.numero_patrimonio || i.numero_serie || "S/N"} —{" "}
+                            {i.localizacao_atual}
+                          </p>
+                        </div>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </div>
+              {formEventError && (
+                <div
+                  className="p-2.5 bg-red-50 border border-red-200 rounded-xl text-[10px] text-red-700 font-semibold"
+                  role="alert"
+                >
+                  {formEventError}
+                </div>
+              )}
+              <button
+                type="submit"
+                disabled={isSaving}
+                className="w-full py-3 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md active:scale-95"
+              >
+                {isSaving ? "Salvando..." : "Cadastrar Evento"}
+              </button>
+            </form>
+          </div>
+
+          <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
+            <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
+              <MapPin size={18} /> Eventos e Alocações
+              <button
+                onClick={handleExportEventosExcel}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all ml-auto"
+              >
+                <Download size={12} />
+                Excel
+              </button>
+            </h2>
+            {eventos.length === 0 ? (
+              <p className="text-xs text-outline text-center py-8">
+                Nenhum evento cadastrado.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {eventos.map((evt) => {
+                  const itemsEvento = itens.filter((i) =>
+                    evt.itens_alocados.includes(i.id),
+                  );
+                  const expired = new Date(evt.data_fim) < today;
+                  return (
+                    <div
+                      key={evt.id}
+                      className={`p-4 border rounded-2xl hover:border-outline-variant/40 transition-all ${expired ? "bg-gray-50/50 border-outline-variant/10" : "bg-surface border-outline-variant/20"}`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xs font-bold text-on-surface mb-1 flex items-center gap-2">
+                            {evt.nome}
+                            {expired && (
+                              <span className="text-[9px] font-bold text-outline bg-surface-container px-1.5 py-0.5 rounded">
+                                Encerrado
+                              </span>
+                            )}
+                          </h3>
+                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-semibold text-on-surface-variant">
+                            <span className="flex items-center gap-1">
+                              <MapPin size={10} /> {evt.local}
+                            </span>
+                            <span className={expired ? "text-outline" : ""}>
+                              {new Date(evt.data_inicio).toLocaleDateString(
+                                "pt-BR",
+                              )}{" "}
+                              →{" "}
+                              {new Date(evt.data_fim).toLocaleDateString("pt-BR")}
+                            </span>
+                          </div>
+                          {itemsEvento.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {itemsEvento.map((it) => (
+                                <span
+                                  key={it.id}
+                                  className="inline-flex items-center gap-1 text-[9px] font-semibold bg-primary/5 text-primary px-2 py-0.5 rounded border border-primary/10"
+                                >
+                                  <Monitor size={10} />{" "}
+                                  {it.nome.length > 25
+                                    ? it.nome.slice(0, 25) + "..."
+                                    : it.nome}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[9px] font-bold bg-surface-container-high text-on-surface-variant px-2.5 py-1 rounded-full border border-outline-variant/20">
+                            {itemsEvento.length} item
+                            {itemsEvento.length !== 1 ? "s" : ""}
+                          </span>
                           {canModify && (
                             <button
-                              onClick={() => {
-                                setShowAddItemToEvent(true);
-                                setItemToAddToEvent("");
-                              }}
-                              className="flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+                              onClick={() =>
+                                setManageEventId(
+                                  manageEventId === evt.id ? null : evt.id,
+                                )
+                              }
+                              aria-expanded={manageEventId === evt.id}
+                              aria-controls={`manage-event-${evt.id}`}
+                              className="flex items-center gap-1 px-2.5 py-1.5 text-[10px] font-bold text-primary hover:bg-primary/5 rounded-lg transition-colors border border-primary/10"
                             >
-                              <Plus size={12} /> Adicionar item
+                              <Users size={12} /> Gerenciar
                             </button>
                           )}
                         </div>
+                      </div>
 
-                        {showAddItemToEvent &&
+                      {manageEventId === evt.id && (
+                        <div
+                          id={`manage-event-${evt.id}`}
+                          className="mt-4 pt-4 border-t border-outline-variant/20 space-y-3 animate-slide-up"
+                        >
+                          <div className="flex items-center justify-between">
+                            <h4 className="text-[11px] font-bold text-on-surface">
+                              Itens Alocados
+                            </h4>
+                            {canModify && (
+                              <button
+                                onClick={() => {
+                                  setShowAddItemToEvent(true);
+                                  setItemToAddToEvent("");
+                                }}
+                                className="flex items-center gap-1 text-[10px] font-bold text-primary hover:underline"
+                              >
+                                <Plus size={12} /> Adicionar item
+                              </button>
+                            )}
+                          </div>
+
+                          {showAddItemToEvent &&
                           itensAlocaveisParaEvento.length > 0 && (
                             <div className="flex items-end gap-2">
-                              <div className="flex-1">
+                              <div className="flex-1 relative">
                                 <label
                                   htmlFor={`add-item-event-${evt.id}`}
                                   className="sr-only"
                                 >
                                   Selecionar item para adicionar ao evento
                                 </label>
-                                <select
-                                  id={`add-item-event-${evt.id}`}
-                                  value={itemToAddToEvent}
-                                  onChange={(e) =>
-                                    setItemToAddToEvent(e.target.value)
-                                  }
-                                  className="w-full px-3 py-1.5 bg-surface border border-outline rounded-xl text-[10px] focus:ring-1 focus:ring-primary text-on-surface"
-                                >
-                                  <option value="">Selecionar item...</option>
-                                  {itensAlocaveisParaEvento.map((i) => (
-                                    <option key={i.id} value={i.id}>
-                                      {i.nome} (
-                                      {i.numero_patrimonio ||
-                                        i.numero_serie ||
-                                        "S/N"}
-                                      )
-                                    </option>
-                                  ))}
-                                </select>
+                                <div className="flex items-center bg-surface border border-outline rounded-xl px-2.5 py-1.5">
+                                  <Search size={12} className="text-outline-variant shrink-0 mr-1.5" />
+                                  <input
+                                    id={`add-item-event-${evt.id}`}
+                                    type="text"
+                                    placeholder="Buscar item por nome ou patrimônio..."
+                                    value={itemToAddToEvent
+                                      ? (() => { const found = itensAlocaveisParaEvento.find((i) => i.id === itemToAddToEvent); return found ? `${found.nome} (${found.numero_patrimonio || found.numero_serie || "S/N"})` : eventItemSearch; })()
+                                      : eventItemSearch
+                                    }
+                                    onChange={(e) => { setEventItemSearch(e.target.value); setItemToAddToEvent(""); setEventItemDropdownOpen(true); }}
+                                    onFocus={() => setEventItemDropdownOpen(true)}
+                                    className="bg-transparent border-none focus:ring-0 text-[10px] w-full text-on-surface placeholder:text-outline"
+                                  />
+                                </div>
+                                {eventItemDropdownOpen && (
+                                  <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-xl shadow-lg max-h-40 overflow-y-auto">
+                                    {itensAlocaveisParaEvento
+                                      .filter((i) => {
+                                        const q = eventItemSearch.toLowerCase();
+                                        return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || "").toLowerCase().includes(q) || (i.numero_serie || "").toLowerCase().includes(q);
+                                      })
+                                      .map((i) => (
+                                        <button
+                                          key={i.id}
+                                          type="button"
+                                          onMouseDown={() => { setItemToAddToEvent(i.id); setEventItemSearch(""); setEventItemDropdownOpen(false); }}
+                                          className="w-full text-left px-2.5 py-1.5 text-[10px] hover:bg-primary/10 text-on-surface border-b border-outline-variant/10 last:border-0"
+                                        >
+                                          {i.nome} <span className="text-outline">({i.numero_patrimonio || i.numero_serie || "S/N"})</span>
+                                        </button>
+                                      ))}
+                                    {itensAlocaveisParaEvento.filter((i) => {
+                                      const q = eventItemSearch.toLowerCase();
+                                      return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || "").toLowerCase().includes(q) || (i.numero_serie || "").toLowerCase().includes(q);
+                                    }).length === 0 && (
+                                      <p className="px-2.5 py-1.5 text-[10px] text-outline">Nenhum item encontrado.</p>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                               <button
                                 onClick={addItemToEvent}
@@ -1005,7 +1075,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                                 Adicionar
                               </button>
                               <button
-                                onClick={() => setShowAddItemToEvent(false)}
+                                onClick={() => { setShowAddItemToEvent(false); setEventItemSearch(""); }}
                                 className="px-3 py-1.5 text-[10px] text-outline hover:text-on-surface transition-colors"
                               >
                                 Cancelar
@@ -1013,50 +1083,50 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                             </div>
                           )}
 
-                        {itemsEvento.length === 0 ? (
-                          <p className="text-[10px] text-outline italic py-2">
-                            Nenhum equipamento alocado a este evento.
-                          </p>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {itemsEvento.map((it) => (
-                              <div
-                                key={it.id}
-                                className="flex items-center justify-between py-2 px-3 bg-surface-container-low rounded-xl"
-                              >
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <Package
-                                    size={12}
-                                    className="text-outline shrink-0"
-                                  />
-                                  <span className="text-[10px] font-semibold text-on-surface truncate">
-                                    {it.nome}
-                                  </span>
+                          {itemsEvento.length === 0 ? (
+                            <p className="text-[10px] text-outline italic py-2">
+                              Nenhum equipamento alocado a este evento.
+                            </p>
+                          ) : (
+                            <div className="space-y-1.5">
+                              {itemsEvento.map((it) => (
+                                <div
+                                  key={it.id}
+                                  className="flex items-center justify-between py-2 px-3 bg-surface-container-low rounded-xl"
+                                >
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <Package
+                                      size={12}
+                                      className="text-outline shrink-0"
+                                    />
+                                    <span className="text-[10px] font-semibold text-on-surface truncate">
+                                      {it.nome}
+                                    </span>
+                                  </div>
+                                  {canModify && (
+                                    <button
+                                      onClick={() =>
+                                        removeItemFromEvent(evt.id, it.id)
+                                      }
+                                      className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                                      aria-label={`Desalocar ${it.nome} do evento`}
+                                    >
+                                      <X size={12} />
+                                    </button>
+                                  )}
                                 </div>
-                                {canModify && (
-                                  <button
-                                    onClick={() =>
-                                      removeItemFromEvent(evt.id, it.id)
-                                    }
-                                    className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
-                                    aria-label={`Desalocar ${it.nome} do evento`}
-                                  >
-                                    <X size={12} />
-                                  </button>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       )}
 
       {/* Modal de Devolução */}
@@ -1117,7 +1187,6 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                 >
                   <option value="NOVO">Como Novo</option>
-                  <option value="REGULAR">Regular</option>
                   <option value="REGULAR">Regular</option>
                   <option value="RUIM">Ruim (Avarias)</option>
                   <option value="ESTRAGADO">
