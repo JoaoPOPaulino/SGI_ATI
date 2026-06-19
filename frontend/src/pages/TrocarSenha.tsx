@@ -108,6 +108,7 @@ const TrocarSenha: React.FC = () => {
         return;
       }
 
+      localStorage.setItem("sgi_ati_ultima_troca_senha", new Date().toISOString());
       setSuccess("Senha alterada com sucesso! Redirecionando...");
 
       redirectTimer.current = setTimeout(() => {
@@ -122,16 +123,16 @@ const TrocarSenha: React.FC = () => {
 
   if (checkingSession) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 text-center max-w-md w-full">
+      <div className="min-h-screen flex items-center justify-center bg-surface p-4 font-body">
+        <div className="bg-surface-container-lowest rounded-3xl shadow-xl p-8 border border-outline-variant/20 text-center max-w-md w-full">
           <Loader2
             size={42}
-            className="text-blue-600 animate-spin mx-auto mb-5"
+            className="text-primary animate-spin mx-auto mb-5"
           />
-          <h1 className="text-2xl font-extrabold text-gray-800 mb-3">
+          <h1 className="text-2xl font-extrabold text-on-surface mb-3">
             Validando acesso
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-on-surface-variant">
             Aguarde enquanto verificamos sua sessão.
           </p>
         </div>
@@ -140,19 +141,19 @@ const TrocarSenha: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <div className="bg-white rounded-3xl shadow-xl p-8 border border-gray-100 max-w-md w-full">
+    <div className="min-h-screen flex items-center justify-center bg-surface p-4 font-body">
+      <div className="bg-surface-container-lowest rounded-3xl shadow-xl p-8 border border-outline-variant/20 max-w-md w-full">
         <div className="flex justify-center mb-5">
-          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center">
             <Lock size={28} />
           </div>
         </div>
 
-        <h1 className="text-2xl font-extrabold text-gray-800 text-center mb-2">
+        <h1 className="text-2xl font-extrabold text-on-surface text-center mb-2">
           Definir nova senha
         </h1>
 
-        <p className="text-sm text-gray-500 text-center mb-6">
+        <p className="text-sm text-on-surface-variant text-center mb-6">
           Para continuar, crie uma senha de acesso para sua conta.
         </p>
 
@@ -172,13 +173,13 @@ const TrocarSenha: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="space-y-1.5">
-            <label className="block text-sm font-bold text-gray-700 ml-1">
+            <label className="block text-sm font-bold text-on-surface-variant ml-1">
               Nova senha
             </label>
 
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock size={18} className="text-gray-400" />
+                <Lock size={18} className="text-outline-variant" />
               </div>
 
               <input
@@ -186,14 +187,14 @@ const TrocarSenha: React.FC = () => {
                 value={novaSenha}
                 onChange={(e) => setNovaSenha(e.target.value)}
                 placeholder="Digite sua nova senha"
-                className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 text-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium placeholder-gray-400"
+                className="w-full pl-11 pr-12 py-3.5 bg-surface border border-outline-variant text-on-surface rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-semibold placeholder-outline-variant"
                 disabled={loading || !!success}
               />
 
               <button
                 type="button"
                 onClick={() => setMostrarSenha((value) => !value)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-outline-variant hover:text-outline transition-colors"
                 aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
                 disabled={loading || !!success}
               >
@@ -203,13 +204,13 @@ const TrocarSenha: React.FC = () => {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-sm font-bold text-gray-700 ml-1">
+            <label className="block text-sm font-bold text-on-surface-variant ml-1">
               Confirmar senha
             </label>
 
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock size={18} className="text-gray-400" />
+                <Lock size={18} className="text-outline-variant" />
               </div>
 
               <input
@@ -217,14 +218,14 @@ const TrocarSenha: React.FC = () => {
                 value={confirmarSenha}
                 onChange={(e) => setConfirmarSenha(e.target.value)}
                 placeholder="Repita sua nova senha"
-                className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 text-gray-800 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all font-medium placeholder-gray-400"
+                className="w-full pl-11 pr-12 py-3.5 bg-surface border border-outline-variant text-on-surface rounded-2xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-semibold placeholder-outline-variant"
                 disabled={loading || !!success}
               />
 
               <button
                 type="button"
                 onClick={() => setMostrarConfirmacao((value) => !value)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute inset-y-0 right-0 pr-4 flex items-center text-outline-variant hover:text-outline transition-colors"
                 aria-label={
                   mostrarConfirmacao ? "Ocultar senha" : "Mostrar senha"
                 }
@@ -238,7 +239,7 @@ const TrocarSenha: React.FC = () => {
           <button
             type="submit"
             disabled={loading || !!success}
-            className="w-full mt-2 py-4 px-6 bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-2xl font-bold shadow-lg shadow-blue-500/30 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
+            className="w-full mt-2 py-4 px-6 custom-gradient-btn text-white rounded-2xl font-bold shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-wait"
           >
             {loading ? (
               <>

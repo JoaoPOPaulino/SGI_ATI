@@ -22,6 +22,8 @@ const Perfil: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   if (!user) return null;
 
+  const ultimaTroca = localStorage.getItem('sgi_ati_ultima_troca_senha');
+
   const handlePhotoClick = () => { fileInputRef.current?.click(); };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,7 +76,7 @@ const Perfil: React.FC = () => {
             <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Key size={18} className="text-primary" />Segurança</h3>
             <div className="space-y-4">
               <div className="p-4 bg-surface rounded-xl border border-outline-variant/30 flex items-center justify-between">
-                <div><h4 className="font-bold text-sm">Senha de Acesso</h4><p className="text-xs text-on-surface-variant">Última alteração: {tempoDecorrido(null)}</p></div>
+                <div><h4 className="font-bold text-sm">Senha de Acesso</h4><p className="text-xs text-on-surface-variant">Última alteração: {tempoDecorrido(ultimaTroca)}</p></div>
                 <button onClick={() => navigate('/trocar-senha')} className="px-4 py-2 custom-gradient-btn text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all">Alterar Senha</button>
               </div>
             </div>
