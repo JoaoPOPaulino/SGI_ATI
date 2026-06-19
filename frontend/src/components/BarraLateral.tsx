@@ -104,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         <button
           onClick={() => { handleNav(); logout(); }}
           title={isCollapsed ? "Sair do Sistema" : undefined}
-          className={`w-full flex items-center gap-3 ${isCollapsed ? 'justify-center px-0' : 'px-4'} py-2.5 rounded-lg text-xs font-bold text-blue-100/70 hover:text-white hover:bg-rose-950/20 hover:text-rose-300 transition-all duration-200 text-left`}
+          className={`w-full flex items-center gap-3 ${isCollapsed ? 'justify-center px-0' : 'px-4'} py-2.5 rounded-lg text-xs font-bold text-blue-100/70 hover:text-white hover:bg-rose-500/20 transition-all duration-200 text-left`}
         >
           <LogOut size={14} className="shrink-0" />
           {!isCollapsed && <span className="truncate">Sair do Sistema</span>}

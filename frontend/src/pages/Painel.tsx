@@ -12,6 +12,7 @@ import {
   DashboardLoanAlert,
   DashboardChartPoint,
 } from "../services/supabaseDashboard";
+import StatusBadge from "../components/DistintivoStatus";
 import {
   Package,
   Wrench,
@@ -239,9 +240,7 @@ const Dashboard: React.FC = () => {
                         </span>
                       </div>
                     </div>
-                    <span className="text-[10px] font-bold bg-amber-500/15 text-amber-400 px-2.5 py-1 rounded-full border border-amber-500/30">
-                      Pendente
-                    </span>
+                    <StatusBadge type="aprovacao" value="PENDENTE" />
                   </button>
                 );
               })}
@@ -291,7 +290,7 @@ const Dashboard: React.FC = () => {
                         )}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold bg-violet-500/15 text-violet-400 px-2.5 py-1 rounded-full border border-violet-500/30">
+                    <span className="text-[10px] font-bold bg-violet-50 text-violet-700 px-2.5 py-1 rounded-full border border-violet-200">
                       Aprovar
                     </span>
                   </button>

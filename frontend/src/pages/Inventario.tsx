@@ -1286,25 +1286,7 @@ const Inventario: React.FC = () => {
                           <span className="text-[9px] font-bold text-outline uppercase">
                             Status:
                           </span>
-                          <span
-                            className={`px-2 py-0.5 text-[9px] font-bold rounded-full border ${
-                              l.status_servico === "FINALIZADO"
-                                ? "bg-emerald-950/30 text-emerald-400 border-emerald-500/20"
-                                : l.status_servico === "EM_REPARO"
-                                  ? "bg-amber-950/30 text-amber-400 border-amber-500/20"
-                                  : l.status_servico === "AGUARDANDO_PECA"
-                                    ? "bg-orange-950/30 text-orange-400 border-orange-500/20"
-                                    : "bg-primary/10 text-primary border-primary/20"
-                            }`}
-                          >
-                            {l.status_servico === "EM_ANALISE"
-                              ? "Em Análise"
-                              : l.status_servico === "AGUARDANDO_PECA"
-                                ? "Aguardando Peça"
-                                : l.status_servico === "EM_REPARO"
-                                  ? "Em Reparo"
-                                  : "Finalizado"}
-                          </span>
+                          <StatusBadge type="servico" value={l.status_servico as "EM_ANALISE" | "AGUARDANDO_PECA" | "EM_REPARO" | "FINALIZADO"} />
                         </div>
                       </div>
                     ))

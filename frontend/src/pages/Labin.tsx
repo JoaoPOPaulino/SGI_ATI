@@ -6,6 +6,7 @@ import {
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudos';
+import StatusBadge from '../components/DistintivoStatus';
 import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil } from 'lucide-react';
 
 const Labin: React.FC = () => {
@@ -150,19 +151,6 @@ const Labin: React.FC = () => {
     await loadData();
   };
 
-  const getStatusBadgeStyle = (status: LaudoTecnico['status_servico']) => {
-    switch (status) {
-      case 'EM_ANALISE':
-        return 'bg-primary-fixed/40 text-primary border-primary/20';
-      case 'AGUARDANDO_PECA':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
-      case 'EM_REPARO':
-        return 'bg-secondary-container/40 text-secondary border-secondary/20';
-      case 'FINALIZADO':
-        return 'bg-tertiary-container/30 text-tertiary border-tertiary/20';
-    }
-  };
-
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
       
@@ -232,9 +220,7 @@ const Labin: React.FC = () => {
                     <td className="px-8 py-4 font-bold max-w-55 truncate">{laudo.item_nome}</td>
                     <td className="px-8 py-4 font-semibold text-on-surface-variant max-w-40 truncate">{laudo.tecnico_nome}</td>
                     <td className="px-8 py-4">
-                      <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase ${getStatusBadgeStyle(laudo.status_servico)}`}>
-                        {laudo.status_servico}
-                      </span>
+                      <StatusBadge type="servico" value={laudo.status_servico} />
                     </td>
                     <td className="px-8 py-4 text-outline font-semibold">
                       {new Date(laudo.created_at).toLocaleDateString()}

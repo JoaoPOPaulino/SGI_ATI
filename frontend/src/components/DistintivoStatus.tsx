@@ -1,37 +1,81 @@
 import React from 'react';
-import type { StatusItem, CondicaoItem } from '../services/types';
+import type { StatusItem, CondicaoItem, StatusAprovacao } from '../services/types';
+
+type StatusServico = "EM_ANALISE" | "AGUARDANDO_PECA" | "EM_REPARO" | "FINALIZADO";
+
+type BadgeType = 'status' | 'condicao' | 'aprovacao' | 'servico';
 
 interface StatusBadgeProps {
-  type: 'status' | 'condicao';
-  value: StatusItem | CondicaoItem;
+  type: BadgeType;
+  value: StatusItem | CondicaoItem | StatusAprovacao | StatusServico;
 }
 
-const S = 'text-[10px]';
+const S = 'text-[10px] font-bold';
 
-const StatusBadge: React.FC<StatusBadgeProps> = ({ type, value }) => {
-  if (type === 'status') {
-    const status = value as StatusItem;
-    switch (status) {
-      case 'ATIVO': return <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} font-semibold rounded-full bg-emerald-950/50 border border-emerald-500/30 text-emerald-400`}><span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />Ativo</span>;
-      case 'EM_MANUTENCAO': return <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} font-semibold rounded-full bg-amber-950/50 border border-amber-500/30 text-amber-400`}><span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />Manutenção</span>;
-      case 'AGUARDANDO_BAIXA': return <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} font-semibold rounded-full bg-yellow-950/50 border border-yellow-500/30 text-yellow-400`}><span className="w-1.5 h-1.5 rounded-full bg-yellow-400" />Aguard. Baixa</span>;
-      case 'BAIXADO': return <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} font-semibold rounded-full bg-rose-950/50 border border-rose-500/30 text-rose-400`}><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Baixado</span>;
-      case 'GUARDADO': return <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} font-semibold rounded-full bg-sky-950/50 border border-sky-500/30 text-sky-400`}><span className="w-1.5 h-1.5 rounded-full bg-sky-400" />Guardado</span>;
-      case 'EMPRESTADO': return <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} font-semibold rounded-full bg-violet-950/50 border border-violet-500/30 text-violet-400`}><span className="w-1.5 h-1.5 rounded-full bg-violet-400 animate-pulse" />Emprestado</span>;
-      case 'EM_EVENTO': return <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} font-semibold rounded-full bg-teal-950/50 border border-teal-500/30 text-teal-400`}><span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-pulse" />Em Evento</span>;
-      default: return <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} font-semibold rounded-full bg-neutral-950/50 border border-neutral-500/30 text-neutral-400`}>{status}</span>;
-    }
-  } else {
-    const condicao = value as CondicaoItem;
-    switch (condicao) {
-      case 'NOVO': return <span className={`inline-flex items-center px-2 py-0.5 ${S} font-medium rounded bg-indigo-950/40 border border-indigo-500/20 text-indigo-300`}>Novo</span>;
-      case 'BOM': return <span className={`inline-flex items-center px-2 py-0.5 ${S} font-medium rounded bg-emerald-950/40 border border-emerald-500/20 text-emerald-300`}>Bom</span>;
-      case 'REGULAR': return <span className={`inline-flex items-center px-2 py-0.5 ${S} font-medium rounded bg-amber-950/40 border border-amber-500/20 text-amber-300`}>Regular</span>;
-      case 'RUIM': return <span className={`inline-flex items-center px-2 py-0.5 ${S} font-medium rounded bg-orange-950/40 border border-orange-500/20 text-orange-300`}>Ruim</span>;
-      case 'ESTRAGADO': return <span className={`inline-flex items-center px-2 py-0.5 ${S} font-medium rounded bg-rose-950/40 border border-rose-500/20 text-rose-300`}>Estragado</span>;
-      default: return <span className={`inline-flex items-center px-2 py-0.5 ${S} font-medium rounded bg-neutral-950/40 border border-neutral-500/20 text-neutral-300`}>{condicao}</span>;
-    }
-  }
+const dot = (color: string, pulse?: boolean) => (
+  <span className={`w-1.5 h-1.5 rounded-full ${color} ${pulse ? 'animate-pulse' : ''}`} />
+);
+
+const statusStyle: Record<string, { bg: string; text: string; border: string; dot: string; label: string; pulse?: boolean }> = {
+  ATIVO:            { bg: 'bg-emerald-50',  text: 'text-emerald-700',  border: 'border-emerald-200',  dot: 'bg-emerald-500',  label: 'Ativo',            pulse: true },
+  EM_MANUTENCAO:    { bg: 'bg-amber-50',    text: 'text-amber-700',    border: 'border-amber-200',    dot: 'bg-amber-500',    label: 'Manutenção',       pulse: true },
+  AGUARDANDO_BAIXA: { bg: 'bg-yellow-50',   text: 'text-yellow-700',   border: 'border-yellow-200',   dot: 'bg-yellow-500',   label: 'Aguard. Baixa'           },
+  BAIXADO:          { bg: 'bg-rose-50',     text: 'text-rose-700',     border: 'border-rose-200',     dot: 'bg-rose-500',     label: 'Baixado'                },
+  GUARDADO:         { bg: 'bg-sky-50',      text: 'text-sky-700',      border: 'border-sky-200',      dot: 'bg-sky-500',      label: 'Guardado'               },
+  EMPRESTADO:       { bg: 'bg-violet-50',   text: 'text-violet-700',   border: 'border-violet-200',   dot: 'bg-violet-500',   label: 'Emprestado',       pulse: true },
+  EM_EVENTO:        { bg: 'bg-teal-50',     text: 'text-teal-700',     border: 'border-teal-200',     dot: 'bg-teal-500',     label: 'Em Evento',        pulse: true },
+  PENDENTE:         { bg: 'bg-amber-50',    text: 'text-amber-700',    border: 'border-amber-200',    dot: '',                label: 'Pendente'               },
+  APROVADO:         { bg: 'bg-emerald-50',  text: 'text-emerald-700',  border: 'border-emerald-200',  dot: '',                label: 'Aprovado'               },
+  REJEITADO:        { bg: 'bg-rose-50',     text: 'text-rose-700',     border: 'border-rose-200',     dot: '',                label: 'Rejeitado'              },
+  NOVO:             { bg: 'bg-indigo-50',   text: 'text-indigo-700',   border: 'border-indigo-200',   dot: '',                label: 'Novo'                   },
+  BOM:              { bg: 'bg-emerald-50',  text: 'text-emerald-700',  border: 'border-emerald-200',  dot: '',                label: 'Bom'                    },
+  REGULAR:          { bg: 'bg-amber-50',    text: 'text-amber-700',    border: 'border-amber-200',    dot: '',                label: 'Regular'                },
+  RUIM:             { bg: 'bg-orange-50',   text: 'text-orange-700',   border: 'border-orange-200',   dot: '',                label: 'Ruim'                   },
+  ESTRAGADO:        { bg: 'bg-rose-50',     text: 'text-rose-700',     border: 'border-rose-200',     dot: '',                label: 'Estragado'              },
+  EM_ANALISE:       { bg: 'bg-blue-50',     text: 'text-blue-700',     border: 'border-blue-200',     dot: 'bg-blue-500',     label: 'Em Análise',       pulse: true },
+  AGUARDANDO_PECA:  { bg: 'bg-amber-50',    text: 'text-amber-700',    border: 'border-amber-200',    dot: 'bg-amber-500',    label: 'Aguardando Peça'        },
+  EM_REPARO:        { bg: 'bg-orange-50',   text: 'text-orange-700',   border: 'border-orange-200',   dot: 'bg-orange-500',   label: 'Em Reparo',        pulse: true },
+  FINALIZADO:       { bg: 'bg-emerald-50',  text: 'text-emerald-700',  border: 'border-emerald-200',  dot: 'bg-emerald-500',  label: 'Finalizado'             },
 };
 
+const StatusBadge: React.FC<StatusBadgeProps> = ({ type, value }) => {
+  const s = statusStyle[value];
+  if (!s) {
+    return <span className={`inline-flex items-center px-2.5 py-0.5 ${S} rounded-full bg-surface-container-high border border-outline-variant/30 text-outline`}>{value}</span>;
+  }
+
+  if (type === 'status') {
+    return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} rounded-full ${s.bg} ${s.text} border ${s.border}`}>
+        {s.dot && dot(s.dot, s.pulse)}
+        {s.label}
+      </span>
+    );
+  }
+
+  if (type === 'aprovacao') {
+    return (
+      <span className={`inline-flex items-center px-2.5 py-0.5 ${S} rounded-full ${s.bg} ${s.text} border ${s.border}`}>
+        {s.label}
+      </span>
+    );
+  }
+
+  if (type === 'servico') {
+    return (
+      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 ${S} rounded-full ${s.bg} ${s.text} border ${s.border}`}>
+        {s.dot && dot(s.dot, s.pulse)}
+        {s.label}
+      </span>
+    );
+  }
+
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 ${S} rounded ${s.bg} ${s.text} border ${s.border}`}>
+      {s.label}
+    </span>
+  );
+};
+
+export { statusStyle };
 export default StatusBadge;

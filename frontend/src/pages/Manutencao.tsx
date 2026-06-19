@@ -173,7 +173,7 @@ const Manutencao: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                         <span className="text-[11px] font-bold text-on-surface truncate">{item.nome}</span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-50 border border-amber-200 text-amber-700">Aguardando Baixa</span>
+                        <StatusBadge type="status" value="AGUARDANDO_BAIXA" />
                       </div>
                       <span className="text-[9px] font-bold font-mono text-outline block uppercase">Pat: {item.numero_patrimonio || 'S/N: ' + item.numero_serie}</span>
                     </div>
