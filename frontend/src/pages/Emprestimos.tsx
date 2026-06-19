@@ -22,6 +22,7 @@ import {
   createLoan,
   updateLoan,
 } from "../services/supabaseEmprestimos";
+import { exportToExcel } from "../services/utilidades";
 import {
   CalendarRange,
   RotateCcw,
@@ -34,6 +35,7 @@ import {
   Package,
   AlertTriangle,
   Users,
+  Download,
 } from "lucide-react";
 import ConfirmDialog from "../components/DialogoConfirmacao";
 
@@ -492,6 +494,34 @@ const Emprestimos: React.FC = () => {
   const today = new Date();
   const isOverdue = (dateStr: string) => new Date(dateStr) < today;
 
+  const handleExportEmprestimosExcel = () => {
+    const data = loansAtivos;
+    const headers = ["ID", "Item", "Responsável", "Previsão Devolução", "Status"];
+    const rows = data.map((item) => [
+      item.id,
+      item.item_nome,
+      item.responsavel,
+      new Date(item.data_retorno_prevista).toLocaleDateString("pt-BR"),
+      item.status,
+    ]);
+    exportToExcel(headers, rows, `emprestimos_${new Date().toISOString().slice(0, 10)}`, "Empréstimos");
+  };
+
+  const handleExportEventosExcel = () => {
+    const data = eventos;
+    const headers = ["ID", "Nome", "Data Início", "Data Fim", "Local", "Responsável", "Itens Alocados"];
+    const rows = data.map((item) => [
+      item.id,
+      item.nome,
+      new Date(item.data_inicio).toLocaleDateString("pt-BR"),
+      new Date(item.data_fim).toLocaleDateString("pt-BR"),
+      item.local,
+      item.responsavel_id,
+      item.itens_alocados.join(", "),
+    ]);
+    exportToExcel(headers, rows, `eventos_${new Date().toISOString().slice(0, 10)}`, "Eventos");
+  };
+
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
       <div>
@@ -615,6 +645,13 @@ const Emprestimos: React.FC = () => {
         <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
           <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
             <CalendarRange size={18} /> Empréstimos Ativos
+            <button
+              onClick={handleExportEmprestimosExcel}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
+            >
+              <Download size={12} />
+              Excel
+            </button>
             {loansAtivos.length > 0 && (
               <span className="ml-auto text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
                 {loansAtivos.length}
@@ -817,6 +854,13 @@ const Emprestimos: React.FC = () => {
         <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
           <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
             <MapPin size={18} /> Eventos e Alocações
+            <button
+              onClick={handleExportEventosExcel}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all ml-auto"
+            >
+              <Download size={12} />
+              Excel
+            </button>
           </h2>
           {eventos.length === 0 ? (
             <p className="text-xs text-outline text-center py-8">

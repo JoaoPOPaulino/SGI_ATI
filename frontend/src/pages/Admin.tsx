@@ -13,6 +13,7 @@ import {
   SupabaseUsuario,
   AuditLogRecord,
 } from "../services/supabaseUsuarios";
+import { exportToExcel } from "../services/utilidades";
 import {
   Users,
   UserPlus,
@@ -30,6 +31,7 @@ import {
   Eye,
   Trash2,
   Loader2,
+  Download,
 } from "lucide-react";
 import { z } from "zod";
 import ConfirmDialog from "../components/DialogoConfirmacao";
@@ -476,6 +478,22 @@ const Admin: React.FC = () => {
     setConfirm((prev) => ({ ...prev, open: false }));
   };
 
+  const handleExportUsuariosExcel = () => {
+    const data = filteredUsers;
+    const headers = ["ID", "Nome", "Email", "CPF", "Perfil", "Polo", "Status", "Criado em"];
+    const rows = data.map((item) => [
+      item.id,
+      item.nome,
+      item.email,
+      item.cpf,
+      item.perfil,
+      item.polo || "",
+      item.ativo ? "Ativo" : "Inativo",
+      item.created_at ? new Date(item.created_at).toLocaleDateString("pt-BR") : "",
+    ]);
+    exportToExcel(headers, rows, `usuarios_${new Date().toISOString().slice(0, 10)}`, "Usuários");
+  };
+
   const SortIcon = ({ field }: { field: SortField }) => {
     if (sortField !== field)
       return <ArrowUpDown size={12} className="text-outline/50" />;
@@ -718,7 +736,15 @@ const Admin: React.FC = () => {
                 Gestão de Acessos
               </h2>
 
-              <div className="relative flex-1 max-w-xs">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={handleExportUsuariosExcel}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
+                >
+                  <Download size={12} />
+                  Excel
+                </button>
+                <div className="relative flex-1 max-w-xs">
                 <Search
                   size={14}
                   className="absolute left-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none"
@@ -738,6 +764,7 @@ const Admin: React.FC = () => {
                     &times;
                   </button>
                 )}
+              </div>
               </div>
             </div>
 

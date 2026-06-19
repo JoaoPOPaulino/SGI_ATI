@@ -112,6 +112,24 @@ const Inventario: React.FC = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(20);
   const [totalCount, setTotalCount] = useState(0);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredItens.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredItens.map((i) => i.id)));
+    }
+  };
 
   const loadItens = async () => {
     const result = await fetchItens(page, pageSize);
@@ -552,7 +570,9 @@ const Inventario: React.FC = () => {
   };
 
   const handleExportInventarioCsv = () => {
-    const data = filteredItens;
+    const data = selectedIds.size > 0
+      ? filteredItens.filter((i) => selectedIds.has(i.id))
+      : filteredItens;
     const headers = [
       "ID",
       "Nome",
@@ -635,7 +655,7 @@ const Inventario: React.FC = () => {
             className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold rounded-xl text-xs shadow-sm transition-all"
           >
             <Download size={14} />
-            Exportar Excel
+            Exportar Excel{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
           </button>
         </div>
       </div>
@@ -832,6 +852,14 @@ const Inventario: React.FC = () => {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-surface-container-low/50">
+                  <th scope="col" className="px-3 py-4 w-8">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.size > 0 && selectedIds.size === filteredItens.length}
+                      onChange={toggleSelectAll}
+                      className="w-3.5 h-3.5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                    />
+                  </th>
                   <th
                     scope="col"
                     className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest"
@@ -879,6 +907,14 @@ const Inventario: React.FC = () => {
                     key={item.id}
                     className={`hover:bg-surface-bright transition-colors ${index % 2 === 1 ? "bg-surface-container-low/10" : ""} group`}
                   >
+                    <td className="px-3 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.has(item.id)}
+                        onChange={() => toggleSelect(item.id)}
+                        className="w-3.5 h-3.5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                      />
+                    </td>
                     <td className="px-6 py-4 font-mono font-bold text-primary max-w-40 truncate">
                       {item.numero_patrimonio ? (
                         <span>{item.numero_patrimonio}</span>
@@ -970,8 +1006,14 @@ const Inventario: React.FC = () => {
           {filteredItens.map((item) => (
             <div
               key={item.id}
-              className="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-md transition-all group"
+              className="bg-surface-container-lowest p-5 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col justify-between hover:shadow-md transition-all group relative"
             >
+              <input
+                type="checkbox"
+                checked={selectedIds.has(item.id)}
+                onChange={() => toggleSelect(item.id)}
+                className="absolute top-3 right-3 w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer z-10"
+              />
               <div>
                 <div className="flex justify-between items-start mb-3">
                   <span className="text-[10px] font-bold font-mono text-outline uppercase">

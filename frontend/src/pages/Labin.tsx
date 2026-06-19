@@ -6,8 +6,9 @@ import {
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudos';
+import { exportToExcel } from '../services/utilidades';
 import StatusBadge from '../components/DistintivoStatus';
-import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil } from 'lucide-react';
+import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil, Download } from 'lucide-react';
 
 const Labin: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -151,6 +152,23 @@ const Labin: React.FC = () => {
     await loadData();
   };
 
+  const handleExportLaudosExcel = () => {
+    const data = filteredLaudos;
+    const headers = ["ID", "Equipamento", "Técnico", "Status Serviço", "Descrição", "Diagnóstico", "Ação Realizada", "Peças", "Data"];
+    const rows = data.map((item) => [
+      item.id,
+      item.item_nome,
+      item.tecnico_nome,
+      item.status_servico,
+      item.descricao_problema,
+      item.diagnostico,
+      item.acao_realizada,
+      item.pecas_utilizadas,
+      new Date(item.created_at).toLocaleDateString("pt-BR"),
+    ]);
+    exportToExcel(headers, rows, `laudos_${new Date().toISOString().slice(0, 10)}`, "Laudos");
+  };
+
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
       
@@ -163,15 +181,24 @@ const Labin: React.FC = () => {
             {!canCreateLaudo && ' Visualização disponível para todos os polos.'}
           </p>
         </div>
-        {canCreateLaudo && (
+        <div className="flex items-center gap-3">
+          {canCreateLaudo && (
+            <button
+              onClick={() => setIsFormOpen(true)}
+              className="flex items-center gap-2 px-5 py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md"
+            >
+              <Plus size={16} />
+              Novo Laudo Técnico
+            </button>
+          )}
           <button
-            onClick={() => setIsFormOpen(true)}
-            className="flex items-center gap-2 px-5 py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md"
+            onClick={handleExportLaudosExcel}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
           >
-            <Plus size={16} />
-            Novo Laudo Técnico
+            <Download size={12} />
+            Excel
           </button>
-        )}
+        </div>
       </div>
 
       {/* Busca e Tabela */}

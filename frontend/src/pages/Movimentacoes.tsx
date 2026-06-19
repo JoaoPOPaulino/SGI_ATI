@@ -185,6 +185,24 @@ const Movimentacoes: React.FC = () => {
   const [movsTotalCount, setMovsTotalCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMovId, setSelectedMovId] = useState("");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredMovs.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredMovs.map((m) => m.id)));
+    }
+  };
 
   // ── Formulário de emissão ──
   const [selectedItemId, setSelectedItemId] = useState("");
@@ -794,7 +812,10 @@ const Movimentacoes: React.FC = () => {
   };
 
   const handleExportMovimentacoesCsv = () => {
-    const data = searchQuery.trim() ? filteredMovs : movs;
+    const allData = searchQuery.trim() ? filteredMovs : movs;
+    const data = selectedIds.size > 0
+      ? allData.filter((m) => selectedIds.has(m.id))
+      : allData;
     const headers = [
       "ID", "Chamado", "Patrimônio", "Série", "Equipamento", "Tipo",
       "Origem", "Destino", "Solicitante", "Status", "Status Guia", "Data",
@@ -1426,7 +1447,7 @@ const Movimentacoes: React.FC = () => {
                   className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
                 >
                   <Download size={12} />
-                  Excel
+                  Excel{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}
                 </button>
               </div>
             </div>
@@ -1453,8 +1474,15 @@ const Movimentacoes: React.FC = () => {
                             ? "bg-primary-fixed/50 border-primary/30"
                             : "bg-surface border-outline-variant/20 hover:bg-surface-container-low"
                           }`}
-                      >
-                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        >
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(m.id)}
+                              onChange={() => toggleSelect(m.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="w-3.5 h-3.5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer shrink-0"
+                            />
                           <span className="text-[10px] font-bold text-outline">
                             {new Date(m.data_movimentacao).toLocaleDateString("pt-BR")}
                           </span>
