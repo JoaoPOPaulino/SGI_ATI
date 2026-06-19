@@ -20,9 +20,13 @@ const Manutencao: React.FC = () => {
   const [repairTarget, setRepairTarget] = useState<Item | null>(null);
   const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('BOM');
 
+  // Estados de Paginação — Fila de Manutenção
+  const [paginaManutencao, setPaginaManutencao] = useState(1);
+  const [itensPorPaginaManut, setItensPorPaginaManut] = useState(5);
+
   const loadData = async () => {
     const allItens = await fetchItens();
-    setMaintenanceItens(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
+    setMaintenanceItens(allItens.filter(i => i.status === 'EM_MANUTENCAO' && (i.condicao === 'RUIM' || i.condicao === 'ESTRAGADO')));
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
     setActiveItens(allItens.filter(i => (i.status === 'ATIVO' || i.status === 'GUARDADO') && (i.condicao === 'RUIM' || i.condicao === 'ESTRAGADO')));
     setLoading(false);
@@ -30,8 +34,18 @@ const Manutencao: React.FC = () => {
 
   useEffect(() => { loadData(); }, []);
 
+  // Resetar paginação ao recarregar dados
+  useEffect(() => { setPaginaManutencao(1); }, [maintenanceItens.length]);
+
   const canModify = hasPermission('TECNICO');
   const isSuperiorOrAdmin = hasPermission('SUPERIOR');
+
+  // Cálculo de Paginação — Manutenção Ativa
+  const totalPaginasManut = Math.ceil(maintenanceItens.length / itensPorPaginaManut);
+  const itensPaginadosManut = maintenanceItens.slice(
+    (paginaManutencao - 1) * itensPorPaginaManut,
+    paginaManutencao * itensPorPaginaManut,
+  );
 
   const handleRequestDecommission = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,8 +140,11 @@ const Manutencao: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+        {/* ─── Fila de Manutenção Ativa com Paginação ─── */}
         <div className="glass-panel p-5 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest flex flex-col min-h-[50vh]">
           <h2 className={hdr}><Wrench size={16} className="text-primary" />Fila de Manutenção Ativa</h2>
+
           {maintenanceItens.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center text-center text-outline py-12">
               <CheckCircle2 size={32} className="text-emerald-500/40 mb-2" />
@@ -135,29 +152,119 @@ const Manutencao: React.FC = () => {
               <p className="text-[10px] text-outline">Nenhum equipamento em manutenção no momento.</p>
             </div>
           ) : (
-            <div className="space-y-3 overflow-y-auto max-h-[60vh] pr-1">
-              {maintenanceItens.map(item => (
-                <div key={item.id} className="p-3.5 bg-surface border border-outline-variant/10 rounded-xl flex items-center gap-3 hover:border-outline-variant/30 transition-all group">
-                  <StatusBadge type="condicao" value={item.condicao} />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[9px] font-mono font-bold text-outline block mb-0.5">{item.numero_patrimonio || 'S/N: ' + item.numero_serie || 'Consumível'}</span>
-                    <h3 className="text-[11px] font-bold text-on-surface truncate">{item.nome}</h3>
-                    <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide mt-1 inline-block">{item.categoria}</span>
+            <div className="flex flex-col gap-3 flex-1">
+
+              {/* Lista paginada */}
+              <div className="space-y-3 pr-1">
+                {itensPaginadosManut.map(item => (
+                  <div key={item.id} className="p-3.5 bg-surface border border-outline-variant/10 rounded-xl flex items-center gap-3 hover:border-outline-variant/30 transition-all group">
+
+                    {/* Badge de condição */}
+                    <StatusBadge type="condicao" value={item.condicao} />
+
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] font-mono font-bold text-outline block mb-0.5">
+                        {item.numero_patrimonio || (item.numero_serie ? 'S/N: ' + item.numero_serie : 'Consumível')}
+                      </span>
+                      <h3 className="text-[11px] font-bold text-on-surface truncate">{item.nome}</h3>
+                      <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide mt-1 inline-block">
+                        {item.categoria}
+                      </span>
+                    </div>
+
+                    {canModify ? (
+                      <button
+                        onClick={() => { setRepairTarget(item); setRepairCondicao(item.condicao); }}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0"
+                      >
+                        <Hammer size={12} />Concluir Reparo
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">
+                        Em Reparo — LABIN
+                      </span>
+                    )}
                   </div>
-                  {canModify ? (
-                    <button onClick={() => { setRepairTarget(item); setRepairCondicao(item.condicao); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
-                      <Hammer size={12} />Concluir Reparo
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">Em Reparo — LABIN</span>
-                  )}
+                ))}
+              </div>
+
+              {/* Paginação */}
+              {maintenanceItens.length > 0 && (
+                <div className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/20 flex-wrap gap-2 mt-auto">
+
+                  {/* Info de registros */}
+                  <span className="text-[10px] font-black text-outline uppercase tracking-wider">
+                    {(paginaManutencao - 1) * itensPorPaginaManut + 1}–
+                    {Math.min(paginaManutencao * itensPorPaginaManut, maintenanceItens.length)} de {maintenanceItens.length} itens
+                  </span>
+
+                  {/* Controles de navegação */}
+                  <div className="flex items-center gap-1">
+                    {/* Primeira página */}
+                    <button onClick={() => setPaginaManutencao(1)} disabled={paginaManutencao === 1}
+                      className="w-[28px] h-[28px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">«</button>
+
+                    {/* Página anterior */}
+                    <button onClick={() => setPaginaManutencao(p => Math.max(p - 1, 1))} disabled={paginaManutencao === 1}
+                      className="w-[28px] h-[28px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
+
+                    {/* Números com reticências */}
+                    {(() => {
+                      const paginas: (number | "...")[] = [];
+                      if (totalPaginasManut <= 7) {
+                        for (let i = 1; i <= totalPaginasManut; i++) paginas.push(i);
+                      } else {
+                        paginas.push(1);
+                        if (paginaManutencao - 1 > 2) paginas.push("...");
+                        const inicio = Math.max(2, paginaManutencao - 1);
+                        const fim = Math.min(totalPaginasManut - 1, paginaManutencao + 1);
+                        for (let i = inicio; i <= fim; i++) paginas.push(i);
+                        if (totalPaginasManut - paginaManutencao > 2) paginas.push("...");
+                        paginas.push(totalPaginasManut);
+                      }
+                      return paginas.map((item, idx) =>
+                        item === "..." ? (
+                          <span key={`e-${idx}`} className="w-[28px] h-[28px] flex items-center justify-center text-xs font-bold text-outline select-none">…</span>
+                        ) : (
+                          <button key={item} onClick={() => setPaginaManutencao(item as number)}
+                            className={`w-[28px] h-[28px] flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${item === paginaManutencao ? "bg-[#163f74] border-[#163f74] text-white" : "border-outline text-outline hover:bg-surface-container-high"}`}>
+                            {item}
+                          </button>
+                        )
+                      );
+                    })()}
+
+                    {/* Próxima página */}
+                    <button onClick={() => setPaginaManutencao(p => Math.min(p + 1, totalPaginasManut))} disabled={paginaManutencao === totalPaginasManut}
+                      className="w-[28px] h-[28px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+
+                    {/* Última página */}
+                    <button onClick={() => setPaginaManutencao(totalPaginasManut)} disabled={paginaManutencao === totalPaginasManut}
+                      className="w-[28px] h-[28px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">»</button>
+                  </div>
+
+                  {/* Seletor de itens por página */}
+                  <div className="flex items-center gap-2">
+                    <select value={itensPorPaginaManut}
+                      onChange={(e) => { setItensPorPaginaManut(Number(e.target.value)); setPaginaManutencao(1); }}
+                      className="px-2 py-1 bg-surface border border-outline rounded-lg text-[10px] text-on-surface font-bold cursor-pointer outline-none">
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                    </select>
+                    <span className="text-[10px] font-black text-outline uppercase tracking-wider">iténs por página</span>
+                  </div>
+
                 </div>
-              ))}
+              )}
             </div>
           )}
         </div>
 
+        {/* ─── Coluna Direita: Baixas + Solicitar Descarte ─── */}
         <div className="space-y-5">
+
+          {/* Controle de Baixas Patrimoniais */}
           <div className="glass-panel p-5 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest flex flex-col min-h-[35vh]">
             <h2 className={hdr}><Trash2 size={16} className="text-error" />Controle de Baixas Patrimoniais</h2>
             {awaitingDecommissionItens.length === 0 ? (
@@ -173,7 +280,7 @@ const Manutencao: React.FC = () => {
                     <div>
                       <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
                         <span className="text-[11px] font-bold text-on-surface truncate">{item.nome}</span>
-                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-50 border border-amber-200 text-amber-700">Aguardando Baixa</span>
+                        <span className="px-1.5 py-0.5 text-[9px] font-bold rounded bg-amber-50 border border-amber-300 text-amber-700">Aguardando Baixa</span>
                       </div>
                       <span className="text-[9px] font-bold font-mono text-outline block uppercase">Pat: {item.numero_patrimonio || 'S/N: ' + item.numero_serie}</span>
                     </div>
@@ -183,7 +290,7 @@ const Manutencao: React.FC = () => {
                           <button onClick={() => handleRejectDecommission(item)} className={btnSm + ' bg-amber-50 hover:bg-amber-100 border border-amber-300 hover:border-amber-500 text-amber-700'}>
                             <XCircle size={10} />Rejeitar
                           </button>
-                          <button onClick={() => handleApproveDecommission(item)} className={btnSm + ' bg-error-container hover:bg-rose-100 border border-red-300 hover:border-red-500 text-on-error-container'}>
+                          <button onClick={() => handleApproveDecommission(item)} className={btnSm + ' bg-red-50 hover:bg-red-100 border border-red-300 hover:border-red-500 text-red-700'}>
                             <Trash2 size={10} />Efetivar Baixa
                           </button>
                         </div>
@@ -197,47 +304,68 @@ const Manutencao: React.FC = () => {
             )}
           </div>
 
+          {/* Solicitar Descarte de Ativo */}
           {canModify && (
             <div className="glass-panel p-5 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
               <h2 className={hdr}><Trash2 size={16} className="text-primary" />Solicitar Descarte de Ativo</h2>
               <form onSubmit={handleRequestDecommission} className="space-y-3.5">
                 <div>
                   <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1`}>Equipamento</label>
-                  <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-lg text-on-surface text-[11px] focus:outline-none">
+                  <select value={selectedItemId} onChange={(e) => setSelectedItemId(e.target.value)}
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-lg text-on-surface text-[11px] focus:outline-none">
                     <option value="">-- Selecione o Ativo --</option>
-                    {activeItens.map(i => (<option key={i.id} value={i.id}>{i.nome} ({i.numero_patrimonio || 'S/N: ' + i.numero_serie || 'Consumível'})</option>))}
+                    {activeItens.map(i => (
+                      <option key={i.id} value={i.id}>{i.nome} ({i.numero_patrimonio || 'S/N: ' + i.numero_serie || 'Consumível'})</option>
+                    ))}
                   </select>
                 </div>
                 <div>
                   <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1`}>Justificativa Técnica</label>
-                  <textarea rows={2} value={formMotivoBaixa} onChange={(e) => setFormMotivoBaixa(e.target.value)} placeholder="Descreva o defeito sem conserto, obsolescência ou perda patrimonial..." className="w-full px-3 py-2 bg-surface border border-outline rounded-lg text-on-surface placeholder:text-outline text-[11px] focus:outline-none resize-none" />
+                  <textarea rows={2} value={formMotivoBaixa} onChange={(e) => setFormMotivoBaixa(e.target.value)}
+                    placeholder="Descreva o defeito sem conserto, obsolescência ou perda patrimonial..."
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-lg text-on-surface placeholder:text-outline text-[11px] focus:outline-none resize-none" />
                 </div>
-                {formError && <div className="p-2.5 bg-red-50 border border-red-200 rounded-lg text-[10px] text-red-700">{formError}</div>}
-                {formSuccess && <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-[10px] text-emerald-700">{formSuccess}</div>}
-                <button type="submit" className="w-full py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-[11px] shadow-md active:scale-95">Solicitar Baixa</button>
+                {formError && <div className="p-2.5 bg-red-50 border border-red-300 rounded-lg text-[10px] text-red-700">{formError}</div>}
+                {formSuccess && <div className="p-2.5 bg-emerald-50 border border-emerald-300 rounded-lg text-[10px] text-emerald-700">{formSuccess}</div>}
+                <button type="submit" className="w-full py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-[11px] shadow-md active:scale-95">
+                  Solicitar Baixa
+                </button>
               </form>
             </div>
           )}
         </div>
       </div>
 
+      {/* Modal de Conclusão de Reparo */}
       {repairTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRepairTarget(null)} />
           <div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-sm w-full animate-slide-up p-5">
             <h3 className="text-sm font-bold text-on-surface mb-2">Concluir Reparo</h3>
-            <p className="text-[11px] text-on-surface-variant mb-5">Equipamento: <strong>{repairTarget.nome}</strong>{repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}</p>
+            <p className="text-[11px] text-on-surface-variant mb-5">
+              Equipamento: <strong>{repairTarget.nome}</strong>
+              {repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}
+            </p>
             <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1.5`}>Condição Pós-Reparo</label>
-            <select value={repairCondicao} onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)} className="w-full px-3 py-2.5 bg-surface border border-outline rounded-lg text-[11px] focus:ring-2 focus:ring-primary mb-5">
-              {repairTarget && repairTarget.condicao === 'ESTRAGADO' && <option value="ESTRAGADO">Estragado</option>}
-              {repairTarget && (repairTarget.condicao === 'ESTRAGADO' || repairTarget.condicao === 'RUIM') && <option value="RUIM">Ruim</option>}
-              {repairTarget && repairTarget.condicao !== 'BOM' && <option value="REGULAR">Regular</option>}
+            <select value={repairCondicao} onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)}
+              className="w-full px-3 py-2.5 bg-surface border border-outline rounded-lg text-[11px] focus:ring-2 focus:ring-primary mb-5">
+              {repairTarget.condicao === 'ESTRAGADO' && <option value="ESTRAGADO">Estragado</option>}
+              {(repairTarget.condicao === 'ESTRAGADO' || repairTarget.condicao === 'RUIM') && <option value="RUIM">Ruim</option>}
+              {repairTarget.condicao !== 'BOM' && <option value="REGULAR">Regular</option>}
               <option value="BOM">Bom</option>
             </select>
-            <p className="text-[10px] text-outline mb-5 bg-surface-container p-2.5 rounded-lg">O item será movido para <strong>Almoxarifado Central</strong> com status <strong>GUARDADO</strong>, pronto para retirada.</p>
+            <p className="text-[10px] text-outline mb-5 bg-surface-container p-2.5 rounded-lg">
+              O item será movido para <strong>Almoxarifado Central</strong> com status <strong>GUARDADO</strong>, pronto para retirada.
+            </p>
             <div className="flex gap-2.5">
-              <button onClick={() => setRepairTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button>
-              <button onClick={handleCompleteRepair} className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">Confirmar Reparo</button>
+              <button onClick={() => setRepairTarget(null)}
+                className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">
+                Cancelar
+              </button>
+              <button onClick={handleCompleteRepair}
+                className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">
+                Confirmar Reparo
+              </button>
             </div>
           </div>
         </div>

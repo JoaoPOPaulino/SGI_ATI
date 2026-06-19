@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { 
+import {
   LaudoTecnico, Item, Movimentacao
 } from '../services/bancoMock';
 import { fetchItens, updateItem } from '../services/supabaseItens';
@@ -10,12 +10,12 @@ import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil } from 'lucide-
 
 const Labin: React.FC = () => {
   const { user, hasPermission } = useAuth();
-  
+
   // Estados
   const [laudos, setLaudos] = useState<LaudoTecnico[]>([]);
   const [itensInManutencao, setItensInManutencao] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Estados do Form
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState('');
@@ -23,10 +23,14 @@ const Labin: React.FC = () => {
   const [formAcao, setFormAcao] = useState('');
   const [formPecas, setFormPecas] = useState('');
   const [formStatusServico, setFormStatusServico] = useState<'EM_ANALISE' | 'AGUARDANDO_PECA' | 'EM_REPARO' | 'FINALIZADO'>('EM_ANALISE');
-  
+
+  // Estados de Paginação — Laudos
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [itensPorPagina, setItensPorPagina] = useState(10);
+
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
-  
+
   // Laudo Ativo para Impressão
   const [activeLaudoPrint, setActiveLaudoPrint] = useState<LaudoTecnico | null>(null);
   const [editingLaudoId, setEditingLaudoId] = useState<string | null>(null);
@@ -45,11 +49,23 @@ const Labin: React.FC = () => {
 
   // Filtrar laudos
   const filteredLaudos = useMemo(() => {
-    return laudos.filter(l => 
+    return laudos.filter(l =>
       l.item_nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
       l.tecnico_nome.toLowerCase().includes(searchQuery.toLowerCase())
     );
   }, [laudos, searchQuery]);
+
+  // Cálculo de Paginação — Laudos
+  const totalPaginas = Math.ceil(filteredLaudos.length / itensPorPagina);
+  const laudosPaginados = filteredLaudos.slice(
+    (paginaAtual - 1) * itensPorPagina,
+    paginaAtual * itensPorPagina,
+  );
+
+  // Resetar para página 1 ao filtrar
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [filteredLaudos.length, searchQuery]);
 
   // Abrir formulário para editar laudo existente
   const openEditLaudo = (laudo: LaudoTecnico) => {
@@ -150,22 +166,23 @@ const Labin: React.FC = () => {
     await loadData();
   };
 
-  const getStatusBadgeStyle = (status: LaudoTecnico['status_servico']) => {
+  // Badge de status do laudo com cores consistentes com o sistema
+  const getStatusBadge = (status: LaudoTecnico['status_servico']) => {
     switch (status) {
       case 'EM_ANALISE':
-        return 'bg-primary-fixed/40 text-primary border-primary/20';
+        return <span className="px-2.5 py-0.5 rounded-lg border text-[10px] font-bold bg-sky-50 border-sky-300 text-sky-700">Em Análise Técnica</span>;
       case 'AGUARDANDO_PECA':
-        return 'bg-amber-50 text-amber-700 border-amber-200';
+        return <span className="px-2.5 py-0.5 rounded-lg border text-[10px] font-bold bg-amber-50 border-amber-300 text-amber-700">Aguardando Peça</span>;
       case 'EM_REPARO':
-        return 'bg-secondary-container/40 text-secondary border-secondary/20';
+        return <span className="px-2.5 py-0.5 rounded-lg border text-[10px] font-bold bg-orange-50 border-orange-300 text-orange-700">Em Reparo</span>;
       case 'FINALIZADO':
-        return 'bg-tertiary-container/30 text-tertiary border-tertiary/20';
+        return <span className="px-2.5 py-0.5 rounded-lg border text-[10px] font-bold bg-emerald-50 border-emerald-300 text-emerald-700">Finalizado</span>;
     }
   };
 
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
-      
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -188,7 +205,7 @@ const Labin: React.FC = () => {
 
       {/* Busca e Tabela */}
       <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10">
-        
+
         {/* Barra de Filtro */}
         <div className="px-8 py-5 border-b border-outline-variant/10 flex flex-col md:flex-row justify-between items-center gap-4">
           <h5 className="text-base font-bold text-primary flex items-center gap-2">
@@ -197,8 +214,8 @@ const Labin: React.FC = () => {
           </h5>
           <div className="flex items-center bg-surface-container-low px-4 py-2 rounded-full w-full md:w-80 border border-outline-variant/10">
             <Search size={16} className="text-outline mr-2" />
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Buscar por item, técnico ou diagnóstico..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -227,14 +244,12 @@ const Labin: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="text-xs">
-                {filteredLaudos.map((laudo) => (
+                {laudosPaginados.map((laudo) => (
                   <tr key={laudo.id} className="border-b border-surface-container-low hover:bg-surface-bright transition-colors group">
                     <td className="px-8 py-4 font-bold max-w-55 truncate">{laudo.item_nome}</td>
                     <td className="px-8 py-4 font-semibold text-on-surface-variant max-w-40 truncate">{laudo.tecnico_nome}</td>
                     <td className="px-8 py-4">
-                      <span className={`px-2.5 py-1 rounded-full border text-[10px] font-black uppercase ${getStatusBadgeStyle(laudo.status_servico)}`}>
-                        {laudo.status_servico}
-                      </span>
+                      {getStatusBadge(laudo.status_servico)}
                     </td>
                     <td className="px-8 py-4 text-outline font-semibold">
                       {new Date(laudo.created_at).toLocaleDateString()}
@@ -263,6 +278,77 @@ const Labin: React.FC = () => {
                 ))}
               </tbody>
             </table>
+
+            {/* Paginação */}
+            {filteredLaudos.length > 0 && (
+              <div className="flex items-center justify-between px-6 py-3 border-t border-outline-variant/10 flex-wrap gap-2">
+
+                {/* Info de registros */}
+                <span className="text-[10px] font-black text-outline uppercase tracking-wider">
+                  {(paginaAtual - 1) * itensPorPagina + 1}–
+                  {Math.min(paginaAtual * itensPorPagina, filteredLaudos.length)} de {filteredLaudos.length} laudos
+                </span>
+
+                {/* Controles de navegação */}
+                <div className="flex items-center gap-1">
+                  {/* Primeira página */}
+                  <button onClick={() => setPaginaAtual(1)} disabled={paginaAtual === 1}
+                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">«</button>
+
+                  {/* Página anterior */}
+                  <button onClick={() => setPaginaAtual(p => Math.max(p - 1, 1))} disabled={paginaAtual === 1}
+                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
+
+                  {/* Números com reticências */}
+                  {(() => {
+                    const paginas: (number | "...")[] = [];
+                    if (totalPaginas <= 7) {
+                      for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
+                    } else {
+                      paginas.push(1);
+                      if (paginaAtual - 1 > 2) paginas.push("...");
+                      const inicio = Math.max(2, paginaAtual - 1);
+                      const fim = Math.min(totalPaginas - 1, paginaAtual + 1);
+                      for (let i = inicio; i <= fim; i++) paginas.push(i);
+                      if (totalPaginas - paginaAtual > 2) paginas.push("...");
+                      paginas.push(totalPaginas);
+                    }
+                    return paginas.map((item, idx) =>
+                      item === "..." ? (
+                        <span key={`e-${idx}`} className="w-[30px] h-[30px] flex items-center justify-center text-xs font-bold text-outline select-none">…</span>
+                      ) : (
+                        <button key={item} onClick={() => setPaginaAtual(item as number)}
+                          className={`w-[30px] h-[30px] flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${item === paginaAtual ? "bg-[#163f74] border-[#163f74] text-white" : "border-outline text-outline hover:bg-surface-container-high"}`}>
+                          {item}
+                        </button>
+                      )
+                    );
+                  })()}
+
+                  {/* Próxima página */}
+                  <button onClick={() => setPaginaAtual(p => Math.min(p + 1, totalPaginas))} disabled={paginaAtual === totalPaginas}
+                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">›</button>
+
+                  {/* Última página */}
+                  <button onClick={() => setPaginaAtual(totalPaginas)} disabled={paginaAtual === totalPaginas}
+                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">»</button>
+                </div>
+
+                {/* Seletor de itens por página */}
+                <div className="flex items-center gap-2">
+                  <select value={itensPorPagina}
+                    onChange={(e) => { setItensPorPagina(Number(e.target.value)); setPaginaAtual(1); }}
+                    className="px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface font-bold cursor-pointer outline-none">
+                    <option value={5}>5</option>
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                  </select>
+                  <span className="text-[10px] font-black text-outline uppercase tracking-wider">Laudos por página</span>
+                </div>
+
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -365,7 +451,7 @@ const Labin: React.FC = () => {
               <div className="pt-4 flex justify-end gap-3 border-t border-surface-container-low">
                 <button
                   type="button"
-                onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); }}
+                  onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); }}
                   className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs"
                 >
                   Cancelar
