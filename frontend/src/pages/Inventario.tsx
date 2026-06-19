@@ -790,7 +790,6 @@ const Inventario: React.FC = () => {
               <option value="TODAS">Condições</option>
               <option value="NOVO">Novo</option>
               <option value="REGULAR">Regular</option>
-              <option value="REGULAR">Regular</option>
               <option value="RUIM">Ruim</option>
               <option value="ESTRAGADO">Estragado</option>
             </select>
