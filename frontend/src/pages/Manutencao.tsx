@@ -380,6 +380,27 @@ const Manutencao: React.FC = () => {
         </div>
       </div>
 
+      {repairTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRepairTarget(null)} />
+          <div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-sm w-full animate-slide-up p-5">
+            <h3 className="text-sm font-bold text-on-surface mb-2">Concluir Reparo</h3>
+            <p className="text-[11px] text-on-surface-variant mb-5">Equipamento: <strong>{repairTarget.nome}</strong>{repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}</p>
+            <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1.5`}>Condição Pós-Reparo</label>
+            <select value={repairCondicao} onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)} className="w-full px-3 py-2.5 bg-surface border border-outline rounded-lg text-[11px] focus:ring-2 focus:ring-primary mb-5">
+              <option value="REGULAR">Regular</option>
+              <option value="RUIM">Ruim</option>
+              <option value="ESTRAGADO">Estragado</option>
+            </select>
+            <p className="text-[10px] text-outline mb-5 bg-surface-container p-2.5 rounded-lg">O item será movido para <strong>Almoxarifado Central</strong> com status <strong>GUARDADO</strong>, pronto para retirada.</p>
+            <div className="flex gap-2.5">
+              <button onClick={() => setRepairTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button>
+              <button onClick={handleCompleteRepair} className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">Confirmar Reparo</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {rejectTarget && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRejectTarget(null)} />
