@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
   LayoutGrid, Package, ArrowLeftRight, CalendarRange, 
-  Wrench, ShieldAlert, LogOut, PenTool, User
+  Wrench, ShieldAlert, LogOut, PenTool, User, ChevronDown
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -13,6 +13,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
   const { hasPermission, logout } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
+  const [emprestimosOpen, setEmprestimosOpen] = useState(false);
   const isCollapsed = !isHovered;
 
   const isAdmin = hasPermission('ADMIN');
@@ -22,9 +23,13 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
     { to: '/inventario', label: 'Inventário', icon: Package },
     { to: '/movimentacoes', label: 'Movimentações', icon: ArrowLeftRight },
     { to: '/manutencao', label: 'Manutenção & Baixas', icon: Wrench },
-    { to: '/emprestimos', label: 'Empréstimos', icon: CalendarRange },
     { to: '/labin', label: 'LABIN (Laudo Técnico)', icon: PenTool },
     { to: '/perfil', label: 'Meu Perfil', icon: User },
+  ];
+
+  const emprestimosSub = [
+    { to: '/emprestimos', label: 'Empréstimos' },
+    { to: '/eventos', label: 'Eventos' },
   ];
 
   const handleNav = () => {
@@ -75,6 +80,43 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
             </NavLink>
           );
         })}
+
+        {/* ── Submenu Empréstimos / Eventos ── */}
+        <div>
+          <button
+            onClick={() => setEmprestimosOpen(!emprestimosOpen)}
+            title={isCollapsed ? "Empréstimos" : undefined}
+            className={`flex items-center gap-3 ${isCollapsed ? 'justify-center px-0 w-full' : 'px-4'} py-3 rounded-lg text-sm font-semibold transition-all duration-200 w-full text-left text-blue-100/70 hover:text-white hover:bg-primary-container/40`}
+          >
+            <CalendarRange size={16} className="shrink-0" />
+            {!isCollapsed && (
+              <>
+                <span className="truncate flex-1">Empréstimos</span>
+                <ChevronDown size={12} className={`transition-transform ${emprestimosOpen ? 'rotate-180' : ''}`} />
+              </>
+            )}
+          </button>
+          {emprestimosOpen && !isCollapsed && (
+            <div className="ml-9 mt-1 space-y-1">
+              {emprestimosSub.map((sub) => (
+                <NavLink
+                  key={sub.to}
+                  to={sub.to}
+                  onClick={handleNav}
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                      isActive
+                        ? 'bg-primary-container/60 text-white'
+                        : 'text-blue-100/60 hover:text-white hover:bg-primary-container/30'
+                    }`
+                  }
+                >
+                  {sub.label}
+                </NavLink>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Admin Navigation */}
         {isAdmin && (

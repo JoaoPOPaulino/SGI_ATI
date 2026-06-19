@@ -51,7 +51,12 @@ const App: React.FC = () => {
             } />
             <Route path="/emprestimos" element={
               <ProtectedRoute>
-                <Layout><Emprestimos /></Layout>
+                <Layout><Emprestimos section="emprestimos" /></Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/eventos" element={
+              <ProtectedRoute>
+                <Layout><Emprestimos section="eventos" /></Layout>
               </ProtectedRoute>
             } />
             <Route path="/manutencao" element={

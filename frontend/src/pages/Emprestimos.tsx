@@ -39,7 +39,11 @@ import {
 } from "lucide-react";
 import ConfirmDialog from "../components/DialogoConfirmacao";
 
-const Emprestimos: React.FC = () => {
+interface EmprestimosProps {
+  section?: 'emprestimos' | 'eventos';
+}
+
+const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) => {
   const { user, hasPermission } = useAuth();
 
   const [itens, setItens] = useState<Item[]>([]);
@@ -566,6 +570,7 @@ const Emprestimos: React.FC = () => {
       )}
 
       {/* Linha 1: Empréstimo + Empréstimos Ativos */}
+      {section === 'emprestimos' && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
           <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
@@ -713,8 +718,10 @@ const Emprestimos: React.FC = () => {
           )}
         </div>
       </div>
+      )}
 
       {/* Linha 2: Novo Evento + Eventos e Alocações */}
+      {section === 'eventos' && (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         <div className="glass-panel p-6 rounded-2xl border border-outline-variant/10 bg-surface-container-lowest">
           <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2 border-b border-outline-variant/10 pb-3">
@@ -1050,6 +1057,7 @@ const Emprestimos: React.FC = () => {
           )}
         </div>
       </div>
+      )}
 
       {/* Modal de Devolução */}
       {activeReturnLoan && (
