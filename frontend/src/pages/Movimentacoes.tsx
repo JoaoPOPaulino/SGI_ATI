@@ -815,12 +815,21 @@ const Movimentacoes: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Nome do Assinante *</label>
+            <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+              {signingTipo === "RESPONSAVEL_COLETA" ? "Nome do Requerente *" : "Nome do Assinante *"}
+            </label>
             <input type="text" value={signingNome} onChange={(e) => setSigningNome(e.target.value)}
               disabled={usarDadosAnteriores}
               className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface disabled:opacity-60" />
           </div>
           <div>
+            <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+              {signingTipo === "RESPONSAVEL_COLETA" ? "CPF do Requerente" : "CPF"}
+            </label>
+            <input type="text" value={signingCpf} onChange={(e) => setSigningCpf(e.target.value)}
+              disabled={usarDadosAnteriores}
+              className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface disabled:opacity-60" />
+          </div><div>
             <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">CPF</label>
             <input type="text" value={signingCpf} onChange={(e) => setSigningCpf(e.target.value)}
               disabled={usarDadosAnteriores}

@@ -1,4 +1,4 @@
-// src/services/emailServices.ts
+// src/services/emailService.ts
 
 import { supabase } from "./supabase";
 
@@ -8,10 +8,31 @@ interface EmailPayload {
   html: string;
 }
 
+/**
+ * Remove quebras de linha e espaços redundantes do HTML antes de enviar.
+ *
+ * Por quê: o SMTP do Gmail (via denomailer) codifica o corpo em
+ * quoted-printable. Nesse encoding, toda quebra de linha "soft" vira
+ * "=" no fim da linha, e ela só é removida corretamente se o cliente
+ * de email decodificar bem. Com HTML multi-linha como template literal,
+ * cada quebra de linha do código aparece como "=20" no email renderizado.
+ * Minificar para uma única linha elimina o problema na raiz.
+ */
+function minifyHtml(html: string): string {
+  return html
+    .replace(/>\s+</g, "><") // remove espaços entre tags
+    .replace(/\s{2,}/g, " ") // colapsa espaços múltiplos
+    .replace(/\n/g, "") // remove quebras de linha
+    .trim();
+}
+
 async function sendEmail(payload: EmailPayload): Promise<void> {
   try {
     const { data, error } = await supabase.functions.invoke("send-email", {
-      body: payload,
+      body: {
+        ...payload,
+        html: minifyHtml(payload.html),
+      },
     });
 
     if (error) {
