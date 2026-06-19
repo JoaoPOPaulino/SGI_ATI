@@ -11,7 +11,7 @@ import {
   LaudoTecnico,
 } from "../services/types";
 import {
-  fetchItens,
+  fetchAllItens,
   createItem,
   updateItem,
   deleteItem as deleteSupabaseItem,
@@ -106,9 +106,8 @@ const Inventario: React.FC = () => {
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
 
-  const [page, setPage] = useState(1);
-  const [pageSize] = useState(20);
-  const [totalCount, setTotalCount] = useState(0);
+  const [paginaAtual, setPaginaAtual] = useState(1);
+  const [itensPorPagina, setItensPorPagina] = useState(10);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleSelect = (id: string) => {
@@ -129,12 +128,8 @@ const Inventario: React.FC = () => {
   };
 
   const loadItens = async () => {
-    const result = await fetchItens(page, pageSize);
-    setItens(result.data);
-    setTotalCount(result.count);
-    if (result.data.length === 0 && page > 1) {
-      setPage(page - 1);
-    }
+    const allItens = await fetchAllItens();
+    setItens(allItens);
   };
 
   const ensureLocaisLoaded = async () => {
@@ -146,7 +141,7 @@ const Inventario: React.FC = () => {
 
   useEffect(() => {
     loadItens();
-  }, [page]);
+  }, []);
 
   useEffect(() => {
     if (formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO") {
@@ -234,6 +229,16 @@ const Inventario: React.FC = () => {
     filterPolo,
     filterLocal,
   ]);
+
+  // Cálculo de Paginação
+  const totalPaginas = Math.ceil(filteredItens.length / itensPorPagina);
+  const itensPaginados = filteredItens.slice(
+    (paginaAtual - 1) * itensPorPagina,
+    paginaAtual * itensPorPagina,
+  );
+  useEffect(() => {
+    setPaginaAtual(1);
+  }, [filteredItens.length, search]);
 
   // Abertura do Modal de Cadastro/Edição
   const openModal = (item: Item | null = null) => {
@@ -814,7 +819,7 @@ const Inventario: React.FC = () => {
       {/* Modo de Visualização e Informações de Linhas */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-on-surface-variant font-semibold">
-          Exibindo {itens.length} de {totalCount} ativos (página {page} de {Math.max(1, Math.ceil(totalCount / pageSize))})
+          Exibindo {filteredItens.length} de {itens.length} ativos
         </p>
       </div>
 
@@ -883,7 +888,7 @@ const Inventario: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="text-xs">
-                {filteredItens.map((item, index) => (
+                {itensPaginados.map((item, index) => (
                   <tr
                     key={item.id}
                     className={`hover:bg-surface-bright transition-colors ${index % 2 === 1 ? "bg-surface-container-low/10" : ""} group`}
@@ -983,44 +988,129 @@ const Inventario: React.FC = () => {
         </div>
       )}
 
-      {totalCount > pageSize && (
-        <div className="flex items-center justify-between pt-4">
-          <span className="text-xs text-on-surface-variant">
-            Total: {totalCount} registros
+      {filteredItens.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/20 flex-wrap      gap-2">
+        
+          {/* Info de registros */}
+          <span className="text-[10px] font-black text-outline uppercase tracking-wider">
+            {(paginaAtual - 1) * itensPorPagina + 1}–
+            {Math.min(paginaAtual * itensPorPagina, filteredItens.length)} de{" "}
+            {filteredItens.length} itens
           </span>
-          <div className="flex items-center gap-2">
+      
+          {/* Controles de navegação */}
+          <div className="flex items-center gap-1">
+            {/* Primeira página */}
             <button
-              onClick={() => setPage(1)}
-              disabled={page <= 1}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              onClick={() => setPaginaAtual(1)}
+              disabled={paginaAtual === 1}
+              className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline       hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Primeira página"
             >
-              Primeira
+              «
             </button>
+      
+            {/* Página anterior */}
             <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page <= 1}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              onClick={() => setPaginaAtual((p) => Math.max(p - 1, 1))}
+              disabled={paginaAtual === 1}
+              className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline       hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Página anterior"
             >
-              Anterior
+              ‹
             </button>
-            <span className="text-xs font-bold text-primary px-2">
-              {page}
-            </span>
+      
+            {/* Números de página com reticências */}
+            {(() => {
+              const paginas: (number | "...")[] = [];
+            
+              if (totalPaginas <= 7) {
+                // Poucas páginas: exibe todas sem reticências
+                for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
+              } else {
+                // Sempre mostra a primeira página
+                paginas.push(1);
+              
+                // Reticências à esquerda: só aparece se a janela não encosta na primeira
+                if (paginaAtual - 1 > 2) paginas.push("...");
+              
+                // Janela central: página anterior, atual e próxima (sem ultrapassar os limites)
+                const inicio = Math.max(2, paginaAtual - 1);
+                const fim = Math.min(totalPaginas - 1, paginaAtual + 1);
+                for (let i = inicio; i <= fim; i++) paginas.push(i);
+              
+                // Reticências à direita: só aparece se a janela não encosta na última
+                if (totalPaginas - paginaAtual > 2) paginas.push("...");
+              
+                // Sempre mostra a última página
+                paginas.push(totalPaginas);
+              }
+            
+              return paginas.map((item, idx) =>
+                item === "..." ? (
+                  <span
+                    key={`ellipsis-${idx}`}
+                    className="w-[30px] h-[30px] flex items-center justify-center text-xs font-bold text-outline select-none"
+                  >
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={item}
+                    onClick={() => setPaginaAtual(item as number)}
+                    className={`w-[30px] h-[30px] flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${
+                      item === paginaAtual
+                        ? "bg-[#163f74] border-[#163f74] text-white"
+                        : "border-outline text-outline hover:bg-surface-container-high hover:text-on-surface"
+                    }`}
+                  >
+                    {item}
+                  </button>
+                ),
+              );
+            })()}
+
+            {/* Próxima página */}
             <button
-              onClick={() => setPage((p) => Math.min(Math.ceil(totalCount / pageSize), p + 1))}
-              disabled={page >= Math.ceil(totalCount / pageSize)}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              onClick={() => setPaginaAtual((p) => Math.min(p + 1, totalPaginas))}
+              disabled={paginaAtual === totalPaginas}
+              className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline       hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Próxima página"
             >
-              Próxima
+              ›
             </button>
+          
+            {/* Última página */}
             <button
-              onClick={() => setPage(Math.ceil(totalCount / pageSize))}
-              disabled={page >= Math.ceil(totalCount / pageSize)}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+              onClick={() => setPaginaAtual(totalPaginas)}
+              disabled={paginaAtual === totalPaginas}
+              className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline       hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+              title="Última página"
             >
-              Última
+              »
             </button>
           </div>
+          
+          {/* Seletor de itens por página */}
+          <div className="flex items-center gap-2">
+            <select
+              value={itensPorPagina}
+              onChange={(e) => {
+                setItensPorPagina(Number(e.target.value));
+                setPaginaAtual(1);
+              }}
+              className="px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface font-bold cursor-pointer outline-none"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-[10px] font-black text-outline uppercase tracking-wider">
+              Itens por página
+            </span>
+          </div>
+            
         </div>
       )}
 

@@ -181,8 +181,8 @@ const Movimentacoes: React.FC = () => {
   const [movs, setMovs] = useState<Movimentacao[]>([]);
   const [itens, setItens] = useState<Item[]>([]);
   const [movsPage, setMovsPage] = useState(1);
-  const [movsPageSize] = useState(20);
   const [movsTotalCount, setMovsTotalCount] = useState(0);
+  const [itensPorPagina, setItensPorPagina] = useState(20);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMovId, setSelectedMovId] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -253,7 +253,7 @@ const Movimentacoes: React.FC = () => {
 
   const loadData = async () => {
     const [movsResult, allItens] = await Promise.all([
-      fetchMovimentacoes(movsPage, movsPageSize),
+      fetchMovimentacoes(movsPage, itensPorPagina),
       fetchAllItens(),
     ]);
 
@@ -272,7 +272,7 @@ const Movimentacoes: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [movsPage]);
+  }, [movsPage, itensPorPagina]);
 
   useEffect(() => {
     if (formTipo === "MANUTENCAO") {
@@ -1606,44 +1606,123 @@ const Movimentacoes: React.FC = () => {
         </div>
       </div>
 
-      {movsTotalCount > movsPageSize && (
-        <div className="flex items-center justify-between pt-4 px-1">
-          <span className="text-xs text-on-surface-variant">
-            Total: {movsTotalCount} movimentações
+      {movsTotalCount > itensPorPagina && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/20 flex-wrap gap-2">
+        
+          {/* Info de registros */}
+          <span className="text-[10px] font-black text-outline uppercase tracking-wider">
+            {(movsPage - 1) * itensPorPagina + 1}–
+            {Math.min(movsPage * itensPorPagina, movsTotalCount)} de{" "}
+            {movsTotalCount} guias
           </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMovsPage(1)}
-              disabled={movsPage <= 1}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              Primeira
-            </button>
-            <button
-              onClick={() => setMovsPage((p) => Math.max(1, p - 1))}
-              disabled={movsPage <= 1}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              Anterior
-            </button>
-            <span className="text-xs font-bold text-primary px-2">
-              {movsPage}
-            </span>
-            <button
-              onClick={() => setMovsPage((p) => Math.min(Math.ceil(movsTotalCount / movsPageSize), p + 1))}
-              disabled={movsPage >= Math.ceil(movsTotalCount / movsPageSize)}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              Próxima
-            </button>
-            <button
-              onClick={() => setMovsPage(Math.ceil(movsTotalCount / movsPageSize))}
-              disabled={movsPage >= Math.ceil(movsTotalCount / movsPageSize)}
-              className="px-3 py-1.5 text-xs font-bold rounded-lg bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container-high disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-            >
-              Última
-            </button>
+      
+          {/* Controles de navegação */}
+          <div className="flex items-center gap-1">
+            {(() => {
+              const totalPaginas = Math.ceil(movsTotalCount / itensPorPagina);
+              const paginas: (number | "...")[] = [];
+            
+              if (totalPaginas <= 7) {
+                for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
+              } else {
+                paginas.push(1);
+                if (movsPage - 1 > 2) paginas.push("...");
+                const inicio = Math.max(2, movsPage - 1);
+                const fim = Math.min(totalPaginas - 1, movsPage + 1);
+                for (let i = inicio; i <= fim; i++) paginas.push(i);
+                if (totalPaginas - movsPage > 2) paginas.push("...");
+                paginas.push(totalPaginas);
+              }
+            
+              return (
+                <>
+                  {/* Primeira página */}
+                  <button
+                    onClick={() => setMovsPage(1)}
+                    disabled={movsPage === 1}
+                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Primeira página"
+                  >
+                    «
+                  </button>
+            
+                  {/* Página anterior */}
+                  <button
+                    onClick={() => setMovsPage((p) => Math.max(p - 1, 1))}
+                    disabled={movsPage === 1}
+                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Página anterior"
+                  >
+                    ‹
+                  </button>
+            
+                  {/* Números de página com reticências */}
+                  {paginas.map((item, idx) =>
+                    item === "..." ? (
+                      <span
+                        key={`ellipsis-${idx}`}
+                        className="w-[30px] h-[30px] flex items-center justify-center text-xs font-bold text-outline select-none"
+                      >
+                        …
+                      </span>
+                    ) : (
+                      <button
+                        key={item}
+                        onClick={() => setMovsPage(item as number)}
+                        className={`w-[30px] h-[30px] flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${
+                          item === movsPage
+                            ? "bg-[#163f74] border-[#163f74] text-white"
+                            : "border-outline text-outline hover:bg-surface-container-high hover:text-on-surface"
+                        }`}
+                      >
+                        {item}
+                      </button>
+                    ),
+                  )}
+            
+                  {/* Próxima página */}
+                  <button
+                    onClick={() => setMovsPage((p) => Math.min(p + 1, totalPaginas))}
+                    disabled={movsPage === totalPaginas}
+                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Próxima página"
+                  >
+                    ›
+                  </button>
+                
+                  {/* Última página */}
+                  <button
+                    onClick={() => setMovsPage(totalPaginas)}
+                    disabled={movsPage === totalPaginas}
+                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Última página"
+                  >
+                    »
+                  </button>
+                </>
+              );
+            })()}
           </div>
+          
+          {/* Seletor de guias por página */}
+          <div className="flex items-center gap-2">
+            <select
+              value={itensPorPagina}
+              onChange={(e) => {
+                setItensPorPagina(Number(e.target.value));
+                setMovsPage(1);
+              }}
+              className="px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface font-bold cursor-pointer outline-none"
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={50}>50</option>
+            </select>
+            <span className="text-[10px] font-black text-outline uppercase tracking-wider">
+              Guias por página
+            </span>
+          </div>
+            
         </div>
       )}
 
