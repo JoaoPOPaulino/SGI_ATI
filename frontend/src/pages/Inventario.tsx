@@ -795,24 +795,6 @@ const Inventario: React.FC = () => {
             </select>
           </div>
         </div>
-
-        {/* Linha Extra de Filtros de Locais */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2 border-t border-outline-variant/10">
-          <input
-            type="text"
-            placeholder="Polo (Ex: Sede Central)..."
-            value={filterPolo === "TODOS" ? "" : filterPolo}
-            onChange={(e) => setFilterPolo(e.target.value || "TODOS")}
-            className="px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface"
-          />
-          <input
-            type="text"
-            placeholder="Localização física (Andar, sala, etc)..."
-            value={filterLocal}
-            onChange={(e) => setFilterLocal(e.target.value)}
-            className="px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface col-span-2"
-          />
-        </div>
       </div>
 
       {/* Modo de Visualização e Informações de Linhas */}
