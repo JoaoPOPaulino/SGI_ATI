@@ -1,3 +1,5 @@
+
+
 // @ts-ignore Deno remote import
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 // @ts-ignore Deno remote import
@@ -9,32 +11,27 @@ declare const Deno: {
   };
 };
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://sgi-ati.vercel.app",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
 type PerfilUsuario = "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
 
+const allowedOrigins = [
+  "https://sgi-ati.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
 serve(async (req: Request) => {
-  // Handle CORS preflight
+  const origin = req.headers.get("Origin") || "";
+  const corsHeaders = {
+    "Access-Control-Allow-Origin": allowedOrigins.includes(origin)
+      ? origin
+      : allowedOrigins[0],
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
-  }
-
-  if (req.method !== "POST") {
-    return new Response(
-      JSON.stringify({
-        success: false,
-        error: "Method not allowed",
-      }),
-      {
-        status: 405,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      },
-    );
   }
 
   try {

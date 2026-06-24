@@ -163,6 +163,8 @@ export async function inviteUser(payload: {
   perfil: string;
   polo?: string;
 }) {
+  const { data: { session } } = await supabase.auth.getSession();
+  console.log("Session ao invocar invite-user:", session);
   const cleanCpf = payload.cpf.replace(/\D/g, "");
   const cleanEmail = payload.email.trim().toLowerCase();
 
