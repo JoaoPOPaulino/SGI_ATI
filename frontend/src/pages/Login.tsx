@@ -73,7 +73,7 @@ const Login: React.FC = () => {
 
       <div className="relative w-full max-w-[440px] animate-slide-up">
         <div className="flex flex-col items-center mb-8">
-          <div className="w-24 h-24 rounded-2xl bg-surface-container-lowest shadow-lg shadow-black/5 border border-outline-variant/30 flex items-center justify-center p-3 mb-5">
+          <div className="w-24 h-24 rounded-2xl bg-primary shadow-lg shadow-black/5 border border-outline-variant/30 flex items-center justify-center p-3 mb-5">
             <img
               src="/ati-logo.png"
               alt="ATI Tocantins"
