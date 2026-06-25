@@ -2,21 +2,77 @@
 
 import { supabase } from "./supabase";
 
+interface InlineImage {
+  cid: string;
+  dataUrl: string;
+}
+
 interface EmailPayload {
   to: string | string[];
   subject: string;
   html: string;
+  inlineImages?: InlineImage[];
 }
 
-async function sendEmail(payload: EmailPayload): Promise<void> {
+/**
+ * Remove quebras de linha e espaços redundantes do HTML antes de enviar.
+ *
+ * Por quê: HTML multi-linha como template literal deixa muitos espaços e
+ * quebras de linha "soltos" no corpo. Minificar para uma única linha evita
+ * ruído visual. O "=20" no email decodificado mal é resolvido na Edge
+ * Function (encoding "auto" em vez de quoted-printable); aqui garantimos
+ * apenas que o HTML enviado já está limpo.
+ */
+function minifyHtml(html: string): string {
+  return html
+    .replace(/>\s+</g, "><") // remove espaços entre tags
+    .replace(/\s{2,}/g, " ") // colapsa espaços múltiplos
+    .replace(/\n/g, "") // remove quebras de linha
+    .trim();
+}
+
+/**
+ * Clientes de email (Gmail, Outlook etc.) bloqueiam <img src="data:...">
+ * por política de segurança/spam — a imagem simplesmente não é exibida.
+ *
+ * Por isso, antes de enviar, trocamos cada Data URL de assinatura por uma
+ * referência "cid:NOME" no HTML, e mandamos a imagem real separadamente
+ * no campo `inlineImages`. A Edge Function se encarrega de anexá-la como
+ * inline attachment com o Content-ID correspondente.
+ */
+function extrairImagensInline(html: string): { html: string; inlineImages: InlineImage[] } {
+  const inlineImages: InlineImage[] = [];
+  let contador = 0;
+
+  const htmlComCid = html.replace(
+    /src="(data:image\/[^;]+;base64,[^"]+)"/g,
+    (_match, dataUrl: string) => {
+      contador += 1;
+      const cid = `assinatura${contador}`;
+      inlineImages.push({ cid, dataUrl });
+      return `src="cid:${cid}"`;
+    },
+  );
+
+  return { html: htmlComCid, inlineImages };
+}
+
+async function sendEmail(payload: Omit<EmailPayload, "inlineImages"> & { html: string }): Promise<void> {
   try {
+    const minified = minifyHtml(payload.html);
+    const { html: htmlComCid, inlineImages } = extrairImagensInline(minified);
+
     const { data, error } = await supabase.functions.invoke("send-email", {
-      body: payload,
+      body: {
+        to: payload.to,
+        subject: payload.subject,
+        html: htmlComCid,
+        inlineImages,
+      },
     });
 
     if (error) {
       console.error("Erro ao enviar e-mail:", error);
-      // Tenta extrair o corpo real do erro
       const context = (error as any).context;
       if (context) {
         const text = await context.text?.();

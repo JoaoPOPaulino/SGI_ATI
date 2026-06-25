@@ -21,6 +21,10 @@ const Manutencao: React.FC = () => {
   const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('REGULAR');
   const [decomSearch, setDecomSearch] = useState('');
   const [decomDropdownOpen, setDecomDropdownOpen] = useState(false);
+  const [rejectTarget, setRejectTarget] = useState<Item | null>(null);
+  const [rejectMotivo, setRejectMotivo] = useState('');
+  const [approveTarget, setApproveTarget] = useState<Item | null>(null);
+
 
   // Estados de Paginação — Fila de Manutenção
   const [paginaManutencao, setPaginaManutencao] = useState(1);
@@ -30,7 +34,11 @@ const Manutencao: React.FC = () => {
     const allItens = await fetchAllItens();
     setMaintenanceItens(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
-    setActiveItens(allItens.filter(i => (i.status === 'ATIVO' || i.status === 'GUARDADO') && (i.condicao === 'RUIM' || i.condicao === 'ESTRAGADO')));
+    setActiveItens(allItens.filter(i =>
+      i.condicao === 'ESTRAGADO'
+        ? (i.status !== 'BAIXADO' && i.status !== 'AGUARDANDO_BAIXA')
+        : (i.status === 'ATIVO' || i.status === 'GUARDADO') && i.condicao === 'RUIM'
+    ));
     setLoading(false);
   };
 
@@ -79,9 +87,16 @@ const Manutencao: React.FC = () => {
     } catch { setFormError('Erro ao solicitar baixa. Verifique a conexão e tente novamente.'); }
   };
 
-  const handleRejectDecommission = async (item: Item) => {
+  const handleRejectDecommission = (item: Item) => {
     if (!isSuperiorOrAdmin) { alert('Apenas usuários de perfil Superior ou Admin possuem privilégios para rejeitar solicitações de baixa.'); return; }
-    const motivo = prompt('Informe o motivo da rejeição da baixa:');
+    setRejectTarget(item);
+    setRejectMotivo('');
+  };
+
+  const confirmRejectDecommission = async () => {
+    if (!rejectTarget) return;
+    const item = rejectTarget;
+    const motivo = rejectMotivo.trim();
     if (!motivo) return;
     try {
       const currentMovs = await fetchAllMovimentacoes();
@@ -98,24 +113,30 @@ const Manutencao: React.FC = () => {
         });
       }
       await loadData();
+      setRejectTarget(null);
       alert(`Baixa rejeitada. Item restaurado para o status "${revertedStatus}".`);
     } catch { alert('Erro ao rejeitar baixa. Verifique a conexão e tente novamente.'); }
   };
 
-  const handleApproveDecommission = async (item: Item) => {
+  const handleApproveDecommission = (item: Item) => {
     if (!isSuperiorOrAdmin) { alert('Apenas usuários de perfil Superior ou Admin possuem privilégios para efetivar a baixa final de ativos.'); return; }
-    if (confirm(`Deseja homologar a BAIXA DEFINITIVA do equipamento "${item.nome}"? Esta ação é irreversível no patrimônio.`)) {
-      try {
-        await updateItem(item.id, { status: 'BAIXADO', localizacao_atual: 'Baixado / Descartado Definitivamente', updated_at: new Date().toISOString() });
-        const currentMovs = await fetchAllMovimentacoes();
-        const pendingBaixa = currentMovs.find(m => m.item_id === item.id && m.tipo === 'BAIXA' && m.status_aprovacao === 'PENDENTE');
-        if (pendingBaixa) {
-          await updateMovimentacao(pendingBaixa.id, { status_aprovacao: 'APROVADO', aprovador_id: user?.id, aprovador_nome: user?.nome, data_movimentacao: new Date().toISOString() });
-        }
-        await loadData();
-        alert('Baixa patrimonial do ativo concluída com sucesso!');
-      } catch { alert('Erro ao efetivar baixa. Verifique a conexão e tente novamente.'); }
-    }
+    setApproveTarget(item);
+  };
+
+  const confirmApproveDecommission = async () => {
+    if (!approveTarget) return;
+    const item = approveTarget;
+    try {
+      await updateItem(item.id, { status: 'BAIXADO', localizacao_atual: 'Baixado / Descartado Definitivamente', updated_at: new Date().toISOString() });
+      const currentMovs = await fetchAllMovimentacoes();
+      const pendingBaixa = currentMovs.find(m => m.item_id === item.id && m.tipo === 'BAIXA' && m.status_aprovacao === 'PENDENTE');
+      if (pendingBaixa) {
+        await updateMovimentacao(pendingBaixa.id, { status_aprovacao: 'APROVADO', aprovador_id: user?.id, aprovador_nome: user?.nome, data_movimentacao: new Date().toISOString() });
+      }
+      await loadData();
+      setApproveTarget(null);
+      alert('Baixa patrimonial do ativo concluída com sucesso!');
+    } catch { alert('Erro ao efetivar baixa. Verifique a conexão e tente novamente.'); }
   };
 
   const handleCompleteRepair = async () => {
@@ -162,22 +183,22 @@ const Manutencao: React.FC = () => {
               {/* Lista paginada */}
               <div className="space-y-3 pr-1">
                 {itensPaginadosManut.map(item => (
-                <div key={item.id} className="p-3.5 bg-surface border border-outline-variant/10 rounded-xl flex items-center gap-3 hover:border-outline-variant/30 transition-all group">
-                  <StatusBadge type="condicao" value={item.condicao} />
-                  <div className="flex-1 min-w-0">
-                    <span className="text-[9px] font-mono font-bold text-outline block mb-0.5">{item.numero_patrimonio || 'S/N: ' + item.numero_serie || 'Consumível'}</span>
-                    <h3 className="text-[11px] font-bold text-on-surface truncate">{item.nome}</h3>
-                    <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide mt-1 inline-block">{item.categoria}</span>
+                  <div key={item.id} className="p-3.5 bg-surface border border-outline-variant/10 rounded-xl flex items-center gap-3 hover:border-outline-variant/30 transition-all group">
+                    <StatusBadge type="condicao" value={item.condicao} />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-[9px] font-mono font-bold text-outline block mb-0.5">{item.numero_patrimonio || 'S/N: ' + item.numero_serie || 'Consumível'}</span>
+                      <h3 className="text-[11px] font-bold text-on-surface truncate">{item.nome}</h3>
+                      <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide mt-1 inline-block">{item.categoria}</span>
+                    </div>
+                    {canModify ? (
+                      <button onClick={() => { setRepairTarget(item); setRepairCondicao(item.condicao); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
+                        <Hammer size={12} />Concluir Reparo
+                      </button>
+                    ) : (
+                      <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">Em Reparo — LABIN</span>
+                    )}
                   </div>
-                  {canModify ? (
-                    <button onClick={() => { setRepairTarget(item); setRepairCondicao(item.condicao); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
-                      <Hammer size={12} />Concluir Reparo
-                    </button>
-                  ) : (
-                    <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">Em Reparo — LABIN</span>
-                  )}
-                </div>
-              ))}
+                ))}
               </div>
 
               {/* Paginação */}
@@ -340,8 +361,8 @@ const Manutencao: React.FC = () => {
                           const q = decomSearch.toLowerCase();
                           return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || '').toLowerCase().includes(q) || (i.numero_serie || '').toLowerCase().includes(q);
                         }).length === 0 && (
-                          <p className="px-3 py-2 text-[11px] text-outline">Nenhum equipamento encontrado.</p>
-                        )}
+                            <p className="px-3 py-2 text-[11px] text-outline">Nenhum equipamento encontrado.</p>
+                          )}
                       </div>
                     )}
                   </div>
@@ -367,13 +388,56 @@ const Manutencao: React.FC = () => {
             <p className="text-[11px] text-on-surface-variant mb-5">Equipamento: <strong>{repairTarget.nome}</strong>{repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}</p>
             <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1.5`}>Condição Pós-Reparo</label>
             <select value={repairCondicao} onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)} className="w-full px-3 py-2.5 bg-surface border border-outline rounded-lg text-[11px] focus:ring-2 focus:ring-primary mb-5">
-              {repairTarget && repairTarget.condicao !== 'REGULAR' && <option value="REGULAR">Regular</option>}
-              {repairTarget && (repairTarget.condicao === 'ESTRAGADO' || repairTarget.condicao === 'RUIM') && <option value="RUIM">Ruim</option>}
+              <option value="REGULAR">Regular</option>
+              <option value="RUIM">Ruim</option>
+              <option value="ESTRAGADO">Estragado</option>
             </select>
             <p className="text-[10px] text-outline mb-5 bg-surface-container p-2.5 rounded-lg">O item será movido para <strong>Almoxarifado Central</strong> com status <strong>GUARDADO</strong>, pronto para retirada.</p>
             <div className="flex gap-2.5">
               <button onClick={() => setRepairTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button>
               <button onClick={handleCompleteRepair} className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">Confirmar Reparo</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {rejectTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRejectTarget(null)} />
+          <div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-sm w-full animate-slide-up p-5">
+            <h3 className="text-sm font-bold text-on-surface mb-2">Rejeitar Solicitação de Baixa</h3>
+            <p className="text-[11px] text-on-surface-variant mb-4">Equipamento: <strong>{rejectTarget.nome}</strong></p>
+            <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1.5`}>Motivo da Rejeição</label>
+            <textarea
+              rows={3}
+              autoFocus
+              value={rejectMotivo}
+              onChange={(e) => setRejectMotivo(e.target.value)}
+              placeholder="Explique por que a baixa está sendo rejeitada..."
+              className="w-full px-3 py-2 bg-surface border border-outline rounded-lg text-on-surface placeholder:text-outline text-[11px] focus:outline-none focus:ring-2 focus:ring-primary resize-none mb-5"
+            />
+            <div className="flex gap-2.5">
+              <button onClick={() => setRejectTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button>
+              <button onClick={confirmRejectDecommission} disabled={!rejectMotivo.trim()} className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">Confirmar Rejeição</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {approveTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setApproveTarget(null)} />
+          <div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-sm w-full animate-slide-up p-5">
+            <h3 className="text-sm font-bold text-error mb-2 flex items-center gap-2"><Trash2 size={16} />Confirmar Baixa Definitiva</h3>
+            <p className="text-[11px] text-on-surface-variant mb-4">
+              Deseja homologar a <strong>BAIXA DEFINITIVA</strong> do equipamento <strong>"{approveTarget.nome}"</strong>?
+            </p>
+            <p className="text-[10px] text-error bg-error-container/30 border border-red-300 p-2.5 rounded-lg mb-5 font-semibold">
+              Esta ação é irreversível no patrimônio.
+            </p>
+            <div className="flex gap-2.5">
+              <button onClick={() => setApproveTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button>
+              <button onClick={confirmApproveDecommission} className="flex-1 py-2.5 bg-error-container hover:bg-rose-100 border border-red-300 hover:border-red-500 text-on-error-container rounded-lg text-[11px] font-bold transition-colors active:scale-95">Efetivar Baixa</button>
             </div>
           </div>
         </div>

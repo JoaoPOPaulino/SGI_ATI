@@ -30,7 +30,7 @@ import {
   fetchAssinaturasGuia,
   createAssinaturaGuia,
 } from "../services/supabaseAssinaturasGuia";
-import { enviarEmailComprovante, enviarEmailDevolucao } from "../services/emailServices";
+import { enviarEmailComprovante, enviarEmailDevolucao } from "../services/emailService";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
   CHECK_OUT: "Saída",
@@ -204,7 +204,6 @@ const Movimentacoes: React.FC = () => {
   const [formDestinoEstacao, setFormDestinoEstacao] = useState("");
   const [formDestinoLivre, setFormDestinoLivre] = useState("");
   const [formObs, setFormObs] = useState("");
-  const [formAssinatura, setFormAssinatura] = useState("");
   const [itemSearch, setItemSearch] = useState("");
   const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
 
@@ -561,11 +560,6 @@ const Movimentacoes: React.FC = () => {
       setIsSaving(false);
       return;
     }
-    if (!formAssinatura) {
-      setFormError("A assinatura de emissão da guia é obrigatória.");
-      setIsSaving(false);
-      return;
-    }
 
     try {
       const item = itens.find((i) => i.id === selectedItemId);
@@ -617,21 +611,6 @@ const Movimentacoes: React.FC = () => {
       const savedMov = await createMovimentacao(newMov);
       if (!savedMov) { setFormError("Erro ao criar guia."); setIsSaving(false); return; }
 
-      await createAssinaturaGuia({
-        movimentacao_id: savedMov.id,
-        tipo_assinatura: "EMISSAO_GUIA",
-        assinante_id: user?.id,
-        assinante_nome: user?.nome || "Anônimo",
-        assinante_cpf: user?.cpf,
-        assinante_perfil: user?.perfil,
-        assinatura_base64: formAssinatura,
-        localizacao: item.localizacao_atual,
-        patrimonio: item.numero_patrimonio,
-        numero_serie: item.numero_serie,
-        chamado,
-        observacao: "Assinatura realizada na emissão da guia.",
-      });
-
       if (formTipo === "MANUTENCAO") {
         await updateItem(item.id, {
           status: "EM_MANUTENCAO",
@@ -670,7 +649,6 @@ const Movimentacoes: React.FC = () => {
       setFormDestinoEstacao("");
       setFormDestinoLivre("");
       setFormObs("");
-      setFormAssinatura("");
       setFormSuccess("Guia emitida com sucesso!");
 
       await loadData();
@@ -837,12 +815,21 @@ const Movimentacoes: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Nome do Assinante *</label>
+            <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+              {signingTipo === "RESPONSAVEL_COLETA" ? "Nome do Requerente *" : "Nome do Assinante *"}
+            </label>
             <input type="text" value={signingNome} onChange={(e) => setSigningNome(e.target.value)}
               disabled={usarDadosAnteriores}
               className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface disabled:opacity-60" />
           </div>
           <div>
+            <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+              {signingTipo === "RESPONSAVEL_COLETA" ? "CPF do Requerente" : "CPF"}
+            </label>
+            <input type="text" value={signingCpf} onChange={(e) => setSigningCpf(e.target.value)}
+              disabled={usarDadosAnteriores}
+              className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface disabled:opacity-60" />
+          </div><div>
             <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">CPF</label>
             <input type="text" value={signingCpf} onChange={(e) => setSigningCpf(e.target.value)}
               disabled={usarDadosAnteriores}
@@ -900,22 +887,20 @@ const Movimentacoes: React.FC = () => {
         <div className="flex items-center bg-surface-container-low border border-outline rounded-xl p-0.5 gap-0.5">
           <button
             onClick={() => setAbaAtiva("emitir")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              abaAtiva === "emitir"
-                ? "bg-primary text-white shadow-sm"
-                : "text-outline hover:text-primary hover:bg-surface-container-high"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva === "emitir"
+              ? "bg-primary text-white shadow-sm"
+              : "text-outline hover:text-primary hover:bg-surface-container-high"
+              }`}
           >
             <FileText size={14} />
             Emitir Nova Guia
           </button>
           <button
             onClick={() => setAbaAtiva("consultar")}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${
-              abaAtiva === "consultar"
-                ? "bg-primary text-white shadow-sm"
-                : "text-outline hover:text-primary hover:bg-surface-container-high"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva === "consultar"
+              ? "bg-primary text-white shadow-sm"
+              : "text-outline hover:text-primary hover:bg-surface-container-high"
+              }`}
           >
             <Search size={14} />
             Consultar Guias
@@ -961,11 +946,11 @@ const Movimentacoes: React.FC = () => {
                     value={
                       selectedItemId
                         ? (() => {
-                            const found = itens.find((i) => i.id === selectedItemId);
-                            return found
-                              ? `${found.nome} (Pat: ${found.numero_patrimonio || `S/N: ${found.numero_serie || "Não informado"}`})`
-                              : itemSearch;
-                          })()
+                          const found = itens.find((i) => i.id === selectedItemId);
+                          return found
+                            ? `${found.nome} (Pat: ${found.numero_patrimonio || `S/N: ${found.numero_serie || "Não informado"}`})`
+                            : itemSearch;
+                        })()
                         : itemSearch
                     }
                     onChange={(e) => {
@@ -1012,8 +997,8 @@ const Movimentacoes: React.FC = () => {
                           (i.numero_serie || "").toLowerCase().includes(q)
                         );
                       }).length === 0 && (
-                        <p className="px-3 py-2 text-xs text-outline">Nenhum equipamento encontrado.</p>
-                      )}
+                          <p className="px-3 py-2 text-xs text-outline">Nenhum equipamento encontrado.</p>
+                        )}
                     </div>
                   )}
                 </div>
@@ -1069,12 +1054,13 @@ const Movimentacoes: React.FC = () => {
                     className="w-full px-4 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface focus:ring-1" />
                 </div>
 
-                <div className="bg-primary-fixed/20 p-4 border border-primary/20 rounded-xl space-y-3">
-                  <div>
-                    <p className="text-[11px] font-black text-primary uppercase">Assinatura de Emissão *</p>
-                    <p className="text-[9px] text-primary/70">Assinatura obrigatória do usuário que está emitindo a guia.</p>
-                  </div>
-                  <CaixaAssinatura value={formAssinatura} onChange={setFormAssinatura} />
+                <div className="p-3 bg-surface-container border border-outline-variant/20 rounded-xl">
+                  <p className="text-[10px] font-bold text-outline">
+                    Emitente: <span className="text-on-surface font-black">{user?.nome}</span>
+                  </p>
+                  <p className="text-[9px] text-outline mt-0.5">
+                    A guia será emitida em seu nome automaticamente.
+                  </p>
                 </div>
 
                 {formError && (
@@ -1140,11 +1126,10 @@ const Movimentacoes: React.FC = () => {
                     const isSelected = selectedMov?.id === m.id;
                     return (
                       <button type="button" key={m.id} onClick={() => setSelectedMovId(m.id)}
-                        className={`w-full text-left p-4 border rounded-xl transition-all ${
-                          isSelected
-                            ? "bg-primary-fixed/50 border-primary/30"
-                            : "bg-surface border-outline-variant/20 hover:bg-surface-container-low"
-                        }`}>
+                        className={`w-full text-left p-4 border rounded-xl transition-all ${isSelected
+                          ? "bg-primary-fixed/50 border-primary/30"
+                          : "bg-surface border-outline-variant/20 hover:bg-surface-container-low"
+                          }`}>
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <input
                             type="checkbox"
