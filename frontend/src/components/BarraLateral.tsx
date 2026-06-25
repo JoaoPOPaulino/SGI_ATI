@@ -47,7 +47,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         className={`px-4 mb-8 flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 mx-2'}`}
       >
         <div className={`${isCollapsed ? 'w-10 h-10 p-0.5' : 'w-14 h-10 p-1'} rounded-lg flex items-center justify-center shrink-0 transition-all duration-300`}>
-          <img src="/ati-logo.png" alt="ATI Logo" className="w-full h-full object-contain" />
+          <img src="/ati-logo-sidebar.png" alt="ATI Logo" className="w-full h-full object-contain" />
         </div>
         {!isCollapsed && (
           <div className="overflow-hidden whitespace-nowrap">
@@ -153,7 +153,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
         </button>
         
         <div className={`pt-4 mt-2 flex justify-center opacity-30 pointer-events-none ${isCollapsed ? 'hidden' : ''}`}>
-          <img src="/ati-logo.png" alt="ATI Logo" className="h-6 object-contain filter grayscale brightness-200" />
+          <img src="/ati-logo-sidebar.png" alt="ATI Logo" className="h-6 object-contain filter grayscale brightness-200" />
         </div>
       </div>
     </aside>
