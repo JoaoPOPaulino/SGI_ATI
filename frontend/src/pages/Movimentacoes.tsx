@@ -829,11 +829,6 @@ const Movimentacoes: React.FC = () => {
             <input type="text" value={signingCpf} onChange={(e) => setSigningCpf(e.target.value)}
               disabled={usarDadosAnteriores}
               className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface disabled:opacity-60" />
-          </div><div>
-            <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">CPF</label>
-            <input type="text" value={signingCpf} onChange={(e) => setSigningCpf(e.target.value)}
-              disabled={usarDadosAnteriores}
-              className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs text-on-surface disabled:opacity-60" />
           </div>
           {mostraEmail && (
             <div className="sm:col-span-2">

@@ -23,6 +23,15 @@ interface EmailPayload {
  * Function (encoding "auto" em vez de quoted-printable); aqui garantimos
  * apenas que o HTML enviado já está limpo.
  */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 function minifyHtml(html: string): string {
   return html
     .replace(/>\s+</g, "><") // remove espaços entre tags
@@ -130,15 +139,15 @@ export async function enviarEmailComprovante(params: {
 
   const body = `
     <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
-      Olá, <strong>${params.requerenteNome}</strong>. Seu equipamento foi coletado.
+      Olá, <strong>${escapeHtml(params.requerenteNome)}</strong>. Seu equipamento foi coletado.
       Abaixo estão os dados de quem realizou a retirada:
     </p>
 
     <table style="width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-      ${infoRow("Equipamento", params.itemNome, true)}
-      ${infoRow("Chamado", params.chamado || "Não informado")}
-      ${infoRow("Coletado por", `<strong>${params.coletorNome}</strong>`, true)}
-      ${infoRow("CPF do Coletor", params.coletorCpf || "Não informado")}
+      ${infoRow("Equipamento", escapeHtml(params.itemNome), true)}
+      ${infoRow("Chamado", escapeHtml(params.chamado || "Não informado"))}
+      ${infoRow("Coletado por", `<strong>${escapeHtml(params.coletorNome)}</strong>`, true)}
+      ${infoRow("CPF do Coletor", escapeHtml(params.coletorCpf || "Não informado"))}
       ${infoRow("Data / Hora", dataFormatada, true)}
     </table>
 
@@ -184,15 +193,15 @@ export async function enviarEmailDevolucao(params: {
 
   const body = `
     <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0 0 16px;">
-      Olá, <strong>${params.requerenteNome}</strong>. O equipamento do seu chamado foi devolvido. Confira os detalhes:
+      Olá, <strong>${escapeHtml(params.requerenteNome)}</strong>. O equipamento do seu chamado foi devolvido. Confira os detalhes:
     </p>
 
     <table style="width: 100%; border-collapse: collapse; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; margin-bottom: 20px;">
-      ${infoRow("Equipamento", params.itemNome, true)}
-      ${infoRow("Chamado", params.chamado || "Não informado")}
-      ${infoRow("Recebido por", `<strong>${params.receptorNome}</strong>`, true)}
-      ${params.receptorCpf ? infoRow("CPF do Receptor", params.receptorCpf) : ""}
-      ${infoRow("Técnico Responsável", params.usuarioLogadoNome, true)}
+      ${infoRow("Equipamento", escapeHtml(params.itemNome), true)}
+      ${infoRow("Chamado", escapeHtml(params.chamado || "Não informado"))}
+      ${infoRow("Recebido por", `<strong>${escapeHtml(params.receptorNome)}</strong>`, true)}
+      ${params.receptorCpf ? infoRow("CPF do Receptor", escapeHtml(params.receptorCpf)) : ""}
+      ${infoRow("Técnico Responsável", escapeHtml(params.usuarioLogadoNome), true)}
       ${infoRow("Data / Hora", dataFormatada)}
     </table>
 
@@ -200,7 +209,7 @@ export async function enviarEmailDevolucao(params: {
     <div style="background: #f1f5f9; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 14px 16px; margin-bottom: 20px;">
       <p style="color: #92400e; font-size: 13px; font-weight: bold; margin: 0 0 4px;">⚠️ Recebido por terceiro</p>
       <p style="color: #78350f; font-size: 13px; margin: 0; line-height: 1.6;">
-        O equipamento foi recebido por <strong>${params.receptorNome}</strong>, não pelo requerente original.
+        O equipamento foi recebido por <strong>${escapeHtml(params.receptorNome)}</strong>, não pelo requerente original.
         Se isso não estava previsto, entre em contato com o suporte.
       </p>
     </div>` : ""}

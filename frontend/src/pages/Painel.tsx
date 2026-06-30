@@ -7,11 +7,13 @@ import {
   fetchPendingMovimentacoes,
   fetchOverdueLoans,
   fetchDashboardChartData,
+  fetchMeusItens,
   DashboardStats,
   DashboardMovimentacao,
   DashboardLoanAlert,
   DashboardChartPoint,
 } from "../services/supabaseDashboard";
+import type { Item } from "../services/types";
 import StatusBadge from "../components/DistintivoStatus";
 import {
   Package,
@@ -22,6 +24,7 @@ import {
   User,
   Shield,
   Clock,
+  HardDrive,
 } from "lucide-react";
 
 const TIPO_MOV_LABEL: Record<string, { label: string; color: string }> = {
@@ -54,6 +57,7 @@ const Dashboard: React.FC = () => {
   const [recentMovs, setRecentMovs] = useState<DashboardMovimentacao[]>([]);
   const [overdueLoans, setOverdueLoans] = useState<DashboardLoanAlert[]>([]);
   const [chartData, setChartData] = useState<DashboardChartPoint[]>([]);
+  const [meusItens, setMeusItens] = useState<Item[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
 
   const isSuperiorOrAdmin = hasPermission("SUPERIOR");
@@ -86,6 +90,11 @@ const Dashboard: React.FC = () => {
         setRecentMovs(recentMovsData);
         setOverdueLoans(overdueLoansData);
         setChartData(chartDataResult);
+
+        if (user?.id) {
+          const meus = await fetchMeusItens(user.id);
+          if (mounted) setMeusItens(meus);
+        }
       } catch (err) {
         console.error("Dashboard: falha ao carregar dados", err);
       } finally {
@@ -159,9 +168,30 @@ const Dashboard: React.FC = () => {
 
         <div
           className={`grid grid-cols-1 gap-4 mb-4 ${
-            isSuperiorOrAdmin ? "sm:grid-cols-2" : "sm:grid-cols-1"
+            isSuperiorOrAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2"
           }`}
         >
+          <button
+            type="button"
+            onClick={() => navigate("/inventario")}
+            className="text-left bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10 cursor-pointer hover:shadow-md transition-all"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <HardDrive size={14} className="text-emerald-500" />
+              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                Sob minha custódia
+              </span>
+            </div>
+            <h3 className="text-2xl font-black text-emerald-500">
+              {meusItens.length}
+            </h3>
+            {meusItens.length > 0 && (
+              <p className="text-[9px] text-outline mt-1 truncate">
+                {meusItens.slice(0, 2).map((i) => i.nome).join(", ")}
+                {meusItens.length > 2 ? "..." : ""}
+              </p>
+            )}
+          </button>
           <button
             type="button"
             onClick={() => navigate("/movimentacoes")}

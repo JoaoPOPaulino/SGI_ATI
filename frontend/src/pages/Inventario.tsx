@@ -22,6 +22,7 @@ import {
 } from "../services/supabaseMovimentacoes";
 import { fetchLocais } from "../services/supabaseLocais";
 import { fetchLaudos } from "../services/supabaseLaudos";
+import { fetchUsuarios, SupabaseUsuario } from "../services/supabaseUsuarios";
 import StatusBadge from "../components/DistintivoStatus";
 import { exportToExcel } from "../services/utilidades";
 import {
@@ -105,6 +106,13 @@ const Inventario: React.FC = () => {
 
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
+  const [usuariosAtivos, setUsuariosAtivos] = useState<SupabaseUsuario[]>([]);
+
+  // Responsável pela Custódia no formulário
+  const [formAtribuidoAId, setFormAtribuidoAId] = useState("");
+  const [formAtribuidoANome, setFormAtribuidoANome] = useState("");
+  const [moveAtribuidoAId, setMoveAtribuidoAId] = useState("");
+  const [moveAtribuidoANome, setMoveAtribuidoANome] = useState("");
 
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(10);
@@ -127,9 +135,16 @@ const Inventario: React.FC = () => {
     }
   };
 
+  const [loadError, setLoadError] = useState(false);
+
   const loadItens = async () => {
-    const allItens = await fetchAllItens();
-    setItens(allItens);
+    try {
+      setLoadError(false);
+      const allItens = await fetchAllItens();
+      setItens(allItens);
+    } catch {
+      setLoadError(true);
+    }
   };
 
   const ensureLocaisLoaded = async () => {
@@ -139,15 +154,21 @@ const Inventario: React.FC = () => {
     setLocaisList(allLocais);
   };
 
+  const ensureUsuariosLoaded = async () => {
+    if (usuariosAtivos.length > 0) return;
+    const users = await fetchUsuarios();
+    setUsuariosAtivos(users.filter((u) => u.ativo));
+  };
+
   useEffect(() => {
     loadItens();
   }, []);
 
   useEffect(() => {
-    if (formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO") {
+    if (!editingItem && (formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO")) {
       setFormQuantidade(1);
     }
-  }, [formTipo]);
+  }, [formTipo, editingItem]);
 
   // Permissões
   const canModify = hasPermission("TECNICO"); // Técnico, Superior e Admin
@@ -244,8 +265,13 @@ const Inventario: React.FC = () => {
   const openModal = (item: Item | null = null) => {
     if (isEstagiario) return;
     void ensureLocaisLoaded();
+    void ensureUsuariosLoaded();
     if (item && item.status === "BAIXADO") {
       alert("Nenhuma modificação é permitida num registro BAIXADO.");
+      return;
+    }
+    if (item && (item.status === "EM_MANUTENCAO" || item.status === "AGUARDANDO_BAIXA")) {
+      alert("Itens em manutenção ou aguardando baixa devem ser geridos pelas páginas de Manutenção ou LABIN.");
       return;
     }
     setFormError("");
@@ -266,6 +292,9 @@ const Inventario: React.FC = () => {
       setFormAndar(item.andar || "");
       setFormSetor(item.setor || "");
       setFormSala(item.sala || "");
+
+      setFormAtribuidoAId(item.atribuido_a_id || "");
+      setFormAtribuidoANome(item.atribuido_a_nome || "");
     } else {
       setEditingItem(null);
       setFormNome("");
@@ -283,6 +312,9 @@ const Inventario: React.FC = () => {
       setFormAndar("Térreo");
       setFormSetor("GSM");
       setFormSala("");
+
+      setFormAtribuidoAId("");
+      setFormAtribuidoANome("");
     }
     setIsModalOpen(true);
   };
@@ -317,9 +349,9 @@ const Inventario: React.FC = () => {
           );
           return;
         }
-        if (patDigits.length === 0 && !formSerie.trim()) {
+        if (patDigits.length === 0) {
           setFormError(
-            "Itens patrimoniados exigem o Nº de Patrimônio ou o Número de Série."
+            "Itens patrimoniados exigem o Nº de Patrimônio."
           );
           return;
         }
@@ -374,6 +406,8 @@ const Inventario: React.FC = () => {
             formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO"
               ? 1
               : formQuantidade,
+          atribuido_a_id: formAtribuidoAId || undefined,
+          atribuido_a_nome: formAtribuidoANome || undefined,
         });
 
         if (
@@ -420,6 +454,8 @@ const Inventario: React.FC = () => {
             formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO"
               ? 1
               : formQuantidade,
+          atribuido_a_id: formAtribuidoAId || undefined,
+          atribuido_a_nome: formAtribuidoANome || undefined,
         };
         await createItem(newItem);
 
@@ -478,6 +514,12 @@ const Inventario: React.FC = () => {
       );
       return;
     }
+    if (item.status === "EM_MANUTENCAO" || item.status === "AGUARDANDO_BAIXA") {
+      alert(
+        "Itens em manutenção ou aguardando baixa não podem ser movimentados. Utilize a página de Manutenção.",
+      );
+      return;
+    }
     setActiveQuickMoveItem(item);
     setMoveDestinoPolo(item.polo || "GSM");
     setMoveDestinoAndar("");
@@ -518,6 +560,7 @@ const Inventario: React.FC = () => {
         sala: moveDestinoSala,
         estacao: moveDestinoEstacao,
         updated_at: now,
+        ...(moveAtribuidoAId ? { atribuido_a_id: moveAtribuidoAId, atribuido_a_nome: moveAtribuidoANome } : {}),
       });
 
       await createMovimentacao({
@@ -805,7 +848,19 @@ const Inventario: React.FC = () => {
       </div>
 
       {/* Listagem principal */}
-      {filteredItens.length === 0 ? (
+      {loadError && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-xs text-red-700 font-semibold">
+          <Info size={16} className="shrink-0" />
+          <span>Erro ao carregar itens do inventário. Verifique sua conexão e tente novamente.</span>
+          <button
+            onClick={loadItens}
+            className="ml-auto px-3 py-1.5 bg-red-100 hover:bg-red-200 rounded-lg text-red-700 font-bold"
+          >
+            Tentar novamente
+          </button>
+        </div>
+      )}
+      {!loadError && filteredItens.length === 0 ? (
         <div className="bg-surface-container-lowest rounded-xl p-12 text-center border border-outline-variant/10 shadow-sm">
           <Info className="mx-auto text-outline/50 mb-3" size={36} />
           <h3 className="text-sm font-bold text-on-surface-variant">
@@ -1288,7 +1343,93 @@ const Inventario: React.FC = () => {
                             <span className="text-on-surface font-bold">
                               {m.destino}
                             </span>
-                          </div>
+      {/* Modal de Movimentação Rápida */}
+      {activeQuickMoveItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface-container-lowest w-full max-w-lg rounded-2xl p-8 shadow-2xl border border-outline-variant/10 animate-slide-up">
+            <div className="flex justify-between items-center mb-6">
+              <div>
+                <h2 className="text-lg font-black text-primary">Movimentação Rápida</h2>
+                <p className="text-xs text-outline mt-1 truncate">{activeQuickMoveItem.nome}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveQuickMoveItem(null)}
+                className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveQuickMove} className="space-y-4">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Polo *</label>
+                  <input type="text" value={moveDestinoPolo} onChange={(e) => setMoveDestinoPolo(e.target.value)}
+                    placeholder="Ex: GSM" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Andar</label>
+                  <input type="text" value={moveDestinoAndar} onChange={(e) => setMoveDestinoAndar(e.target.value)}
+                    placeholder="Ex: Térreo" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Setor</label>
+                  <input type="text" value={moveDestinoSetor} onChange={(e) => setMoveDestinoSetor(e.target.value)}
+                    placeholder="Ex: GSM" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Sala</label>
+                  <input type="text" value={moveDestinoSala} onChange={(e) => setMoveDestinoSala(e.target.value)}
+                    placeholder="Ex: Sala 101" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+                <div className="col-span-2">
+                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Estação</label>
+                  <input type="text" value={moveDestinoEstacao} onChange={(e) => setMoveDestinoEstacao(e.target.value)}
+                    placeholder="Ex: Estação 03" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Atribuir a Usuário</label>
+                <select
+                  value={moveAtribuidoAId}
+                  onChange={(e) => {
+                    setMoveAtribuidoAId(e.target.value);
+                    const selected = usuariosAtivos.find((u) => u.id === e.target.value);
+                    setMoveAtribuidoANome(selected?.nome || "");
+                  }}
+                  className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
+                >
+                  <option value="">Manter atual</option>
+                  {usuariosAtivos.map((u) => (
+                    <option key={u.id} value={u.id}>{u.nome}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Observação</label>
+                <input type="text" value={moveObservacao} onChange={(e) => setMoveObservacao(e.target.value)}
+                  placeholder="Motivo da transferência..." className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+              </div>
+
+              {moveError && (
+                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{moveError}</div>
+              )}
+
+              <div className="pt-4 flex justify-end gap-3 border-t border-surface-container-low">
+                <button type="button" onClick={() => setActiveQuickMoveItem(null)}
+                  className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
+                <button type="submit" disabled={isSaving}
+                  className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50">
+                  {isSaving ? "Movendo..." : "Confirmar Transferência"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
                           <span className="text-[9px] text-outline block mt-0.5">
                             Operado por {m.solicitante_nome}
                           </span>
@@ -1628,6 +1769,29 @@ const Inventario: React.FC = () => {
                     </select>
                   )}
                 </div>
+              </div>
+
+              {/* Responsável pela Custódia */}
+              <div>
+                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+                  Responsável pela Custódia
+                </label>
+                <select
+                  value={formAtribuidoAId}
+                  onChange={(e) => {
+                    setFormAtribuidoAId(e.target.value);
+                    const selected = usuariosAtivos.find((u) => u.id === e.target.value);
+                    setFormAtribuidoANome(selected?.nome || "");
+                  }}
+                  className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
+                >
+                  <option value="">Nenhum (sem responsável)</option>
+                  {usuariosAtivos.map((u) => (
+                    <option key={u.id} value={u.id}>
+                      {u.nome} ({u.perfil})
+                    </option>
+                  ))}
+                </select>
               </div>
 
               {formError && (

@@ -104,16 +104,9 @@ export async function deleteUser(userId: string): Promise<boolean> {
     });
 
     if (!error) return true;
+    console.error("Erro ao invocar delete-user:", error);
   } catch (err) {
-    console.warn("Edge Function delete-user indisponivel:", err);
-  }
-
-  try {
-    const { error } = await supabase.from("usuarios").delete().eq("id", userId);
-
-    if (!error) return true;
-  } catch (err) {
-    console.error('Supabase deleteUser error:', err);
+    console.error("Edge Function delete-user indisponivel:", err);
   }
 
   return false;

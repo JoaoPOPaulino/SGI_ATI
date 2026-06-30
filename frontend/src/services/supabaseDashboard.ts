@@ -1,5 +1,5 @@
 import { supabase } from "./supabase";
-import type { Movimentacao, Loan } from "./types";
+import type { Movimentacao, Loan, Item } from "./types";
 
 export interface DashboardStats {
   total: number;
@@ -32,6 +32,27 @@ export type DashboardLoanAlert = Pick<
 export interface DashboardChartPoint {
   label: string;
   value: number;
+}
+
+export async function fetchMeusItens(userId: string): Promise<Item[]> {
+  try {
+    const { data, error } = await supabase
+      .from("itens")
+      .select("id,nome,numero_patrimonio,numero_serie,status,localizacao_atual,categoria")
+      .eq("atribuido_a_id", userId)
+      .neq("status", "BAIXADO")
+      .order("nome", { ascending: true });
+
+    if (error) {
+      console.error("Erro ao buscar itens sob custódia:", error);
+      return [];
+    }
+
+    return (data || []) as Item[];
+  } catch (err) {
+    console.error("Falha ao buscar itens sob custódia:", err);
+    return [];
+  }
 }
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {

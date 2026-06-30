@@ -113,85 +113,38 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     setItens(filteredItens);
 
     const today = new Date();
-    let changed = false;
-
     const expiredEventos = currentEventos.filter(
       (evt) => new Date(evt.data_fim) < today && evt.itens_alocados.length > 0,
     );
-    if (expiredEventos.length > 0 && canModify) {
-      try {
-        for (const evt of expiredEventos) {
-          const rollbackSnapshots: {
-            itemId: string;
-            oldStatus: string;
-            oldLocal: string;
-          }[] = [];
-          for (const itemId of evt.itens_alocados) {
-            const allItens = await fetchAllItens();
-            const it = allItens.find((i) => i.id === itemId);
-            if (it) {
-              rollbackSnapshots.push({
-                itemId: it.id,
-                oldStatus: it.status,
-                oldLocal: it.localizacao_atual,
-              });
-            }
-          }
-          for (const itemId of evt.itens_alocados) {
-            try {
-              await updateItem(itemId, {
-                status: "GUARDADO",
-                localizacao_atual: "Almoxarifado Central (Evento Encerrado)",
-                updated_at: new Date().toISOString(),
-              });
-            } catch {
-              const snap = rollbackSnapshots.find((s) => s.itemId === itemId);
-              if (snap) {
-                await updateItem(itemId, {
-                  status: snap.oldStatus as any,
-                  localizacao_atual: snap.oldLocal,
-                });
-              }
-              throw new Error("Rollback: falha ao atualizar item");
-            }
-          }
-          try {
-            await updateEvento(evt.id, { itens_alocados: [] });
-          } catch {
-            for (const snap of rollbackSnapshots) {
-              await updateItem(snap.itemId, {
-                status: snap.oldStatus as any,
-                localizacao_atual: snap.oldLocal,
-              }).catch(() => { });
-            }
-            throw new Error("Rollback: falha ao atualizar evento");
-          }
+
+    for (const evt of expiredEventos) {
+      for (const itemId of evt.itens_alocados) {
+        const item = allItens.find((i) => i.id === itemId);
+        if (item && item.status === "EM_EVENTO") {
+          await updateItem(itemId, {
+            localizacao_atual: "Almoxarifado Central",
+            status: "GUARDADO",
+            updated_at: new Date().toISOString(),
+          }).catch(() => {});
+          await createMovimentacao({
+            id: crypto.randomUUID(),
+            item_id: itemId,
+            item_nome: item.nome,
+            tipo: "CHECK_IN",
+            origem: `Evento: ${evt.nome}`,
+            destino: "Almoxarifado Central",
+            solicitante_id: "sistema",
+            solicitante_nome: "Sistema (Evento Expirado)",
+            status_aprovacao: "APROVADO",
+            data_movimentacao: new Date().toISOString(),
+            observacao: `Desalocado automaticamente — evento "${evt.nome}" expirou em ${new Date(evt.data_fim).toLocaleDateString("pt-BR")}`,
+          }).catch(() => {});
         }
-      } catch (err) {
-        console.warn("Limpeza de eventos expirados incompleta:", err);
       }
-      changed = true;
+      await updateEvento(evt.id, { itens_alocados: [] }).catch(() => {});
     }
 
-    if (changed) {
-      const [refreshedItens, refreshedEventos] = await Promise.all([
-        fetchAllItens(),
-        fetchEventos(),
-      ]);
-      setItens(
-        refreshedItens.filter(
-          (i) =>
-            i.status === "ATIVO" ||
-            i.status === "GUARDADO" ||
-            i.status === "EMPRESTADO" ||
-            i.status === "EM_EVENTO",
-        ),
-      );
-      setEventos(refreshedEventos);
-    } else {
-      setEventos(currentEventos);
-    }
-
+    setEventos(currentEventos);
     setLoans(currentLoans);
   };
 
@@ -256,20 +209,20 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       setIsSaving(false);
       return;
     }
+    if (new Date(formDataRetorno) <= new Date()) {
+      setFormLoanError("A data de retorno deve ser futura.");
+      setIsSaving(false);
+      return;
+    }
 
     try {
       const allItens = await fetchAllItens();
       const item = allItens.find((i) => i.id === selectedItemId);
       if (!item) {
+        setFormLoanError("Equipamento não encontrado.");
         setIsSaving(false);
         return;
       }
-
-      await updateItem(item.id, {
-        localizacao_atual: `Emprestado para: ${formResponsavel}`,
-        status: "EMPRESTADO",
-        updated_at: new Date().toISOString(),
-      });
 
       const newLoan: Loan = {
         id: crypto.randomUUID(),
@@ -293,6 +246,13 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
         status_aprovacao: "APROVADO",
         data_movimentacao: new Date().toISOString(),
         observacao: `Devolução prevista: ${formDataRetorno}`,
+      });
+
+      await updateItem(item.id, {
+        localizacao_atual: `Emprestado para: ${formResponsavel}`,
+        status: "EMPRESTADO",
+        atribuido_a_nome: formResponsavel,
+        updated_at: new Date().toISOString(),
       });
 
       setSelectedItemId("");
@@ -331,6 +291,11 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     }
     if (!formDataInicio || !formDataFim) {
       setFormEventError("Informe as datas.");
+      setIsSaving(false);
+      return;
+    }
+    if (new Date(formDataFim) < new Date(formDataInicio)) {
+      setFormEventError("A data de fim não pode ser anterior à data de início.");
       setIsSaving(false);
       return;
     }
@@ -399,8 +364,16 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     const evento = eventos.find((e) => e.id === manageEventId);
     if (!evento) return;
 
+    if (new Date(evento.data_fim) < new Date()) {
+      return;
+    }
+
     const item = itens.find((i) => i.id === itemToAddToEvent);
     if (!item) return;
+
+    if (item.status !== "GUARDADO" && item.status !== "ATIVO") {
+      return;
+    }
 
     await updateEvento(manageEventId, {
       itens_alocados: [...evento.itens_alocados, itemToAddToEvent],
@@ -438,8 +411,11 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     await updateEvento(eventoId, {
       itens_alocados: evento.itens_alocados.filter((id) => id !== itemId),
     });
+    const destino = item.localizacao_atual.includes("Evento:")
+      ? "Almoxarifado Central"
+      : item.localizacao_atual;
     await updateItem(itemId, {
-      localizacao_atual: "Almoxarifado Central",
+      localizacao_atual: destino,
       status: "GUARDADO",
       updated_at: new Date().toISOString(),
     });
@@ -449,8 +425,8 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       item_id: item.id,
       item_nome: item.nome,
       tipo: "CHECK_IN",
-      origem: item.localizacao_atual,
-      destino: "Almoxarifado Central",
+      origem: "Evento: " + evento.nome,
+      destino,
       solicitante_id: user?.id || "",
       solicitante_nome: user?.nome || "",
       status_aprovacao: "APROVADO",
@@ -465,6 +441,8 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     e.preventDefault();
     if (!activeReturnLoan) return;
 
+    if (activeReturnLoan.status === "DEVOLVIDO") return;
+
     const allItens = await fetchAllItens();
     const item = allItens.find((i) => i.id === activeReturnLoan.item_id);
     if (!item) return;
@@ -473,8 +451,10 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
 
     await updateItem(item.id, {
       condicao: returnCondicao,
-      status: "GUARDADO",
-      localizacao_atual: "Almoxarifado Central",
+      status: returnCondicao === 'ESTRAGADO' || returnCondicao === 'RUIM' ? 'EM_MANUTENCAO' : 'GUARDADO',
+      localizacao_atual: returnCondicao === 'ESTRAGADO' || returnCondicao === 'RUIM'
+        ? 'Almoxarifado Central (Aguardando Manutenção)'
+        : 'Almoxarifado Central',
       updated_at: new Date().toISOString(),
     });
 

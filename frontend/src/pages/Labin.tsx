@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
-  LaudoTecnico, Item, Movimentacao
+  LaudoTecnico, Item, Movimentacao, CondicaoItem
 } from '../services/types';
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
@@ -27,6 +27,7 @@ const Labin: React.FC = () => {
   const [formAcao, setFormAcao] = useState('');
   const [formPecas, setFormPecas] = useState('');
   const [formStatusServico, setFormStatusServico] = useState<'EM_ANALISE' | 'AGUARDANDO_PECA' | 'EM_REPARO' | 'FINALIZADO'>('EM_ANALISE');
+  const [formCondicaoLaudo, setFormCondicaoLaudo] = useState<CondicaoItem>('REGULAR');
   
   // Estados de Paginação — Laudos
   const [paginaAtual, setPaginaAtual] = useState(1);
@@ -112,69 +113,83 @@ const Labin: React.FC = () => {
       return;
     }
 
-    const allItens = await fetchAllItens();
-    const item = allItens.find(i => i.id === selectedItemId);
-    if (!item) return;
+    try {
+      const allItens = await fetchAllItens();
+      const item = allItens.find(i => i.id === selectedItemId);
+      if (!item) {
+        setFormError('Equipamento não encontrado.');
+        return;
+      }
 
-    const now = new Date().toISOString();
+      const now = new Date().toISOString();
+      let laudoId = editingLaudoId;
 
-    if (editingLaudoId) {
-      await updateLaudo(editingLaudoId, {
-        descricao_problema: formDescricao,
-        acao_realizada: formAcao,
-        pecas_utilizadas: formPecas,
-        status_servico: formStatusServico,
-        created_at: now,
-      });
-    } else {
-      await createLaudo({
-        id: crypto.randomUUID(),
-        item_id: item.id,
-        item_nome: item.nome,
-        tecnico_id: user?.id || 'tecnico-anon',
-        tecnico_nome: user?.nome || 'Técnico Anônimo',
-        descricao_problema: formDescricao,
-        diagnostico: '',
-        acao_realizada: formAcao,
-        pecas_utilizadas: formPecas,
-        status_servico: formStatusServico,
-        created_at: now,
-      });
+      if (editingLaudoId) {
+        await updateLaudo(editingLaudoId, {
+          descricao_problema: formDescricao,
+          acao_realizada: formAcao,
+          pecas_utilizadas: formPecas,
+          status_servico: formStatusServico,
+        });
+      } else {
+        laudoId = crypto.randomUUID();
+        await createLaudo({
+          id: laudoId,
+          item_id: item.id,
+          item_nome: item.nome,
+          tecnico_id: user?.id || 'tecnico-anon',
+          tecnico_nome: user?.nome || 'Técnico Anônimo',
+          descricao_problema: formDescricao,
+          diagnostico: '',
+          acao_realizada: formAcao,
+          pecas_utilizadas: formPecas,
+          status_servico: formStatusServico,
+          created_at: now,
+        });
+      }
+      if (formStatusServico === 'FINALIZADO') {
+        if (item.status !== 'EM_MANUTENCAO') {
+          await loadData();
+          setFormError('O equipamento já não está em manutenção.');
+          return;
+        }
+
+        await updateItem(item.id, {
+          status: 'GUARDADO',
+          condicao: formCondicaoLaudo || 'REGULAR',
+          localizacao_atual: 'LABIN',
+          updated_at: now
+        });
+
+        await createMovimentacao({
+          id: crypto.randomUUID(),
+          item_id: item.id,
+          item_nome: item.nome,
+          tipo: 'CHECK_IN',
+          origem: item.localizacao_atual,
+          destino: 'LABIN',
+          solicitante_id: user?.id || 'usr-anon',
+          solicitante_nome: user?.nome || 'Anônimo',
+          status_aprovacao: 'APROVADO',
+          data_movimentacao: now,
+          observacao: `Retorno pós-reparo concluído no LABIN. Laudo: ${laudoId}`,
+          tipo_documento: 'LAUDO_TECNICO',
+          signature_token: crypto.randomUUID()
+        });
+      }
+
+      setFormDescricao('');
+      setFormAcao('');
+      setFormPecas('');
+      setSelectedItemId('');
+      setFormStatusServico('EM_ANALISE');
+      setEditingLaudoId(null);
+      setFormSuccess(editingLaudoId ? 'Laudo atualizado com sucesso!' : 'Laudo Técnico salvo e registrado com sucesso!');
+      setIsFormOpen(false);
+      await loadData();
+    } catch {
+      setFormError('Erro ao salvar laudo. Verifique a conexão.');
     }
-    if (formStatusServico === 'FINALIZADO') {
-      await updateItem(item.id, {
-        status: 'GUARDADO',
-        condicao: 'REGULAR',
-        localizacao_atual: 'LABIN',
-        updated_at: now
-      });
-
-      await createMovimentacao({
-        id: crypto.randomUUID(),
-        item_id: item.id,
-        item_nome: item.nome,
-        tipo: 'CHECK_IN',
-        origem: item.localizacao_atual,
-        destino: 'LABIN',
-        solicitante_id: user?.id || 'usr-anon',
-        solicitante_nome: user?.nome || 'Anônimo',
-        status_aprovacao: 'APROVADO',
-        data_movimentacao: now,
-        observacao: `Retorno pós-reparo concluído no LABIN. Laudo: ${editingLaudoId || 'novo'}`,
-        tipo_documento: 'LAUDO_TECNICO',
-        signature_token: `sha256-${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`
-      });
-    }
-
-    setFormDescricao('');
-    setFormAcao('');
-    setFormPecas('');
-    setSelectedItemId('');
-    setFormStatusServico('EM_ANALISE');
-    setEditingLaudoId(null);
-    setFormSuccess(editingLaudoId ? 'Laudo atualizado com sucesso!' : 'Laudo Técnico salvo e registrado com sucesso!');
-    setIsFormOpen(false);
-    await loadData();
   };
 
   const handleExportLaudosExcel = () => {
@@ -464,6 +479,21 @@ const Labin: React.FC = () => {
                 </select>
               </div>
 
+              {formStatusServico === 'FINALIZADO' && (
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Condição Pós-Reparo</label>
+                  <select
+                    value={formCondicaoLaudo}
+                    onChange={(e) => setFormCondicaoLaudo(e.target.value as CondicaoItem)}
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                  >
+                    <option value="NOVO">Novo</option>
+                    <option value="REGULAR">Bom / Regular</option>
+                    <option value="RUIM">Ruim</option>
+                  </select>
+                </div>
+              )}
+
               {/* Descrição do Problema */}
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Descrição do Problema</label>
@@ -510,7 +540,7 @@ const Labin: React.FC = () => {
               <div className="pt-4 flex justify-end gap-3 border-t border-surface-container-low">
                 <button
                   type="button"
-                onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); }}
+                onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); setFormCondicaoLaudo('REGULAR'); }}
                   className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs"
                 >
                   Cancelar

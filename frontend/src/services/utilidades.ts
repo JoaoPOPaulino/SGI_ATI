@@ -5,14 +5,22 @@ export function buildLocationString(...fields: (string | undefined)[]): string {
   return fields.filter(Boolean).join(' - ');
 }
 
+function escapeCsvField(value: string): string {
+  const escaped = value.replace(/"/g, '""');
+  if (/^[=+\-@]/.test(escaped)) {
+    return `"'${escaped}"`;
+  }
+  return `"${escaped}"`;
+}
+
 export function exportToCsv(
   headers: string[],
   rows: string[][],
   filename: string,
 ): void {
   const bom = '\uFEFF';
-  const headerLine = headers.join(',');
-  const dataLines = rows.map(row => row.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+  const headerLine = headers.map(h => `"${h}"`).join(',');
+  const dataLines = rows.map(row => row.map(v => escapeCsvField(String(v))).join(','));
   const csv = bom + [headerLine, ...dataLines].join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -103,7 +111,7 @@ export function createMovimentacaoRecord(
 ): Movimentacao {
   return {
     id: crypto.randomUUID(),
-    status_aprovacao: 'APROVADO' as StatusAprovacao,
+    status_aprovacao: 'PENDENTE' as StatusAprovacao,
     data_movimentacao: new Date().toISOString(),
     ...overrides,
   };
@@ -114,16 +122,20 @@ export function getReversedStatus(
 ): string {
   if (itemMovs.length === 0) return 'ATIVO';
 
-  const lastMov = itemMovs[0];
+  const sorted = [...itemMovs].sort((a, b) =>
+    new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime()
+  );
+  const lastMov = sorted[0];
   switch (lastMov.tipo) {
     case 'CHECK_IN':
-      return lastMov.destino.includes('Almoxarifado') ? 'GUARDADO' : 'ATIVO';
-    case 'CHECK_OUT':
       return 'GUARDADO';
+    case 'CHECK_OUT':
+      return 'ATIVO';
     case 'MANUTENCAO':
       return 'EM_MANUTENCAO';
-    case 'TRANSFERENCIA':
     case 'EMPRESTIMO':
+      return 'EMPRESTADO';
+    case 'TRANSFERENCIA':
     case 'VIAGEM':
       return 'ATIVO';
     default:

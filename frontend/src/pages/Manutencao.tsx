@@ -36,7 +36,7 @@ const Manutencao: React.FC = () => {
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
     setActiveItens(allItens.filter(i =>
       i.condicao === 'ESTRAGADO'
-        ? (i.status !== 'BAIXADO' && i.status !== 'AGUARDANDO_BAIXA')
+        ? (i.status !== 'BAIXADO' && i.status !== 'AGUARDANDO_BAIXA' && i.status !== 'EMPRESTADO' && i.status !== 'EM_EVENTO')
         : (i.status === 'ATIVO' || i.status === 'GUARDADO') && i.condicao === 'RUIM'
     ));
     setLoading(false);
@@ -72,15 +72,28 @@ const Manutencao: React.FC = () => {
       const allItens = await fetchAllItens();
       const item = allItens.find(i => i.id === selectedItemId);
       if (!item) return;
-      await updateItem(item.id, { status: 'AGUARDANDO_BAIXA', updated_at: new Date().toISOString() });
-      await createMovimentacao({
-        id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome, tipo: 'BAIXA',
-        origem: item.localizacao_atual, destino: 'Depósito de Sucata / Descarte',
-        solicitante_id: user?.id || 'usr-anon', solicitante_nome: user?.nome || 'Anônimo',
-        status_aprovacao: isSuperiorOrAdmin ? 'APROVADO' : 'PENDENTE',
-        data_movimentacao: new Date().toISOString(),
-        observacao: `Solicitação de baixa. Motivo: ${formMotivoBaixa}`
-      });
+      if (isSuperiorOrAdmin) {
+        await updateItem(item.id, { status: 'BAIXADO', localizacao_atual: 'Baixado / Descartado Definitivamente', updated_at: new Date().toISOString() });
+        await createMovimentacao({
+          id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome, tipo: 'BAIXA',
+          origem: item.localizacao_atual, destino: 'Depósito de Sucata / Descarte',
+          solicitante_id: user?.id || 'usr-anon', solicitante_nome: user?.nome || 'Anônimo',
+          aprovador_id: user?.id, aprovador_nome: user?.nome,
+          status_aprovacao: 'APROVADO',
+          data_movimentacao: new Date().toISOString(),
+          observacao: `Baixa homologada diretamente. Motivo: ${formMotivoBaixa}`
+        });
+      } else {
+        await updateItem(item.id, { status: 'AGUARDANDO_BAIXA', updated_at: new Date().toISOString() });
+        await createMovimentacao({
+          id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome, tipo: 'BAIXA',
+          origem: item.localizacao_atual, destino: 'Depósito de Sucata / Descarte',
+          solicitante_id: user?.id || 'usr-anon', solicitante_nome: user?.nome || 'Anônimo',
+          status_aprovacao: 'PENDENTE',
+          data_movimentacao: new Date().toISOString(),
+          observacao: `Solicitação de baixa. Motivo: ${formMotivoBaixa}`
+        });
+      }
       setSelectedItemId(''); setFormMotivoBaixa('');
       setFormSuccess('Solicitação de baixa enviada para a fila de homologação!');
       await loadData();
@@ -191,7 +204,7 @@ const Manutencao: React.FC = () => {
                       <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide mt-1 inline-block">{item.categoria}</span>
                     </div>
                     {canModify ? (
-                      <button onClick={() => { setRepairTarget(item); setRepairCondicao(item.condicao); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
+                      <button onClick={() => { setRepairTarget(item); setRepairCondicao('REGULAR'); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
                         <Hammer size={12} />Concluir Reparo
                       </button>
                     ) : (
@@ -388,9 +401,9 @@ const Manutencao: React.FC = () => {
             <p className="text-[11px] text-on-surface-variant mb-5">Equipamento: <strong>{repairTarget.nome}</strong>{repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}</p>
             <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1.5`}>Condição Pós-Reparo</label>
             <select value={repairCondicao} onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)} className="w-full px-3 py-2.5 bg-surface border border-outline rounded-lg text-[11px] focus:ring-2 focus:ring-primary mb-5">
-              <option value="REGULAR">Regular</option>
+              <option value="NOVO">Novo</option>
+              <option value="REGULAR">Bom / Regular</option>
               <option value="RUIM">Ruim</option>
-              <option value="ESTRAGADO">Estragado</option>
             </select>
             <p className="text-[10px] text-outline mb-5 bg-surface-container p-2.5 rounded-lg">O item será movido para <strong>Almoxarifado Central</strong> com status <strong>GUARDADO</strong>, pronto para retirada.</p>
             <div className="flex gap-2.5">

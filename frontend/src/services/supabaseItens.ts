@@ -32,7 +32,8 @@ const ITENS_SELECT = `
 `;
 
 export async function fetchItens(page = 1, pageSize = 20): Promise<FetchItensResult> {
-  const from = (page - 1) * pageSize;
+  const safePage = Math.max(1, page);
+  const from = (safePage - 1) * pageSize;
   const to = from + pageSize - 1;
 
   try {
@@ -81,13 +82,16 @@ export async function fetchItemById(id: string): Promise<Item | null> {
   }
 }
 
+const MAX_ITEMS = 5000;
+
 export async function fetchAllItens(): Promise<Item[]> {
   try {
     let allData: Item[] = [];
     let from = 0;
     const pageSize = 1000;
+    const maxPages = Math.ceil(MAX_ITEMS / pageSize);
 
-    while (true) {
+    for (let page = 0; page < maxPages; page++) {
       const { data, error } = await supabase
         .from("itens")
         .select(ITENS_SELECT)
@@ -102,6 +106,7 @@ export async function fetchAllItens(): Promise<Item[]> {
       if (!data || data.length === 0) break;
 
       allData = [...allData, ...(data as Item[])];
+      if (data.length < pageSize) break;
       from += pageSize;
     }
 
@@ -161,6 +166,8 @@ export async function updateItem(
 export async function deleteItem(
   id: string,
 ): Promise<{ success: boolean; error?: string }> {
+  if (!id) return { success: false, error: "ID obrigatório" };
+
   try {
     const { error: e1 } = await supabase.from("movimentacoes").delete().eq("item_id", id);
     if (e1) { console.error("Erro ao excluir movimentacoes:", e1); return { success: false, error: e1.message }; }
