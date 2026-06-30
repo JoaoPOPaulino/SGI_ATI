@@ -31,15 +31,64 @@ const ITENS_SELECT = `
   atribuido_a_nome
 `;
 
-export async function fetchItens(page = 1, pageSize = 20): Promise<FetchItensResult> {
+export interface FetchItensFilters {
+  search?: string;
+  patrimonio?: string;
+  serial?: string;
+  categoria?: string;
+  status?: string;
+  condicao?: string;
+  polo?: string;
+  local?: string;
+}
+
+function applyFiltersToQuery(query: any, filters?: FetchItensFilters) {
+  if (!filters) return query;
+
+  if (filters.status && filters.status !== "TODOS") {
+    query = query.eq("status", filters.status);
+  } else if (!filters.status || filters.status === "TODOS") {
+    // Esconder BAIXADO por padrão na listagem geral
+    query = query.neq("status", "BAIXADO");
+  }
+
+  if (filters.categoria && filters.categoria !== "TODAS") {
+    query = query.eq("categoria", filters.categoria);
+  }
+  if (filters.condicao && filters.condicao !== "TODAS") {
+    query = query.eq("condicao", filters.condicao);
+  }
+  if (filters.polo && filters.polo !== "TODOS") {
+    query = query.eq("polo", filters.polo);
+  }
+  if (filters.patrimonio) {
+    query = query.ilike("numero_patrimonio", `%${filters.patrimonio}%`);
+  }
+  if (filters.serial) {
+    query = query.ilike("numero_serie", `%${filters.serial}%`);
+  }
+  if (filters.local) {
+    query = query.ilike("localizacao_atual", `%${filters.local}%`);
+  }
+  if (filters.search) {
+    query = query.or(`nome.ilike.%${filters.search}%,localizacao_atual.ilike.%${filters.search}%`);
+  }
+  return query;
+}
+
+export async function fetchItens(page = 1, pageSize = 20, filters?: FetchItensFilters): Promise<FetchItensResult> {
   const safePage = Math.max(1, page);
   const from = (safePage - 1) * pageSize;
   const to = from + pageSize - 1;
 
   try {
-    const { data, error, count } = await supabase
+    let query = supabase
       .from("itens")
-      .select(ITENS_SELECT, { count: "exact" })
+      .select(ITENS_SELECT, { count: "exact" });
+      
+    query = applyFiltersToQuery(query, filters);
+
+    const { data, error, count } = await query
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -82,9 +131,37 @@ export async function fetchItemById(id: string): Promise<Item | null> {
   }
 }
 
+export interface InventarioStats {
+  total: number;
+  ativos: number;
+  manutencao: number;
+  baixas: number;
+}
+
+export async function fetchInventarioStats(): Promise<InventarioStats> {
+  try {
+    const [{ count: total }, { count: ativos }, { count: manutencao }, { count: baixas }] = await Promise.all([
+      supabase.from("itens").select("*", { count: "exact", head: true }),
+      supabase.from("itens").select("*", { count: "exact", head: true }).in("status", ["ATIVO", "EMPRESTADO", "EM_EVENTO"]),
+      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "EM_MANUTENCAO"),
+      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "AGUARDANDO_BAIXA")
+    ]);
+    
+    return {
+      total: total || 0,
+      ativos: ativos || 0,
+      manutencao: manutencao || 0,
+      baixas: baixas || 0
+    };
+  } catch (err) {
+    console.error("Erro ao buscar stats do inventário:", err);
+    return { total: 0, ativos: 0, manutencao: 0, baixas: 0 };
+  }
+}
+
 const MAX_ITEMS = 5000;
 
-export async function fetchAllItens(): Promise<Item[]> {
+export async function fetchAllItens(filters?: FetchItensFilters): Promise<Item[]> {
   try {
     let allData: Item[] = [];
     let from = 0;
@@ -92,14 +169,18 @@ export async function fetchAllItens(): Promise<Item[]> {
     const maxPages = Math.ceil(MAX_ITEMS / pageSize);
 
     for (let page = 0; page < maxPages; page++) {
-      const { data, error } = await supabase
+      let query = supabase
         .from("itens")
-        .select(ITENS_SELECT)
+        .select(ITENS_SELECT);
+        
+      query = applyFiltersToQuery(query, filters);
+
+      const { data, error } = await query
         .order("created_at", { ascending: false })
         .range(from, from + pageSize - 1);
 
       if (error) {
-        console.error("Erro ao buscar itens:", error);
+        console.error("Erro ao buscar itens para exportação:", error);
         break;
       }
 
@@ -115,7 +196,7 @@ export async function fetchAllItens(): Promise<Item[]> {
       condicao: item.condicao === 'BOM' ? 'REGULAR' : item.condicao,
     }));
   } catch (err) {
-    console.error("Falha ao buscar itens:", err);
+    console.error("Falha ao buscar itens para exportação:", err);
     return [];
   }
 }

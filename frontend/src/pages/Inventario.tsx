@@ -11,6 +11,8 @@ import {
   LaudoTecnico,
 } from "../services/types";
 import {
+  fetchItens,
+  fetchInventarioStats,
   fetchAllItens,
   createItem,
   updateItem,
@@ -45,7 +47,10 @@ const Inventario: React.FC = () => {
   const { user, hasPermission } = useAuth();
 
   // Estados de Dados
-  const [itens, setItens] = useState<Item[]>([]);
+  const [itensPaginados, setItensPaginados] = useState<Item[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [totalPaginas, setTotalPaginas] = useState(1);
+  const [totalItens, setTotalItens] = useState(0);
   const [search, setSearch] = useState("");
 
   // Filtros Avançados (Issues #5, #6)
@@ -128,10 +133,10 @@ const Inventario: React.FC = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredItens.length) {
+    if (selectedIds.size === itensPaginados.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredItens.map((i) => i.id)));
+      setSelectedIds(new Set(itensPaginados.map((i) => i.id)));
     }
   };
 
@@ -139,11 +144,25 @@ const Inventario: React.FC = () => {
 
   const loadItens = async () => {
     try {
+      setIsLoading(true);
       setLoadError(false);
-      const allItens = await fetchAllItens();
-      setItens(allItens);
+      const { data, count } = await fetchItens(paginaAtual, itensPorPagina, {
+        search,
+        patrimonio: filterPatrimonio,
+        serial: filterSerial,
+        categoria: filterCategoria,
+        status: filterStatus,
+        condicao: filterCondicao,
+        polo: filterPolo,
+        local: filterLocal
+      });
+      setItensPaginados(data);
+      setTotalItens(count);
+      setTotalPaginas(Math.ceil(count / itensPorPagina) || 1);
     } catch {
       setLoadError(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -161,8 +180,22 @@ const Inventario: React.FC = () => {
   };
 
   useEffect(() => {
-    loadItens();
-  }, []);
+    const timer = setTimeout(() => {
+      loadItens();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [
+    paginaAtual,
+    itensPorPagina,
+    search,
+    filterPatrimonio,
+    filterSerial,
+    filterCategoria,
+    filterStatus,
+    filterCondicao,
+    filterPolo,
+    filterLocal,
+  ]);
 
   useEffect(() => {
     if (!editingItem && (formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO")) {
@@ -175,72 +208,15 @@ const Inventario: React.FC = () => {
   const isEstagiario = !canModify;
 
   // Estatísticas Rápidas
-  const stats = useMemo(() => {
-    return {
-      total: itens.length,
-      ativos: itens.filter(
-        (i) =>
-          i.status === "ATIVO" ||
-          i.status === "EMPRESTADO" ||
-          i.status === "EM_EVENTO",
-      ).length,
-      manutencao: itens.filter((i) => i.status === "EM_MANUTENCAO").length,
-      baixas: itens.filter((i) => i.status === "AGUARDANDO_BAIXA").length,
-    };
-  }, [itens]);
+  const [stats, setStats] = useState({ total: 0, ativos: 0, manutencao: 0, baixas: 0 });
 
-  // Filtros de busca estendidos (Issues #5, #6)
-  const filteredItens = useMemo(() => {
-    return itens.filter((item) => {
-      // Ocultação padrão de baixados na listagem geral (Regra de Negócio: Visualização Operacional)
-      if (filterStatus === "TODOS" && item.status === "BAIXADO") {
-        return false;
-      }
+  useEffect(() => {
+    fetchInventarioStats().then(setStats);
+  }, []);
 
-      const matchesSearch =
-        item.nome.toLowerCase().includes(search.toLowerCase()) ||
-        item.localizacao_atual.toLowerCase().includes(search.toLowerCase());
-
-      const matchesPatrimonio =
-        !filterPatrimonio ||
-        (item.numero_patrimonio &&
-          item.numero_patrimonio
-            .toLowerCase()
-            .includes(filterPatrimonio.toLowerCase()));
-
-      const matchesSerial =
-        !filterSerial ||
-        (item.numero_serie &&
-          item.numero_serie.toLowerCase().includes(filterSerial.toLowerCase()));
-
-      const matchesCategoria =
-        filterCategoria === "TODAS" ||
-        item.categoria.toLowerCase() === filterCategoria.toLowerCase();
-      const matchesStatus =
-        filterStatus === "TODOS" || item.status === filterStatus;
-      const matchesCondicao =
-        filterCondicao === "TODAS" || item.condicao === filterCondicao;
-      const matchesPolo = filterPolo === "TODOS" || item.polo === filterPolo;
-
-      const matchesLocal =
-        !filterLocal ||
-        item.localizacao_atual
-          .toLowerCase()
-          .includes(filterLocal.toLowerCase());
-
-      return (
-        matchesSearch &&
-        matchesPatrimonio &&
-        matchesSerial &&
-        matchesCategoria &&
-        matchesStatus &&
-        matchesCondicao &&
-        matchesPolo &&
-        matchesLocal
-      );
-    });
+  useEffect(() => {
+    setPaginaAtual(1);
   }, [
-    itens,
     search,
     filterPatrimonio,
     filterSerial,
@@ -250,16 +226,6 @@ const Inventario: React.FC = () => {
     filterPolo,
     filterLocal,
   ]);
-
-  // Cálculo de Paginação
-  const totalPaginas = Math.ceil(filteredItens.length / itensPorPagina);
-  const itensPaginados = filteredItens.slice(
-    (paginaAtual - 1) * itensPorPagina,
-    paginaAtual * itensPorPagina,
-  );
-  useEffect(() => {
-    setPaginaAtual(1);
-  }, [filteredItens.length, search]);
 
   // Abertura do Modal de Cadastro/Edição
   const openModal = (item: Item | null = null) => {
@@ -614,10 +580,25 @@ const Inventario: React.FC = () => {
     }
   };
 
-  const handleExportInventarioCsv = () => {
-    const data = selectedIds.size > 0
-      ? filteredItens.filter((i) => selectedIds.has(i.id))
-      : filteredItens;
+  const handleExportInventarioCsv = async () => {
+    let dataToExport = itensPaginados;
+    if (selectedIds.size > 0) {
+      dataToExport = itensPaginados.filter((i) => selectedIds.has(i.id));
+    } else {
+      setIsLoading(true);
+      dataToExport = await fetchAllItens({
+        search,
+        patrimonio: filterPatrimonio,
+        serial: filterSerial,
+        categoria: filterCategoria,
+        status: filterStatus,
+        condicao: filterCondicao,
+        polo: filterPolo,
+        local: filterLocal
+      });
+      setIsLoading(false);
+    }
+    const data = dataToExport;
     const headers = [
       "ID",
       "Nome",
@@ -797,9 +778,13 @@ const Inventario: React.FC = () => {
               className="w-full bg-surface border border-outline rounded-lg px-2 py-1.5 text-xs text-on-surface"
             />
             <datalist id="filtro-categorias">
-              {[...new Set(itens.map((i) => i.categoria))].map((c) => (
-                <option key={c} value={c} />
-              ))}
+              <option value="NOTEBOOK" />
+              <option value="COMPUTADOR" />
+              <option value="MONITOR" />
+              <option value="IMPRESSORA" />
+              <option value="FERRAMENTA" />
+              <option value="ACESSORIO" />
+              <option value="OUTROS" />
             </datalist>
           </div>
 
@@ -843,7 +828,7 @@ const Inventario: React.FC = () => {
       {/* Modo de Visualização e Informações de Linhas */}
       <div className="flex items-center justify-between">
         <p className="text-xs text-on-surface-variant font-semibold">
-          Exibindo {filteredItens.length} de {itens.length} ativos
+          Exibindo {itensPaginados.length} de {totalItens} ativos
         </p>
       </div>
 
@@ -860,7 +845,14 @@ const Inventario: React.FC = () => {
           </button>
         </div>
       )}
-      {!loadError && filteredItens.length === 0 ? (
+      {isLoading ? (
+        <div className="bg-surface-container-lowest rounded-xl p-12 text-center border border-outline-variant/10 shadow-sm">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-3"></div>
+          <h3 className="text-sm font-bold text-on-surface-variant">
+            Buscando dados no servidor...
+          </h3>
+        </div>
+      ) : !loadError && itensPaginados.length === 0 ? (
         <div className="bg-surface-container-lowest rounded-xl p-12 text-center border border-outline-variant/10 shadow-sm">
           <Info className="mx-auto text-outline/50 mb-3" size={36} />
           <h3 className="text-sm font-bold text-on-surface-variant">
@@ -869,7 +861,7 @@ const Inventario: React.FC = () => {
         </div>
       ) : (
         /* Tabela Premium zebra sem linhas pesadas */
-        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden">
+        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden relative">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
@@ -877,7 +869,7 @@ const Inventario: React.FC = () => {
                   <th scope="col" className="px-3 py-4 w-8">
                     <input
                       type="checkbox"
-                      checked={selectedIds.size > 0 && selectedIds.size === filteredItens.length}
+                      checked={selectedIds.size > 0 && selectedIds.size === itensPaginados.length}
                       onChange={toggleSelectAll}
                       className="w-3.5 h-3.5 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
                     />
@@ -1024,14 +1016,14 @@ const Inventario: React.FC = () => {
         </div>
       )}
 
-      {filteredItens.length > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/20 flex-wrap      gap-2">
+      {totalItens > 0 && (
+        <div className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/20 flex-wrap gap-2">
         
           {/* Info de registros */}
           <span className="text-[10px] font-black text-outline uppercase tracking-wider">
             {(paginaAtual - 1) * itensPorPagina + 1}–
-            {Math.min(paginaAtual * itensPorPagina, filteredItens.length)} de{" "}
-            {filteredItens.length} itens
+            {Math.min(paginaAtual * itensPorPagina, totalItens)} de{" "}
+            {totalItens} itens
           </span>
       
           {/* Controles de navegação */}
