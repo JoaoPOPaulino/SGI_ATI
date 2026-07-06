@@ -14,10 +14,10 @@ console.log("Gerando dados de teste...");
 const U = [
   { id: uid(), nome: "Joao Silva",       email: "joao@ati.com",     cpf: "11111111111", perfil: "ESTAGIARIO", ativo: true,  polo: "GSM" },
   { id: uid(), nome: "Pedro Santos",      email: "pedro@ati.com",    cpf: "22222222222", perfil: "TECNICO",     ativo: true,  polo: "GSM" },
-  { id: uid(), nome: "Maria Oliveira",    email: "maria@ati.com",    cpf: "33333333333", perfil: "SUPERIOR",    ativo: true,  polo: "Laboratorio" },
+  { id: uid(), nome: "Maria Oliveira",    email: "maria@ati.com",    cpf: "33333333333", perfil: "SUPERVISOR",    ativo: true,  polo: "Laboratorio" },
   { id: uid(), nome: "adm00",             email: "admin@ati.com",    cpf: "00000000000", perfil: "ADMIN",       ativo: true,  polo: "GSM" },
   { id: uid(), nome: "Ana Costa",         email: "ana@ati.com",      cpf: "44444444444", perfil: "TECNICO",     ativo: true,  polo: "Laboratorio" },
-  { id: uid(), nome: "Carlos Mendes",     email: "carlos@ati.com",   cpf: "55555555555", perfil: "SUPERIOR",    ativo: true,  polo: "GSM" },
+  { id: uid(), nome: "Carlos Mendes",     email: "carlos@ati.com",   cpf: "55555555555", perfil: "SUPERVISOR",    ativo: true,  polo: "GSM" },
   { id: uid(), nome: "Fernanda Lima",     email: "fernanda@ati.com", cpf: "66666666666", perfil: "ESTAGIARIO", ativo: true,  polo: "Laboratorio" },
   { id: uid(), nome: "Roberto Alves",     email: "roberto@ati.com",  cpf: "77777777777", perfil: "TECNICO",     ativo: false, polo: "GSM" },
 ];
@@ -273,7 +273,7 @@ const solicitacoes = [
 const audit_logs = [
   { id: uid(), admin_id: U[3].id, admin_name: U[3].nome, action: "CREATE_USER", target_user_id: U[4].id, target_user_name: U[4].nome, details: "Criacao de novo usuario TECNICO", timestamp: now() },
   { id: uid(), admin_id: U[3].id, admin_name: U[3].nome, action: "TOGGLE_STATUS", target_user_id: U[7].id, target_user_name: U[7].nome, details: "Usuario desativado", timestamp: now() },
-  { id: uid(), admin_id: U[3].id, admin_name: U[3].nome, action: "CHANGE_PROFILE", target_user_id: U[5].id, target_user_name: U[5].nome, details: "Perfil alterado: TECNICO -> SUPERIOR", timestamp: now() },
+  { id: uid(), admin_id: U[3].id, admin_name: U[3].nome, action: "CHANGE_PROFILE", target_user_id: U[5].id, target_user_name: U[5].nome, details: "Perfil alterado: TECNICO -> SUPERVISOR", timestamp: now() },
   { id: uid(), admin_id: U[3].id, admin_name: U[3].nome, action: "APPROVE_REGISTRATION", target_user_id: "sol-aprovado", target_user_name: "Marcos Vinicius", details: "Cadastro aprovado", timestamp: now() },
   { id: uid(), admin_id: U[3].id, admin_name: U[3].nome, action: "REJECT_REGISTRATION", target_user_id: "sol-rejeitado", target_user_name: "Patricia Souza", details: "Cadastro rejeitado", timestamp: now() },
   { id: uid(), admin_id: U[3].id, admin_name: U[3].nome, action: "CHANGE_POLO", target_user_id: U[6].id, target_user_name: U[6].nome, details: "Polo alterado: GSM -> Laboratorio", timestamp: now() },

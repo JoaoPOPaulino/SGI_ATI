@@ -181,6 +181,6 @@ export const userSchema = z.object({
   cpf: z.string().refine((v) => isValidCpf(v), {
     message: "CPF inválido. Informe 11 dígitos.",
   }),
-  perfil: z.enum(["ESTAGIARIO", "TECNICO", "SUPERIOR", "ADMIN"] as const),
+  perfil: z.enum(["ESTAGIARIO", "TECNICO", "SUPERVISOR", "ADMIN"] as const),
   polo: z.string().optional(),
 });

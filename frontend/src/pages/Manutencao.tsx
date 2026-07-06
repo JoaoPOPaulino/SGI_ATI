@@ -50,7 +50,7 @@ const Manutencao: React.FC = () => {
   useEffect(() => { setPaginaManutencao(1); }, [maintenanceItens.length]);
 
   const canModify = hasPermission('TECNICO');
-  const isSuperiorOrAdmin = hasPermission('SUPERIOR');
+  const isSupervisorOrAdmin = hasPermission('SUPERVISOR');
 
   // Cálculo de Paginação — Manutenção Ativa
   const totalPaginasManut = Math.ceil(maintenanceItens.length / itensPorPaginaManut);
@@ -68,7 +68,7 @@ const Manutencao: React.FC = () => {
       const allItens = await fetchAllItens();
       const item = allItens.find(i => i.id === selectedItemId);
       if (!item) return;
-      if (isSuperiorOrAdmin) {
+      if (isSupervisorOrAdmin) {
         await updateItem(item.id, { status: 'BAIXADO', localizacao_atual: 'Baixado / Descartado Definitivamente', updated_at: new Date().toISOString() });
         await createMovimentacao({
           id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome, tipo: 'BAIXA',
@@ -97,7 +97,7 @@ const Manutencao: React.FC = () => {
   };
 
   const handleRejectDecommission = (item: Item) => {
-    if (!isSuperiorOrAdmin) { toast("error", "Apenas usuários de perfil Superior ou Admin possuem privilégios para rejeitar solicitações de baixa."); return; }
+    if (!isSupervisorOrAdmin) { toast("error", "Apenas usuários de perfil Superior ou Admin possuem privilégios para rejeitar solicitações de baixa."); return; }
     setRejectTarget(item);
     setRejectMotivo('');
   };
@@ -128,7 +128,7 @@ const Manutencao: React.FC = () => {
   };
 
   const handleApproveDecommission = (item: Item) => {
-    if (!isSuperiorOrAdmin) { toast("error", "Apenas usuários de perfil Superior ou Admin possuem privilégios para efetivar a baixa final de ativos."); return; }
+    if (!isSupervisorOrAdmin) { toast("error", "Apenas usuários de perfil Superior ou Admin possuem privilégios para efetivar a baixa final de ativos."); return; }
     setApproveTarget(item);
   };
 
@@ -248,7 +248,7 @@ const Manutencao: React.FC = () => {
                       <span className="text-[9px] font-bold font-mono text-outline block uppercase">Pat: {item.numero_patrimonio || 'S/N: ' + item.numero_serie}</span>
                     </div>
                     <div>
-                      {isSuperiorOrAdmin ? (
+                      {isSupervisorOrAdmin ? (
                         <div className={btnSm}>
                           <button onClick={() => handleRejectDecommission(item)} className={btnSm + ' bg-amber-50 hover:bg-amber-100 border border-amber-300 hover:border-amber-500 text-amber-700'}>
                             <XCircle size={10} />Rejeitar

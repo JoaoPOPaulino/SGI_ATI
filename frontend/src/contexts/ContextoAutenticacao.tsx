@@ -266,7 +266,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const hierarchy: Record<PerfilUsuario, number> = {
       ESTAGIARIO: 1,
       TECNICO: 2,
-      SUPERIOR: 3,
+      SUPERVISOR: 3,
       ADMIN: 4,
     };
 

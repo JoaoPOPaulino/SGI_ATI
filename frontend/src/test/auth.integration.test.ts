@@ -83,14 +83,14 @@ describe('Auth Flow Integration', () => {
   describe('Permissoes', () => {
     it('hierarquia correta de perfis', () => {
       const hierarchy: Record<PerfilUsuario, number> = {
-        ESTAGIARIO: 1, TECNICO: 2, SUPERIOR: 3, ADMIN: 4,
+        ESTAGIARIO: 1, TECNICO: 2, SUPERVISOR: 3, ADMIN: 4,
       };
       const hasPermission = (userPerfil: PerfilUsuario, required: PerfilUsuario) =>
         hierarchy[userPerfil] >= hierarchy[required];
 
       expect(hasPermission('ESTAGIARIO', 'TECNICO')).toBe(false);
       expect(hasPermission('TECNICO', 'TECNICO')).toBe(true);
-      expect(hasPermission('SUPERIOR', 'TECNICO')).toBe(true);
+      expect(hasPermission('SUPERVISOR', 'TECNICO')).toBe(true);
       expect(hasPermission('ADMIN', 'ADMIN')).toBe(true);
     });
   });

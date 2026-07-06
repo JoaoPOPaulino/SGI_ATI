@@ -128,7 +128,7 @@ const Admin: React.FC = () => {
         case "perfil": {
           const hierarchy: Record<PerfilUsuario, number> = {
             ADMIN: 4,
-            SUPERIOR: 3,
+            SUPERVISOR: 3,
             TECNICO: 2,
             ESTAGIARIO: 1,
           };
@@ -664,8 +664,8 @@ const Admin: React.FC = () => {
                 <option value="TECNICO">
                   Técnico (Pode aprovar e dar baixa em manutenções)
                 </option>
-                <option value="SUPERIOR">
-                  Superior (Aprova baixas definitivas)
+                <option value="SUPERVISOR">
+                  Supervisor (Aprova baixas definitivas)
                 </option>
                 <option value="ADMIN">Administrador (Controle Total)</option>
               </select>
@@ -833,7 +833,7 @@ const Admin: React.FC = () => {
                           >
                             <option value="ESTAGIARIO">ESTAGIÁRIO</option>
                             <option value="TECNICO">TÉCNICO</option>
-                            <option value="SUPERIOR">SUPERIOR</option>
+                            <option value="SUPERVISOR">SUPERVISOR</option>
                             <option value="ADMIN">ADMIN</option>
                           </select>
                         </td>

@@ -60,7 +60,7 @@ const Dashboard: React.FC = () => {
   const [meusItens, setMeusItens] = useState<Item[]>([]);
   const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
 
-  const isSuperiorOrAdmin = hasPermission("SUPERIOR");
+  const isSupervisorOrAdmin = hasPermission("SUPERVISOR");
 
   useEffect(() => {
     let mounted = true;
@@ -168,7 +168,7 @@ const Dashboard: React.FC = () => {
 
         <div
           className={`grid grid-cols-1 gap-4 mb-4 ${
-            isSuperiorOrAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2"
+            isSupervisorOrAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2"
           }`}
         >
           <button
@@ -208,7 +208,7 @@ const Dashboard: React.FC = () => {
             </h3>
           </button>
 
-          {isSuperiorOrAdmin && (
+          {isSupervisorOrAdmin && (
             <button
               type="button"
               onClick={() => navigate("/movimentacoes")}
@@ -278,7 +278,7 @@ const Dashboard: React.FC = () => {
           </div>
         )}
 
-        {isSuperiorOrAdmin && meusDados.aprovarPendentes.length > 0 && (
+        {isSupervisorOrAdmin && meusDados.aprovarPendentes.length > 0 && (
           <div>
             <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-2">
               <Shield size={12} />
@@ -362,7 +362,7 @@ const Dashboard: React.FC = () => {
           </button>
         )}
 
-        {isSuperiorOrAdmin && overdueLoans.length > 0 && (
+        {isSupervisorOrAdmin && overdueLoans.length > 0 && (
           <button
             type="button"
             onClick={() => navigate("/emprestimos")}
@@ -395,7 +395,7 @@ const Dashboard: React.FC = () => {
           </button>
         )}
 
-        {isSuperiorOrAdmin && stats.aguardandoBaixa > 0 && (
+        {isSupervisorOrAdmin && stats.aguardandoBaixa > 0 && (
           <button
             type="button"
             onClick={() => navigate("/manutencao")}

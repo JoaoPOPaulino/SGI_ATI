@@ -8,24 +8,24 @@ import type {
 describe('Domain Types Validation', () => {
   describe('PerfilUsuario hierarchy', () => {
     const hierarchy: Record<PerfilUsuario, number> = {
-      ESTAGIARIO: 1, TECNICO: 2, SUPERIOR: 3, ADMIN: 4,
+      ESTAGIARIO: 1, TECNICO: 2, SUPERVISOR: 3, ADMIN: 4,
     };
 
     it('ESTAGIARIO nao pode TECNICO', () => {
       expect(hierarchy['ESTAGIARIO']).toBeLessThan(hierarchy['TECNICO']);
     });
 
-    it('TECNICO nao pode SUPERIOR', () => {
-      expect(hierarchy['TECNICO']).toBeLessThan(hierarchy['SUPERIOR']);
+    it('TECNICO nao pode SUPERVISOR', () => {
+      expect(hierarchy['TECNICO']).toBeLessThan(hierarchy['SUPERVISOR']);
     });
 
-    it('SUPERIOR nao pode ADMIN', () => {
-      expect(hierarchy['SUPERIOR']).toBeLessThan(hierarchy['ADMIN']);
+    it('SUPERVISOR nao pode ADMIN', () => {
+      expect(hierarchy['SUPERVISOR']).toBeLessThan(hierarchy['ADMIN']);
     });
 
     it('ADMIN pode tudo', () => {
       expect(hierarchy['ADMIN']).toBeGreaterThanOrEqual(hierarchy['TECNICO']);
-      expect(hierarchy['ADMIN']).toBeGreaterThanOrEqual(hierarchy['SUPERIOR']);
+      expect(hierarchy['ADMIN']).toBeGreaterThanOrEqual(hierarchy['SUPERVISOR']);
     });
   });
 

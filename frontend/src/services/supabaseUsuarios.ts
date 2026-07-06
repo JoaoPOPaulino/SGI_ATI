@@ -7,7 +7,7 @@ export interface SupabaseUsuario {
   nome: string;
   email: string;
   cpf: string;
-  perfil: "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
+  perfil: "ESTAGIARIO" | "TECNICO" | "SUPERVISOR" | "ADMIN";
   ativo: boolean;
   polo?: string | null;
   foto?: string | null;

@@ -11,7 +11,7 @@ declare const Deno: {
   };
 };
 
-type PerfilUsuario = "ESTAGIARIO" | "TECNICO" | "SUPERIOR" | "ADMIN";
+type PerfilUsuario = "ESTAGIARIO" | "TECNICO" | "SUPERVISOR" | "ADMIN";
 
 const allowedOrigins = [
   "https://sgi-ati.vercel.app",

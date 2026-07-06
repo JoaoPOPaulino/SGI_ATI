@@ -26,7 +26,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey);
 const INITIAL_USUARIOS = [
   { nome: 'João Silva', email: 'joao@ati.com', cpf: '11111111111', perfil: 'ESTAGIARIO', ativo: true, polo: 'GSM', primeiro_acesso: true },
   { nome: 'Pedro Santos', email: 'pedro@ati.com', cpf: '22222222222', perfil: 'TECNICO', ativo: true, polo: 'GSM', primeiro_acesso: true },
-  { nome: 'Maria Oliveira', email: 'maria@ati.com', cpf: '33333333333', perfil: 'SUPERIOR', ativo: true, polo: 'Laboratório', primeiro_acesso: true },
+  { nome: 'Maria Oliveira', email: 'maria@ati.com', cpf: '33333333333', perfil: 'SUPERVISOR', ativo: true, polo: 'Laboratório', primeiro_acesso: true },
   { nome: 'Ricardo Lima', email: 'admin@ati.com', cpf: '00000000000', perfil: 'ADMIN', ativo: true, polo: 'GSM', primeiro_acesso: true }
 ];
 
