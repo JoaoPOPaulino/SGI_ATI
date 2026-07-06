@@ -114,11 +114,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
 
-        if (event === "TOKEN_REFRESHED") {
+        if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
           return;
         }
 
-        if (session?.user && mounted) {
+        if (session?.user && mounted && userRef.current === null) {
           try {
             await loadUserProfile(session.user.id);
           } catch (err) {
