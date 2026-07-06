@@ -11,26 +11,18 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPerfil, requiredPolo }) => {
-  const { user, hasPermission, isLoading } = useAuth();
+  const { user, hasPermission } = useAuth();
   const location = useLocation();
-
-  if (isLoading && !user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (user?.primeiro_acesso && location.pathname !== '/trocar-senha') {
+  if (user.primeiro_acesso && location.pathname !== '/trocar-senha') {
     return <Navigate to="/trocar-senha" replace />;
   }
 
-  if (requiredPerfil && !isLoading && !hasPermission(requiredPerfil)) {
+  if (requiredPerfil && !hasPermission(requiredPerfil)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center animate-fade-in">
         <div className="p-4 bg-error-container/20 border border-error/30 rounded-2xl mb-6 text-error">
@@ -44,7 +36,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPerfi
     );
   }
 
-  if (requiredPolo && !isLoading && user && user.polo !== requiredPolo && user.perfil !== 'ADMIN') {
+  if (requiredPolo && user.polo !== requiredPolo && user.perfil !== 'ADMIN') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center animate-fade-in">
         <div className="p-4 bg-error-container/20 border border-error/30 rounded-2xl mb-6 text-error">

@@ -110,7 +110,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           return;
         }
 
-        if (session?.user && mounted) {
+        if (session?.user && mounted && !user) {
           try {
             await loadUserProfile(session.user.id);
           } catch (err) {
