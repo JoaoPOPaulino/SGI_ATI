@@ -47,6 +47,7 @@ const Layout: React.FC = () => {
         </header>
 
         <main className="grow overflow-y-auto p-4 md:p-8">
+          <div className="fixed bottom-2 right-2 text-[8px] text-outline/30 font-mono select-none pointer-events-none z-50">v7</div>
           <Outlet />
         </main>
       </div>
