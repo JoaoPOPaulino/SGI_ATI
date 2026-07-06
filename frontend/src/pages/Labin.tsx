@@ -9,6 +9,7 @@ import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudo
 import { exportToExcel } from '../services/utilidades';
 import StatusBadge from '../components/DistintivoStatus';
 import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil, Download } from 'lucide-react';
+import Paginacao from '../components/Paginacao';
 
 const Labin: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -319,73 +320,15 @@ const Labin: React.FC = () => {
 
             {/* Paginação */}
             {filteredLaudos.length > 0 && (
-              <div className="flex items-center justify-between px-6 py-3 border-t border-outline-variant/10 flex-wrap gap-2">
-
-                {/* Info de registros */}
-                <span className="text-[10px] font-black text-outline uppercase tracking-wider">
-                  {(paginaAtual - 1) * itensPorPagina + 1}–
-                  {Math.min(paginaAtual * itensPorPagina, filteredLaudos.length)} de {filteredLaudos.length} laudos
-                </span>
-
-                {/* Controles de navegação */}
-                <div className="flex items-center gap-1">
-                  {/* Primeira página */}
-                  <button onClick={() => setPaginaAtual(1)} disabled={paginaAtual === 1}
-                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">«</button>
-
-                  {/* Página anterior */}
-                  <button onClick={() => setPaginaAtual(p => Math.max(p - 1, 1))} disabled={paginaAtual === 1}
-                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
-
-                  {/* Números com reticências */}
-                  {(() => {
-                    const paginas: (number | "...")[] = [];
-                    if (totalPaginas <= 7) {
-                      for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
-                    } else {
-                      paginas.push(1);
-                      if (paginaAtual - 1 > 2) paginas.push("...");
-                      const inicio = Math.max(2, paginaAtual - 1);
-                      const fim = Math.min(totalPaginas - 1, paginaAtual + 1);
-                      for (let i = inicio; i <= fim; i++) paginas.push(i);
-                      if (totalPaginas - paginaAtual > 2) paginas.push("...");
-                      paginas.push(totalPaginas);
-                    }
-                    return paginas.map((item, idx) =>
-                      item === "..." ? (
-                        <span key={`e-${idx}`} className="w-[30px] h-[30px] flex items-center justify-center text-xs font-bold text-outline select-none">…</span>
-                      ) : (
-                        <button key={item} onClick={() => setPaginaAtual(item as number)}
-                          className={`w-[30px] h-[30px] flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${item === paginaAtual ? "bg-[#163f74] border-[#163f74] text-white" : "border-outline text-outline hover:bg-surface-container-high"}`}>
-                          {item}
-                        </button>
-                      )
-                    );
-                  })()}
-
-                  {/* Próxima página */}
-                  <button onClick={() => setPaginaAtual(p => Math.min(p + 1, totalPaginas))} disabled={paginaAtual === totalPaginas}
-                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">›</button>
-
-                  {/* Última página */}
-                  <button onClick={() => setPaginaAtual(totalPaginas)} disabled={paginaAtual === totalPaginas}
-                    className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">»</button>
-                </div>
-
-                {/* Seletor de itens por página */}
-                <div className="flex items-center gap-2">
-                  <select value={itensPorPagina}
-                    onChange={(e) => { setItensPorPagina(Number(e.target.value)); setPaginaAtual(1); }}
-                    className="px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface font-bold cursor-pointer outline-none">
-                    <option value={5}>5</option>
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                  </select>
-                  <span className="text-[10px] font-black text-outline uppercase tracking-wider">Laudos por página</span>
-                </div>
-
-              </div>
+              <Paginacao
+                paginaAtual={paginaAtual}
+                totalPaginas={totalPaginas}
+                totalItens={filteredLaudos.length}
+                itensPorPagina={itensPorPagina}
+                onPaginaChange={setPaginaAtual}
+                onItensPorPaginaChange={setItensPorPagina}
+                rotuloItens="laudos"
+              />
             )}
           </div>
         )}

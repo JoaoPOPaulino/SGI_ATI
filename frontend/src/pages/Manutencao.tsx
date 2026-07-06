@@ -4,6 +4,7 @@ import { Item, StatusItem, Movimentacao, CondicaoItem } from '../services/types'
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchAllMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer, Search, X } from 'lucide-react';
+import Paginacao from '../components/Paginacao';
 import StatusBadge from '../components/DistintivoStatus';
 import { getReversedStatus } from '../services/utilidades';
 
@@ -216,72 +217,15 @@ const Manutencao: React.FC = () => {
 
               {/* Paginação */}
               {maintenanceItens.length > 0 && (
-                <div className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/20 flex-wrap gap-2 mt-auto">
-
-                  {/* Info de registros */}
-                  <span className="text-[10px] font-black text-outline uppercase tracking-wider">
-                    {(paginaManutencao - 1) * itensPorPaginaManut + 1}–
-                    {Math.min(paginaManutencao * itensPorPaginaManut, maintenanceItens.length)} de {maintenanceItens.length} itens
-                  </span>
-
-                  {/* Controles de navegação */}
-                  <div className="flex items-center gap-1">
-                    {/* Primeira página */}
-                    <button onClick={() => setPaginaManutencao(1)} disabled={paginaManutencao === 1}
-                      className="w-[28px] h-[28px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">«</button>
-
-                    {/* Página anterior */}
-                    <button onClick={() => setPaginaManutencao(p => Math.max(p - 1, 1))} disabled={paginaManutencao === 1}
-                      className="w-[28px] h-[28px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">‹</button>
-
-                    {/* Números com reticências */}
-                    {(() => {
-                      const paginas: (number | "...")[] = [];
-                      if (totalPaginasManut <= 7) {
-                        for (let i = 1; i <= totalPaginasManut; i++) paginas.push(i);
-                      } else {
-                        paginas.push(1);
-                        if (paginaManutencao - 1 > 2) paginas.push("...");
-                        const inicio = Math.max(2, paginaManutencao - 1);
-                        const fim = Math.min(totalPaginasManut - 1, paginaManutencao + 1);
-                        for (let i = inicio; i <= fim; i++) paginas.push(i);
-                        if (totalPaginasManut - paginaManutencao > 2) paginas.push("...");
-                        paginas.push(totalPaginasManut);
-                      }
-                      return paginas.map((item, idx) =>
-                        item === "..." ? (
-                          <span key={`e-${idx}`} className="w-[28px] h-[28px] flex items-center justify-center text-xs font-bold text-outline select-none">…</span>
-                        ) : (
-                          <button key={item} onClick={() => setPaginaManutencao(item as number)}
-                            className={`w-[28px] h-[28px] flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${item === paginaManutencao ? "bg-[#163f74] border-[#163f74] text-white" : "border-outline text-outline hover:bg-surface-container-high"}`}>
-                            {item}
-                          </button>
-                        )
-                      );
-                    })()}
-
-                    {/* Próxima página */}
-                    <button onClick={() => setPaginaManutencao(p => Math.min(p + 1, totalPaginasManut))} disabled={paginaManutencao === totalPaginasManut}
-                      className="w-[28px] h-[28px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">›</button>
-
-                    {/* Última página */}
-                    <button onClick={() => setPaginaManutencao(totalPaginasManut)} disabled={paginaManutencao === totalPaginasManut}
-                      className="w-[28px] h-[28px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high transition-colors disabled:opacity-30 disabled:cursor-not-allowed">»</button>
-                  </div>
-
-                  {/* Seletor de itens por página */}
-                  <div className="flex items-center gap-2">
-                    <select value={itensPorPaginaManut}
-                      onChange={(e) => { setItensPorPaginaManut(Number(e.target.value)); setPaginaManutencao(1); }}
-                      className="px-2 py-1 bg-surface border border-outline rounded-lg text-[10px] text-on-surface font-bold cursor-pointer outline-none">
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                    </select>
-                    <span className="text-[10px] font-black text-outline uppercase tracking-wider">iténs por página</span>
-                  </div>
-
-                </div>
+                <Paginacao
+                  paginaAtual={paginaManutencao}
+                  totalPaginas={totalPaginasManut}
+                  totalItens={maintenanceItens.length}
+                  itensPorPagina={itensPorPaginaManut}
+                  onPaginaChange={setPaginaManutencao}
+                  onItensPorPaginaChange={setItensPorPaginaManut}
+                  rotuloItens="iténs"
+                />
               )}
             </div>
           )}

@@ -1,6 +1,8 @@
 import React, { Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/ContextoAutenticacao';
+import { ToastProvider } from './components/SistemaToast';
+import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/RotaProtegida';
 import Layout from './components/Layout';
 
@@ -27,10 +29,12 @@ const PageLoader = () => (
 
 const App: React.FC = () => {
   return (
-    <AuthProvider>
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
+    <ErrorBoundary>
+      <ToastProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/trocar-senha" element={<ChangePassword />} />
 
@@ -84,7 +88,9 @@ const App: React.FC = () => {
           </Routes>
         </Suspense>
       </BrowserRouter>
-    </AuthProvider>
+        </AuthProvider>
+      </ToastProvider>
+    </ErrorBoundary>
   );
 };
 

@@ -98,10 +98,7 @@ export async function fetchItens(page = 1, pageSize = 20, filters?: FetchItensFi
     }
 
     return {
-      data: (data || []).map((item: any) => ({
-        ...item,
-        condicao: item.condicao === 'BOM' ? 'REGULAR' : item.condicao,
-      })) as Item[], count: count || 0
+      data: (data || []) as Item[], count: count || 0
     };
   } catch (err) {
     console.error("Falha ao buscar itens:", err);
@@ -122,9 +119,7 @@ export async function fetchItemById(id: string): Promise<Item | null> {
       return null;
     }
 
-    const item = data as Item | null;
-    if (item && item.condicao === 'BOM') item.condicao = 'REGULAR';
-    return item;
+    return data as Item | null;
   } catch (err) {
     console.error("Falha ao buscar item:", err);
     return null;
@@ -140,19 +135,24 @@ export interface InventarioStats {
 
 export async function fetchInventarioStats(): Promise<InventarioStats> {
   try {
-    const [{ count: total }, { count: ativos }, { count: manutencao }, { count: baixas }] = await Promise.all([
-      supabase.from("itens").select("*", { count: "exact", head: true }),
-      supabase.from("itens").select("*", { count: "exact", head: true }).in("status", ["ATIVO", "EMPRESTADO", "EM_EVENTO"]),
-      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "EM_MANUTENCAO"),
-      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "AGUARDANDO_BAIXA")
-    ]);
-    
-    return {
-      total: total || 0,
-      ativos: ativos || 0,
-      manutencao: manutencao || 0,
-      baixas: baixas || 0
-    };
+    const { data, error } = await supabase
+      .from("itens")
+      .select("status");
+
+    if (error) {
+      console.error("Erro ao buscar stats do inventário:", error);
+      return { total: 0, ativos: 0, manutencao: 0, baixas: 0 };
+    }
+
+    const itens = data || [];
+    const total = itens.length;
+    const ativos = itens.filter((i) =>
+      i.status === "ATIVO" || i.status === "EMPRESTADO" || i.status === "EM_EVENTO"
+    ).length;
+    const manutencao = itens.filter((i) => i.status === "EM_MANUTENCAO").length;
+    const baixas = itens.filter((i) => i.status === "AGUARDANDO_BAIXA").length;
+
+    return { total, ativos, manutencao, baixas };
   } catch (err) {
     console.error("Erro ao buscar stats do inventário:", err);
     return { total: 0, ativos: 0, manutencao: 0, baixas: 0 };
@@ -191,10 +191,7 @@ export async function fetchAllItens(filters?: FetchItensFilters): Promise<Item[]
       from += pageSize;
     }
 
-    return allData.map((item) => ({
-      ...item,
-      condicao: item.condicao === 'BOM' ? 'REGULAR' : item.condicao,
-    }));
+    return allData as Item[];
   } catch (err) {
     console.error("Falha ao buscar itens para exportação:", err);
     return [];

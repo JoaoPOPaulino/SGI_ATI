@@ -26,6 +26,7 @@ import {
   X,
 } from "lucide-react";
 import { exportToExcel } from "../services/utilidades";
+import Paginacao from "../components/Paginacao";
 import {
   fetchAssinaturasGuia,
   createAssinaturaGuia,
@@ -286,7 +287,7 @@ const Movimentacoes: React.FC = () => {
         (m.item_numero_serie || "").toLowerCase().includes(query)
       );
     });
-    return result.sort(
+    return [...result].sort(
       (a, b) =>
         new Date(b.data_movimentacao).getTime() -
         new Date(a.data_movimentacao).getTime(),
@@ -325,17 +326,16 @@ const Movimentacoes: React.FC = () => {
   const selectedHistory = useMemo(() => {
     if (!selectedMov) return [];
     const chamadoSelecionado = normalizeChamado(selectedMov.chamado);
-    return movs
-      .filter((m) => {
-        if (m.item_id !== selectedMov.item_id) return false;
-        if (!chamadoSelecionado) return m.id === selectedMov.id;
-        return sameChamado(m.chamado, selectedMov.chamado);
-      })
-      .sort(
-        (a, b) =>
-          new Date(b.data_movimentacao).getTime() -
-          new Date(a.data_movimentacao).getTime(),
-      );
+    const filtered = movs.filter((m) => {
+      if (m.item_id !== selectedMov.item_id) return false;
+      if (!chamadoSelecionado) return m.id === selectedMov.id;
+      return sameChamado(m.chamado, selectedMov.chamado);
+    });
+    return [...filtered].sort(
+      (a, b) =>
+        new Date(b.data_movimentacao).getTime() -
+        new Date(a.data_movimentacao).getTime(),
+    );
   }, [movs, selectedMov]);
 
   const getItemSnapshot = (mov: Movimentacao) => {
@@ -708,75 +708,6 @@ const Movimentacoes: React.FC = () => {
       </div>
     </div>
   );
-
-  const renderPaginacao = () => {
-    if (filteredMovs.length === 0) return null;
-
-    const paginas: (number | "...")[] = [];
-    if (totalPaginas <= 7) {
-      for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
-    } else {
-      paginas.push(1);
-      if (paginaAtual - 1 > 2) paginas.push("...");
-      const inicio = Math.max(2, paginaAtual - 1);
-      const fim = Math.min(totalPaginas - 1, paginaAtual + 1);
-      for (let i = inicio; i <= fim; i++) paginas.push(i);
-      if (totalPaginas - paginaAtual > 2) paginas.push("...");
-      paginas.push(totalPaginas);
-    }
-
-    return (
-      <div className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/20 flex-wrap gap-2">
-
-        <span className="text-[10px] font-black text-outline uppercase tracking-wider">
-          {(paginaAtual - 1) * itensPorPagina + 1}–
-          {Math.min(paginaAtual * itensPorPagina, filteredMovs.length)} de {filteredMovs.length} guias
-        </span>
-
-        <div className="flex items-center gap-1">
-          <button onClick={() => setPaginaAtual(1)} disabled={paginaAtual === 1}
-            className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Primeira página">&laquo;</button>
-
-          <button onClick={() => setPaginaAtual((p) => Math.max(p - 1, 1))} disabled={paginaAtual === 1}
-            className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Página anterior">&lsaquo;</button>
-
-          {paginas.map((item, idx) =>
-            item === "..." ? (
-              <span key={`ellipsis-${idx}`} className="w-[30px] h-[30px] flex items-center justify-center text-xs font-bold text-outline select-none">&hellip;</span>
-            ) : (
-              <button key={item} onClick={() => setPaginaAtual(item as number)}
-                className={`w-[30px] h-[30px] flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${item === paginaAtual ? "bg-[#163f74] border-[#163f74] text-white" : "border-outline text-outline hover:bg-surface-container-high hover:text-on-surface"}`}>
-                {item}
-              </button>
-            )
-          )}
-
-          <button onClick={() => setPaginaAtual((p) => Math.min(p + 1, totalPaginas))} disabled={paginaAtual === totalPaginas}
-            className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Próxima página">&rsaquo;</button>
-
-          <button onClick={() => setPaginaAtual(totalPaginas)} disabled={paginaAtual === totalPaginas}
-            className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-            title="Última página">&raquo;</button>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <select value={itensPorPagina}
-            onChange={(e) => { setItensPorPagina(Number(e.target.value)); setPaginaAtual(1); }}
-            className="px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface font-bold cursor-pointer outline-none">
-            <option value={5}>5</option>
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={50}>50</option>
-          </select>
-          <span className="text-[10px] font-black text-outline uppercase tracking-wider">Guias por página</span>
-        </div>
-
-      </div>
-    );
-  };
 
   const renderSigningFields = () => {
     const mostraEmail = signingTipo === "RESPONSAVEL_COLETA" || signingTipo === "REQUERENTE_DEVOLUCAO";
@@ -1152,7 +1083,15 @@ const Movimentacoes: React.FC = () => {
                   })
                 )}
                 {/* Paginação */}
-                {renderPaginacao()}
+                <Paginacao
+                  paginaAtual={paginaAtual}
+                  totalPaginas={totalPaginas}
+                  totalItens={filteredMovs.length}
+                  itensPorPagina={itensPorPagina}
+                  onPaginaChange={setPaginaAtual}
+                  onItensPorPaginaChange={setItensPorPagina}
+                  rotuloItens="guias"
+                />
               </div>
 
               {/* Painel de detalhe */}

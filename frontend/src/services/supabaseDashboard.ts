@@ -57,51 +57,51 @@ export async function fetchMeusItens(userId: string): Promise<Item[]> {
 
 export async function fetchDashboardStats(): Promise<DashboardStats> {
   try {
-    const [
-      { count: total },
-      { count: estragados },
-      { count: manutencao },
-      { count: emprestados },
-      { count: emEvento },
-      { count: aguardandoBaixa },
-      { count: disponiveis },
-      { count: prontosRetirada },
-    ] = await Promise.all([
-      supabase.from("itens").select("*", { count: "exact", head: true }),
-      supabase.from("itens").select("*", { count: "exact", head: true }).eq("condicao", "ESTRAGADO"),
-      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "EM_MANUTENCAO"),
-      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "EMPRESTADO"),
-      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "EM_EVENTO"),
-      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "AGUARDANDO_BAIXA"),
-      supabase.from("itens").select("*", { count: "exact", head: true }).in("status", ["ATIVO", "GUARDADO"]),
-      supabase.from("itens").select("*", { count: "exact", head: true }).eq("status", "GUARDADO"),
-    ]);
+    const { data, error } = await supabase
+      .from("itens")
+      .select("status, condicao");
+
+    if (error) {
+      console.error("Erro ao buscar estatísticas do painel:", error);
+      return INITIAL_STATS_FALLBACK;
+    }
+
+    const itens = data || [];
+    const total = itens.length;
+    const estragados = itens.filter((i) => i.condicao === "ESTRAGADO").length;
+    const manutencao = itens.filter((i) => i.status === "EM_MANUTENCAO").length;
+    const emprestados = itens.filter((i) => i.status === "EMPRESTADO").length;
+    const emEvento = itens.filter((i) => i.status === "EM_EVENTO").length;
+    const aguardandoBaixa = itens.filter((i) => i.status === "AGUARDANDO_BAIXA").length;
+    const disponiveis = itens.filter((i) => i.status === "ATIVO" || i.status === "GUARDADO").length;
+    const prontosRetirada = itens.filter((i) => i.status === "GUARDADO").length;
 
     return {
-      total: total || 0,
-      estragados: estragados || 0,
-      manutencao: manutencao || 0,
-      emprestados: emprestados || 0,
-      emEvento: emEvento || 0,
-      disponiveis: disponiveis || 0,
-      aguardandoBaixa: aguardandoBaixa || 0,
-      prontosRetirada: prontosRetirada || 0,
+      total,
+      estragados,
+      manutencao,
+      emprestados,
+      emEvento,
+      disponiveis,
+      aguardandoBaixa,
+      prontosRetirada,
     };
   } catch (err) {
     console.error("Falha ao buscar estatísticas do painel:", err);
-
-    return {
-      total: 0,
-      estragados: 0,
-      manutencao: 0,
-      emprestados: 0,
-      emEvento: 0,
-      disponiveis: 0,
-      aguardandoBaixa: 0,
-      prontosRetirada: 0,
-    };
+    return INITIAL_STATS_FALLBACK;
   }
 }
+
+const INITIAL_STATS_FALLBACK: DashboardStats = {
+  total: 0,
+  estragados: 0,
+  manutencao: 0,
+  emprestados: 0,
+  emEvento: 0,
+  disponiveis: 0,
+  aguardandoBaixa: 0,
+  prontosRetirada: 0,
+};
 
 export async function fetchPendingMovimentacoes(
   limit = 20,

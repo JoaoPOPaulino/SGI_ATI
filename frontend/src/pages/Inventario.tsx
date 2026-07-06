@@ -26,6 +26,7 @@ import { fetchLocais } from "../services/supabaseLocais";
 import { fetchLaudos } from "../services/supabaseLaudos";
 import { fetchUsuarios, SupabaseUsuario } from "../services/supabaseUsuarios";
 import StatusBadge from "../components/DistintivoStatus";
+import Paginacao from "../components/Paginacao";
 import { exportToExcel } from "../services/utilidades";
 import {
   Search,
@@ -1017,129 +1018,14 @@ const Inventario: React.FC = () => {
       )}
 
       {totalItens > 0 && (
-        <div className="flex items-center justify-between px-4 py-2.5 bg-surface-container-low rounded-xl border border-outline-variant/20 flex-wrap gap-2">
-        
-          {/* Info de registros */}
-          <span className="text-[10px] font-black text-outline uppercase tracking-wider">
-            {(paginaAtual - 1) * itensPorPagina + 1}–
-            {Math.min(paginaAtual * itensPorPagina, totalItens)} de{" "}
-            {totalItens} itens
-          </span>
-      
-          {/* Controles de navegação */}
-          <div className="flex items-center gap-1">
-            {/* Primeira página */}
-            <button
-              onClick={() => setPaginaAtual(1)}
-              disabled={paginaAtual === 1}
-              className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline       hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Primeira página"
-            >
-              «
-            </button>
-      
-            {/* Página anterior */}
-            <button
-              onClick={() => setPaginaAtual((p) => Math.max(p - 1, 1))}
-              disabled={paginaAtual === 1}
-              className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline       hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Página anterior"
-            >
-              ‹
-            </button>
-      
-            {/* Números de página com reticências */}
-            {(() => {
-              const paginas: (number | "...")[] = [];
-            
-              if (totalPaginas <= 7) {
-                // Poucas páginas: exibe todas sem reticências
-                for (let i = 1; i <= totalPaginas; i++) paginas.push(i);
-              } else {
-                // Sempre mostra a primeira página
-                paginas.push(1);
-              
-                // Reticências à esquerda: só aparece se a janela não encosta na primeira
-                if (paginaAtual - 1 > 2) paginas.push("...");
-              
-                // Janela central: página anterior, atual e próxima (sem ultrapassar os limites)
-                const inicio = Math.max(2, paginaAtual - 1);
-                const fim = Math.min(totalPaginas - 1, paginaAtual + 1);
-                for (let i = inicio; i <= fim; i++) paginas.push(i);
-              
-                // Reticências à direita: só aparece se a janela não encosta na última
-                if (totalPaginas - paginaAtual > 2) paginas.push("...");
-              
-                // Sempre mostra a última página
-                paginas.push(totalPaginas);
-              }
-            
-              return paginas.map((item, idx) =>
-                item === "..." ? (
-                  <span
-                    key={`ellipsis-${idx}`}
-                    className="w-[30px] h-[30px] flex items-center justify-center text-xs font-bold text-outline select-none"
-                  >
-                    …
-                  </span>
-                ) : (
-                  <button
-                    key={item}
-                    onClick={() => setPaginaAtual(item as number)}
-                    className={`w-[30px] h-[30px] flex items-center justify-center border rounded-lg text-xs font-bold transition-colors ${
-                      item === paginaAtual
-                        ? "bg-[#163f74] border-[#163f74] text-white"
-                        : "border-outline text-outline hover:bg-surface-container-high hover:text-on-surface"
-                    }`}
-                  >
-                    {item}
-                  </button>
-                ),
-              );
-            })()}
-
-            {/* Próxima página */}
-            <button
-              onClick={() => setPaginaAtual((p) => Math.min(p + 1, totalPaginas))}
-              disabled={paginaAtual === totalPaginas}
-              className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline       hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Próxima página"
-            >
-              ›
-            </button>
-          
-            {/* Última página */}
-            <button
-              onClick={() => setPaginaAtual(totalPaginas)}
-              disabled={paginaAtual === totalPaginas}
-              className="w-[30px] h-[30px] flex items-center justify-center border border-outline rounded-lg text-xs font-bold text-outline       hover:bg-surface-container-high hover:text-on-surface transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
-              title="Última página"
-            >
-              »
-            </button>
-          </div>
-          
-          {/* Seletor de itens por página */}
-          <div className="flex items-center gap-2">
-            <select
-              value={itensPorPagina}
-              onChange={(e) => {
-                setItensPorPagina(Number(e.target.value));
-                setPaginaAtual(1);
-              }}
-              className="px-3 py-1.5 bg-surface border border-outline rounded-lg text-xs text-on-surface font-bold cursor-pointer outline-none"
-            >
-              <option value={5}>5</option>
-              <option value={10}>10</option>
-              <option value={20}>20</option>
-              <option value={50}>50</option>
-            </select>
-            <span className="text-[10px] font-black text-outline uppercase tracking-wider">
-              Itens por página
-            </span>
-          </div>
-            
-        </div>
+        <Paginacao
+          paginaAtual={paginaAtual}
+          totalPaginas={totalPaginas}
+          totalItens={totalItens}
+          itensPorPagina={itensPorPagina}
+          onPaginaChange={setPaginaAtual}
+          onItensPorPaginaChange={setItensPorPagina}
+        />
       )}
 
       {/* Modal de Detalhes Completo em Abas (Issue #7) */}
