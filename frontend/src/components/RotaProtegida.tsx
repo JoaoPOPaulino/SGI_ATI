@@ -14,7 +14,15 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPerfi
   const { user, hasPermission, isLoading } = useAuth();
   const location = useLocation();
 
-  if (!isLoading && !user) {
+  if (isLoading && !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
