@@ -110,7 +110,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (event === "INITIAL_SESSION") return;
 
         if (event === "SIGNED_OUT") {
-          setUser(null);
+          if (userRef.current) {
+            console.warn("SIGNED_OUT ignorado — usuário estava logado. Faça logout manual.");
+          }
           return;
         }
 
