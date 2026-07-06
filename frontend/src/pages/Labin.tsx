@@ -4,7 +4,7 @@ import {
   LaudoTecnico, Item, Movimentacao, CondicaoItem
 } from '../services/types';
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
-import { fetchMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
+import { fetchAllMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudos';
 import { exportToExcel } from '../services/utilidades';
 import StatusBadge from '../components/DistintivoStatus';

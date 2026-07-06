@@ -6,14 +6,27 @@ export interface FetchMovimentacoesResult {
   count: number;
 }
 
-export async function fetchMovimentacoes(page = 1, pageSize = 20): Promise<FetchMovimentacoesResult> {
+export async function fetchMovimentacoesComBusca(
+  page = 1,
+  pageSize = 10,
+  search?: string,
+): Promise<FetchMovimentacoesResult> {
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 
   try {
-    const { data, error, count } = await supabase
+    let query = supabase
       .from('movimentacoes')
-      .select('*', { count: 'exact' })
+      .select('*', { count: 'exact' });
+
+    if (search) {
+      const term = `%${search}%`;
+      query = query.or(
+        `item_nome.ilike.${term},chamado.ilike.${term},item_patrimonio.ilike.${term},item_numero_serie.ilike.${term},destino.ilike.${term},origem.ilike.${term},solicitante_nome.ilike.${term}`
+      );
+    }
+
+    const { data, error, count } = await query
       .order('data_movimentacao', { ascending: false })
       .range(from, to);
 

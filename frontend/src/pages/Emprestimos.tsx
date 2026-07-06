@@ -7,9 +7,8 @@ import {
   Loan,
   Movimentacao,
 } from "../services/types";
-import { fetchAllItens, updateItem } from "../services/supabaseItens";
+import { fetchItens, updateItem, fetchAllItens } from "../services/supabaseItens";
 import {
-  fetchMovimentacoes,
   createMovimentacao,
 } from "../services/supabaseMovimentacoes";
 import {
@@ -199,8 +198,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     }
 
     try {
-      const allItens = await fetchAllItens();
-      const item = allItens.find((i) => i.id === selectedItemId);
+      const item = itens.find((i) => i.id === selectedItemId);
       if (!item) {
         setFormLoanError("Equipamento não encontrado.");
         setIsSaving(false);
@@ -291,7 +289,6 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       await createEvento(newEvent);
 
       if (formItensSelecionados.length > 0) {
-        const allItens = await fetchAllItens();
         for (const itemId of formItensSelecionados) {
           await updateItem(itemId, {
             localizacao_atual: `Evento: ${formNomeEvento} (${formLocalEvento})`,
@@ -300,7 +297,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
           });
         }
         for (const itemId of formItensSelecionados) {
-          const it = allItens.find((i) => i.id === itemId);
+          const it = itens.find((i) => i.id === itemId);
           if (it) {
             await createMovimentacao({
               id: crypto.randomUUID(),
@@ -421,8 +418,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
 
     if (activeReturnLoan.status === "DEVOLVIDO") return;
 
-    const allItens = await fetchAllItens();
-    const item = allItens.find((i) => i.id === activeReturnLoan.item_id);
+    const item = itens.find((i) => i.id === activeReturnLoan.item_id);
     if (!item) return;
 
     const localAnterior = item.localizacao_atual;

@@ -11,7 +11,7 @@ import type {
 import { fetchAllItens, updateItem } from "../services/supabaseItens";
 import {
   createMovimentacao,
-  fetchAllMovimentacoes,
+  fetchMovimentacoesComBusca,
   updateMovimentacao,
 } from "../services/supabaseMovimentacoes";
 import {
@@ -199,7 +199,9 @@ const Movimentacoes: React.FC = () => {
   const [abaAtiva, setAbaAtiva] = useState<"emitir" | "consultar">("emitir");
 
   const [movs, setMovs] = useState<Movimentacao[]>([]);
+  const [totalMovs, setTotalMovs] = useState(0);
   const [itens, setItens] = useState<Item[]>([]);
+  const [isLoadingMovs, setIsLoadingMovs] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedMovId, setSelectedMovId] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -216,10 +218,10 @@ const Movimentacoes: React.FC = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === filteredMovs.length) {
+    if (selectedIds.size === movs.length) {
       setSelectedIds(new Set());
     } else {
-      setSelectedIds(new Set(filteredMovs.map((m) => m.id)));
+      setSelectedIds(new Set(movs.map((m) => m.id)));
     }
   };
 
@@ -261,17 +263,25 @@ const Movimentacoes: React.FC = () => {
 
   const isTecnicoOrHigher = hasPermission("TECNICO");
 
-  const loadData = async () => {
-    const [allMovs, allItens] = await Promise.all([
-      fetchAllMovimentacoes(),
-      fetchAllItens(),
-    ]);
-    setMovs(allMovs);
+  const loadMovimentacoes = async () => {
+    setIsLoadingMovs(true);
+    const { data, count } = await fetchMovimentacoesComBusca(paginaAtual, itensPorPagina, searchQuery || undefined);
+    setMovs(data);
+    setTotalMovs(count);
+    setIsLoadingMovs(false);
+  };
+
+  const loadItens = async () => {
+    const allItens = await fetchAllItens();
     setItens(allItens.filter((i) => i.status === "ATIVO" || i.status === "GUARDADO"));
   };
 
   useEffect(() => {
-    loadData();
+    loadMovimentacoes();
+  }, [paginaAtual, itensPorPagina, searchQuery]);
+
+  useEffect(() => {
+    loadItens();
   }, []);
 
   useEffect(() => {
@@ -298,36 +308,11 @@ const Movimentacoes: React.FC = () => {
     return itens.find((item) => item.id === selectedItemId) || null;
   }, [itens, selectedItemId]);
 
-  const filteredMovs = useMemo(() => {
-    const query = searchQuery.toLowerCase().trim();
-    const result = movs.filter((m) => {
-      if (!query) return true;
-      return (
-        m.item_nome.toLowerCase().includes(query) ||
-        m.destino.toLowerCase().includes(query) ||
-        m.origem.toLowerCase().includes(query) ||
-        m.solicitante_nome.toLowerCase().includes(query) ||
-        (m.chamado || "").toLowerCase().includes(query) ||
-        (m.item_patrimonio || "").toLowerCase().includes(query) ||
-        (m.item_numero_serie || "").toLowerCase().includes(query)
-      );
-    });
-    return [...result].sort(
-      (a, b) =>
-        new Date(b.data_movimentacao).getTime() -
-        new Date(a.data_movimentacao).getTime(),
-    );
-  }, [movs, searchQuery]);
-
-  const totalPaginas = Math.ceil(filteredMovs.length / itensPorPagina);
-  const movsPaginados = filteredMovs.slice(
-    (paginaAtual - 1) * itensPorPagina,
-    paginaAtual * itensPorPagina,
-  );
+  const totalPaginas = Math.ceil(totalMovs / itensPorPagina) || 1;
 
   useEffect(() => {
     setPaginaAtual(1);
-  }, [filteredMovs.length, searchQuery]);
+  }, [searchQuery]);
 
   const normalizeChamado = (value?: string | null) => {
     const normalized = (value || "").trim().toLowerCase();
@@ -338,24 +323,35 @@ const Movimentacoes: React.FC = () => {
     return normalizeChamado(a) === normalizeChamado(b);
   };
 
-  const selectedMov = useMemo(() => {
-    return movs.find((m) => m.id === selectedMovId) || filteredMovs[0] || null;
-  }, [filteredMovs, movs, selectedMovId]);
+  const [selectedMov, setSelectedMov] = useState<Movimentacao | null>(null);
+  const [selectedHistory, setSelectedHistory] = useState<Movimentacao[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  const selectedHistory = useMemo(() => {
-    if (!selectedMov) return [];
-    const chamadoSelecionado = normalizeChamado(selectedMov.chamado);
-    const filtered = movs.filter((m) => {
-      if (m.item_id !== selectedMov.item_id) return false;
-      if (!chamadoSelecionado) return true;
-      return sameChamado(m.chamado, selectedMov.chamado);
-    });
-    return [...filtered].sort(
-      (a, b) =>
-        new Date(b.data_movimentacao).getTime() -
-        new Date(a.data_movimentacao).getTime(),
-    );
-  }, [movs, selectedMov]);
+  useEffect(() => {
+    if (!selectedMovId || movs.length === 0) return;
+    const found = movs.find((m) => m.id === selectedMovId);
+    if (found) setSelectedMov(found);
+  }, [selectedMovId, movs]);
+
+  useEffect(() => {
+    if (!selectedMov) {
+      setSelectedHistory([]);
+      return;
+    }
+    const loadHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const { data } = await fetchMovimentacoesComBusca(1, 100, selectedMov.chamado || undefined);
+        const filtered = (data || []).filter((m) => m.item_id === selectedMov.item_id);
+        setSelectedHistory(filtered);
+      } catch {
+        setSelectedHistory([]);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    loadHistory();
+  }, [selectedMov]);
 
   const getItemSnapshot = (mov: Movimentacao) => {
     const item = itens.find((i) => i.id === mov.item_id);
@@ -590,7 +586,7 @@ const Movimentacoes: React.FC = () => {
     setSigningMov(null);
     setDadosColetaAnterior(null);
 
-    await loadData();
+    await loadMovimentacoes();
 
     if (activeGuia?.id === signedMovId) {
       await reloadAssinaturas(signedMovId);
@@ -726,7 +722,7 @@ const Movimentacoes: React.FC = () => {
       setFormObs("");
       setFormSuccess("Guia emitida com sucesso!");
 
-      await loadData();
+      await loadMovimentacoes();
       setSelectedMovId(savedMov.id);
       await openGuia(savedMov);
     } catch {
@@ -736,8 +732,8 @@ const Movimentacoes: React.FC = () => {
     }
   };
 
-  const handleExportMovimentacoesExcel = () => {
-    const allData = searchQuery.trim() ? filteredMovs : movs;
+  const handleExportMovimentacoesExcel = async () => {
+    const { data: allData } = await fetchMovimentacoesComBusca(1, 5000, searchQuery || undefined);
     const data = selectedIds.size > 0
       ? allData.filter((m) => selectedIds.has(m.id))
       : allData;
@@ -1061,13 +1057,13 @@ const Movimentacoes: React.FC = () => {
 
               {/* Lista paginada de guias */}
               <div className="space-y-3">
-                {movsPaginados.length === 0 ? (
+                {movs.length === 0 ? (
                   <div className="text-center text-outline py-12">
                     <FileText size={36} className="mx-auto mb-2 opacity-50" />
                     <p className="text-xs font-bold">Nenhum registro encontrado</p>
                   </div>
                 ) : (
-                  movsPaginados.map((m) => {
+                  movs.map((m) => {
                     const isSelected = selectedMov?.id === m.id;
                     return (
                       <button type="button" key={m.id} onClick={() => setSelectedMovId(m.id)}
@@ -1105,7 +1101,7 @@ const Movimentacoes: React.FC = () => {
                 <Paginacao
                   paginaAtual={paginaAtual}
                   totalPaginas={totalPaginas}
-                  totalItens={filteredMovs.length}
+                  totalItens={movs.length}
                   itensPorPagina={itensPorPagina}
                   onPaginaChange={setPaginaAtual}
                   onItensPorPaginaChange={setItensPorPagina}
