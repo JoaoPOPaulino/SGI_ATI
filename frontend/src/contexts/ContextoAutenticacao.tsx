@@ -67,7 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   useEffect(() => {
     let mounted = true;
-    let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
     const initSession = async () => {
       try {
@@ -77,21 +76,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
         if (error) {
           console.error("Erro ao carregar sessão:", error);
-          setUser(null);
+          if (mounted) setUser(null);
           return;
         }
 
         const session = data.session;
 
         if (!session?.user) {
-          setUser(null);
+          if (mounted) setUser(null);
           return;
         }
 
         await loadUserProfile(session.user.id);
       } catch (err) {
         console.error("Erro inesperado ao iniciar sessão:", err);
-        setUser(null);
+        if (mounted) setUser(null);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -102,35 +101,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     initSession();
 
     const { data: listener } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         if (event === "INITIAL_SESSION") return;
-        timeoutId = setTimeout(async () => {
+
+        if (event === "SIGNED_OUT") {
+          setUser(null);
+          return;
+        }
+
+        if (event === "TOKEN_REFRESHED") {
+          return;
+        }
+
+        if (session?.user && mounted) {
           try {
-            if (!mounted) return;
-
-            setIsLoading(true);
-
-            if (!session?.user) {
-              setUser(null);
-              return;
-            }
-
             await loadUserProfile(session.user.id);
           } catch (err) {
             console.error("Erro ao atualizar sessão:", err);
-            setUser(null);
-          } finally {
-            if (mounted) {
-              setIsLoading(false);
-            }
           }
-        }, 0);
+        }
       },
     );
 
     return () => {
       mounted = false;
-      if (timeoutId) clearTimeout(timeoutId);
       listener.subscription.unsubscribe();
     };
   }, []);
