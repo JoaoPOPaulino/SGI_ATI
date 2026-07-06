@@ -190,20 +190,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
-      const { data: perfilUsuario, error: perfilError } = await supabase
-        .from("usuarios")
-        .select("*")
-        .eq("cpf", cleanCpf)
-        .eq("ativo", true)
-        .maybeSingle();
+      const { data: email, error: rpcError } = await supabase
+        .rpc("get_user_email_by_cpf", { p_cpf: cleanCpf });
 
-      if (perfilError || !perfilUsuario) {
+      if (rpcError || !email) {
         return { success: false, error: "Usuário não encontrado ou inativo." };
       }
 
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
-          email: perfilUsuario.email,
+          email: email as string,
           password: senha,
         });
 
