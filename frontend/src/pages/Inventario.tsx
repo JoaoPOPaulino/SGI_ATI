@@ -27,6 +27,7 @@ import { fetchLaudos } from "../services/supabaseLaudos";
 import { fetchUsuarios, SupabaseUsuario } from "../services/supabaseUsuarios";
 import StatusBadge from "../components/DistintivoStatus";
 import Paginacao from "../components/Paginacao";
+import { useToast } from "../components/SistemaToast";
 import { exportToExcel } from "../services/utilidades";
 import {
   Search,
@@ -46,6 +47,7 @@ import {
 
 const Inventario: React.FC = () => {
   const { user, hasPermission } = useAuth();
+  const { toast } = useToast();
 
   // Estados de Dados
   const [itensPaginados, setItensPaginados] = useState<Item[]>([]);
@@ -234,11 +236,11 @@ const Inventario: React.FC = () => {
     void ensureLocaisLoaded();
     void ensureUsuariosLoaded();
     if (item && item.status === "BAIXADO") {
-      alert("Nenhuma modificação é permitida num registro BAIXADO.");
+      toast("warning", "Nenhuma modificação é permitida num registro BAIXADO.");
       return;
     }
     if (item && (item.status === "EM_MANUTENCAO" || item.status === "AGUARDANDO_BAIXA")) {
-      alert("Itens em manutenção ou aguardando baixa devem ser geridos pelas páginas de Manutenção ou LABIN.");
+      toast("warning", "Itens em manutenção ou aguardando baixa devem ser geridos pelas páginas de Manutenção ou LABIN.");
       return;
     }
     setFormError("");
@@ -472,17 +474,19 @@ const Inventario: React.FC = () => {
     if (isEstagiario) return;
     void ensureLocaisLoaded()
     if (item.status === "BAIXADO") {
-      alert("Nenhuma movimentação é permitida num registro BAIXADO.");
+      toast("warning", "Nenhuma movimentação é permitida num registro BAIXADO.");
       return;
     }
     if (item.status === "EMPRESTADO" || item.status === "EM_EVENTO") {
-      alert(
+      toast(
+        "warning",
         "Itens emprestados ou alocados em eventos não podem ser movimentados. Realize a devolução ou desalocação primeiro.",
       );
       return;
     }
     if (item.status === "EM_MANUTENCAO" || item.status === "AGUARDANDO_BAIXA") {
-      alert(
+      toast(
+        "warning",
         "Itens em manutenção ou aguardando baixa não podem ser movimentados. Utilize a página de Manutenção.",
       );
       return;
@@ -551,7 +555,7 @@ const Inventario: React.FC = () => {
 
       setActiveQuickMoveItem(null);
       await loadItens();
-      alert("Equipamento transferido de localização com sucesso!");
+      toast("success", "Equipamento transferido de localização com sucesso!");
     } finally {
       setIsSaving(false);
     }
@@ -560,7 +564,7 @@ const Inventario: React.FC = () => {
   // Exclusão Logística (Somente Admin)
   const handleDelete = async (id: string) => {
     if (!hasPermission("ADMIN")) {
-      alert("Somente usuários Administradores podem deletar itens permanentemente.");
+      toast("error", "Somente usuários Administradores podem deletar itens permanentemente.");
       return;
     }
     if (
@@ -570,7 +574,8 @@ const Inventario: React.FC = () => {
     ) {
       const result = await deleteSupabaseItem(id);
       if (!result.success) {
-        alert(
+        toast(
+          "error",
           "Falha ao excluir o item: " +
             (result.error ||
               "Erro desconhecido. Verifique se há movimentações vinculadas ou se você possui permissão suficiente."),

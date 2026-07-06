@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
+import BuscaEquipamento from "../components/BuscaEquipamento";
+import { useToast } from "../components/SistemaToast";
 import {
   fetchAssinaturasGuia,
   createAssinaturaGuia,
@@ -163,6 +165,7 @@ const CaixaAssinatura: React.FC<CaixaAssinaturaProps> = ({ value, onChange }) =>
 
 const Movimentacoes: React.FC = () => {
   const { user, hasPermission } = useAuth();
+  const { toast } = useToast();
 
   const [abaAtiva, setAbaAtiva] = useState<"emitir" | "consultar">("emitir");
 
@@ -205,9 +208,6 @@ const Movimentacoes: React.FC = () => {
   const [formDestinoEstacao, setFormDestinoEstacao] = useState("");
   const [formDestinoLivre, setFormDestinoLivre] = useState("");
   const [formObs, setFormObs] = useState("");
-  const [itemSearch, setItemSearch] = useState("");
-  const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
-
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
@@ -303,12 +303,6 @@ const Movimentacoes: React.FC = () => {
   useEffect(() => {
     setPaginaAtual(1);
   }, [filteredMovs.length, searchQuery]);
-
-  useEffect(() => {
-    const handleClick = () => setItemDropdownOpen(false);
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, []);
 
   const normalizeChamado = (value?: string | null) => {
     const normalized = (value || "").trim().toLowerCase();
@@ -422,12 +416,12 @@ const Movimentacoes: React.FC = () => {
     if (!signingMov) return;
 
     if (!signingNome.trim()) {
-      alert("Informe o nome do assinante.");
+      toast("error", "Informe o nome do assinante.");
       return;
     }
 
     if (!signingAssinatura) {
-      alert("Realize a assinatura na caixa de assinatura.");
+      toast("error", "Realize a assinatura na caixa de assinatura.");
       return;
     }
 
@@ -473,7 +467,7 @@ const Movimentacoes: React.FC = () => {
     });
 
     if (!saved) {
-      alert("Erro ao salvar assinatura. Tente novamente.");
+      toast("error", "Erro ao salvar assinatura. Tente novamente.");
       return;
     }
 
@@ -866,67 +860,11 @@ const Movimentacoes: React.FC = () => {
                   <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
                     Equipamento
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Buscar equipamento por nome ou patrimônio..."
-                    value={
-                      selectedItemId
-                        ? (() => {
-                          const found = itens.find((i) => i.id === selectedItemId);
-                          return found
-                            ? `${found.nome} (Pat: ${found.numero_patrimonio || `S/N: ${found.numero_serie || "Não informado"}`})`
-                            : itemSearch;
-                        })()
-                        : itemSearch
-                    }
-                    onChange={(e) => {
-                      setItemSearch(e.target.value);
-                      setSelectedItemId("");
-                      setItemDropdownOpen(true);
-                    }}
-                    onFocus={() => setItemDropdownOpen(true)}
-                    className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                  <BuscaEquipamento
+                    itens={itens}
+                    selectedItemId={selectedItemId}
+                    onSelect={(id) => setSelectedItemId(id)}
                   />
-                  {itemDropdownOpen && (
-                    <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-xl shadow-lg max-h-52 overflow-y-auto">
-                      {itens
-                        .filter((i) => {
-                          const q = itemSearch.toLowerCase();
-                          return (
-                            i.nome.toLowerCase().includes(q) ||
-                            (i.numero_patrimonio || "").toLowerCase().includes(q) ||
-                            (i.numero_serie || "").toLowerCase().includes(q)
-                          );
-                        })
-                        .map((i) => (
-                          <button
-                            key={i.id}
-                            type="button"
-                            onMouseDown={() => {
-                              setSelectedItemId(i.id);
-                              setItemSearch("");
-                              setItemDropdownOpen(false);
-                            }}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-primary/10 text-on-surface border-b border-outline-variant/10 last:border-0"
-                          >
-                            {i.nome}{" "}
-                            <span className="text-outline">
-                              (Pat: {i.numero_patrimonio || `S/N: ${i.numero_serie || "Não informado"}`})
-                            </span>
-                          </button>
-                        ))}
-                      {itens.filter((i) => {
-                        const q = itemSearch.toLowerCase();
-                        return (
-                          i.nome.toLowerCase().includes(q) ||
-                          (i.numero_patrimonio || "").toLowerCase().includes(q) ||
-                          (i.numero_serie || "").toLowerCase().includes(q)
-                        );
-                      }).length === 0 && (
-                          <p className="px-3 py-2 text-xs text-outline">Nenhum equipamento encontrado.</p>
-                        )}
-                    </div>
-                  )}
                 </div>
 
                 <div className="bg-surface p-4 border border-outline-variant/20 rounded-xl space-y-3">

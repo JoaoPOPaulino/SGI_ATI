@@ -54,28 +54,32 @@ const MAX_MOVIMENTACOES = 5000;
 
 export async function fetchAllMovimentacoes(): Promise<Movimentacao[]> {
   try {
-    let allData: Movimentacao[] = [];
-    let from = 0;
     const pageSize = 1000;
     const maxPages = Math.ceil(MAX_MOVIMENTACOES / pageSize);
+    const promises: Promise<{ data: any[] | null; error: any }>[] = [];
 
     for (let page = 0; page < maxPages; page++) {
-      const { data, error } = await supabase
-        .from('movimentacoes')
-        .select('*')
-        .order('data_movimentacao', { ascending: false })
-        .range(from, from + pageSize - 1);
+      const from = page * pageSize;
+      promises.push(
+        supabase
+          .from('movimentacoes')
+          .select('*')
+          .order('data_movimentacao', { ascending: false })
+          .range(from, from + pageSize - 1)
+      );
+    }
 
+    const results = await Promise.all(promises);
+
+    let allData: Movimentacao[] = [];
+    for (const { data, error } of results) {
       if (error) {
         console.error('Erro ao buscar movimentações:', error);
         break;
       }
-
       if (!data || data.length === 0) break;
-
       allData = [...allData, ...(data as Movimentacao[])];
       if (data.length < pageSize) break;
-      from += pageSize;
     }
 
     return allData;

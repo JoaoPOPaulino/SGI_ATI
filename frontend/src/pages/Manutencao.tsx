@@ -5,11 +5,14 @@ import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchAllMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer, Search, X } from 'lucide-react';
 import Paginacao from '../components/Paginacao';
+import BuscaEquipamento from '../components/BuscaEquipamento';
+import { useToast } from '../components/SistemaToast';
 import StatusBadge from '../components/DistintivoStatus';
 import { getReversedStatus } from '../services/utilidades';
 
 const Manutencao: React.FC = () => {
   const { user, hasPermission } = useAuth();
+  const { toast } = useToast();
   const [maintenanceItens, setMaintenanceItens] = useState<Item[]>([]);
   const [awaitingDecommissionItens, setAwaitingDecommissionItens] = useState<Item[]>([]);
   const [activeItens, setActiveItens] = useState<Item[]>([]);
@@ -20,8 +23,6 @@ const Manutencao: React.FC = () => {
   const [formSuccess, setFormSuccess] = useState('');
   const [repairTarget, setRepairTarget] = useState<Item | null>(null);
   const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('REGULAR');
-  const [decomSearch, setDecomSearch] = useState('');
-  const [decomDropdownOpen, setDecomDropdownOpen] = useState(false);
   const [rejectTarget, setRejectTarget] = useState<Item | null>(null);
   const [rejectMotivo, setRejectMotivo] = useState('');
   const [approveTarget, setApproveTarget] = useState<Item | null>(null);
@@ -44,12 +45,6 @@ const Manutencao: React.FC = () => {
   };
 
   useEffect(() => { loadData(); }, []);
-
-  useEffect(() => {
-    const handleClick = () => setDecomDropdownOpen(false);
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, []);
 
   // Resetar paginação ao recarregar dados
   useEffect(() => { setPaginaManutencao(1); }, [maintenanceItens.length]);
@@ -102,7 +97,7 @@ const Manutencao: React.FC = () => {
   };
 
   const handleRejectDecommission = (item: Item) => {
-    if (!isSuperiorOrAdmin) { alert('Apenas usuários de perfil Superior ou Admin possuem privilégios para rejeitar solicitações de baixa.'); return; }
+    if (!isSuperiorOrAdmin) { toast("error", "Apenas usuários de perfil Superior ou Admin possuem privilégios para rejeitar solicitações de baixa."); return; }
     setRejectTarget(item);
     setRejectMotivo('');
   };
@@ -128,12 +123,12 @@ const Manutencao: React.FC = () => {
       }
       await loadData();
       setRejectTarget(null);
-      alert(`Baixa rejeitada. Item restaurado para o status "${revertedStatus}".`);
-    } catch { alert('Erro ao rejeitar baixa. Verifique a conexão e tente novamente.'); }
+      toast("success", `Baixa rejeitada. Item restaurado para o status "${revertedStatus}".`);
+    } catch { toast("error", "Erro ao rejeitar baixa. Verifique a conexão e tente novamente."); }
   };
 
   const handleApproveDecommission = (item: Item) => {
-    if (!isSuperiorOrAdmin) { alert('Apenas usuários de perfil Superior ou Admin possuem privilégios para efetivar a baixa final de ativos.'); return; }
+    if (!isSuperiorOrAdmin) { toast("error", "Apenas usuários de perfil Superior ou Admin possuem privilégios para efetivar a baixa final de ativos."); return; }
     setApproveTarget(item);
   };
 
@@ -149,8 +144,8 @@ const Manutencao: React.FC = () => {
       }
       await loadData();
       setApproveTarget(null);
-      alert('Baixa patrimonial do ativo concluída com sucesso!');
-    } catch { alert('Erro ao efetivar baixa. Verifique a conexão e tente novamente.'); }
+      toast("success", "Baixa patrimonial do ativo concluída com sucesso!");
+    } catch { toast("error", "Erro ao efetivar baixa. Verifique a conexão e tente novamente."); }
   };
 
   const handleCompleteRepair = async () => {
@@ -168,7 +163,8 @@ const Manutencao: React.FC = () => {
       });
       setRepairTarget(null);
       await loadData();
-    } catch { alert('Erro ao concluir reparo. Verifique a conexão e tente novamente.'); }
+      toast("success", "Reparo concluído com sucesso!");
+    } catch { toast("error", "Erro ao concluir reparo. Verifique a conexão e tente novamente."); }
   };
 
   const lbl = 'text-[10px]';
@@ -277,52 +273,11 @@ const Manutencao: React.FC = () => {
               <form onSubmit={handleRequestDecommission} className="space-y-3.5">
                 <div>
                   <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1`}>Equipamento</label>
-                  <div className="relative">
-                    <div className="flex items-center bg-surface border border-outline rounded-lg px-3 py-2">
-                      <Search size={14} className="text-outline-variant shrink-0 mr-2" />
-                      <input
-                        type="text"
-                        placeholder="Buscar equipamento por nome ou patrimônio..."
-                        value={selectedItemId
-                          ? (() => { const found = activeItens.find(i => i.id === selectedItemId); return found ? `${found.nome} (${found.numero_patrimonio || 'S/N: ' + found.numero_serie || 'Consumível'})` : decomSearch; })()
-                          : decomSearch
-                        }
-                        onChange={(e) => { setDecomSearch(e.target.value); setSelectedItemId(''); setDecomDropdownOpen(true); }}
-                        onFocus={() => setDecomDropdownOpen(true)}
-                        className="bg-transparent border-none focus:ring-0 text-[11px] w-full text-on-surface placeholder:text-outline"
-                      />
-                      {selectedItemId && (
-                        <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSelectedItemId(''); setDecomSearch(''); }} className="ml-2 text-outline-variant hover:text-outline">
-                          <X size={14} />
-                        </button>
-                      )}
-                    </div>
-                    {decomDropdownOpen && (
-                      <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                        {activeItens
-                          .filter(i => {
-                            const q = decomSearch.toLowerCase();
-                            return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || '').toLowerCase().includes(q) || (i.numero_serie || '').toLowerCase().includes(q);
-                          })
-                          .map(i => (
-                            <button
-                              key={i.id}
-                              type="button"
-                              onMouseDown={() => { setSelectedItemId(i.id); setDecomSearch(''); setDecomDropdownOpen(false); }}
-                              className="w-full text-left px-3 py-2 text-[11px] hover:bg-primary/10 text-on-surface border-b border-outline-variant/10 last:border-0"
-                            >
-                              {i.nome} <span className="text-outline">({i.numero_patrimonio || 'S/N: ' + i.numero_serie || 'Consumível'})</span>
-                            </button>
-                          ))}
-                        {activeItens.filter(i => {
-                          const q = decomSearch.toLowerCase();
-                          return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || '').toLowerCase().includes(q) || (i.numero_serie || '').toLowerCase().includes(q);
-                        }).length === 0 && (
-                            <p className="px-3 py-2 text-[11px] text-outline">Nenhum equipamento encontrado.</p>
-                          )}
-                      </div>
-                    )}
-                  </div>
+                  <BuscaEquipamento
+                    itens={activeItens}
+                    selectedItemId={selectedItemId}
+                    onSelect={(id) => setSelectedItemId(id)}
+                  />
                 </div>
                 <div>
                   <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1`}>Justificativa Técnica</label>

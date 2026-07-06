@@ -10,6 +10,7 @@ import { exportToExcel } from '../services/utilidades';
 import StatusBadge from '../components/DistintivoStatus';
 import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil, Download } from 'lucide-react';
 import Paginacao from '../components/Paginacao';
+import BuscaEquipamento from '../components/BuscaEquipamento';
 
 const Labin: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -22,8 +23,6 @@ const Labin: React.FC = () => {
   // Estados do Form
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedItemId, setSelectedItemId] = useState('');
-  const [itemSearch, setItemSearch] = useState('');
-  const [itemDropdownOpen, setItemDropdownOpen] = useState(false);
   const [formDescricao, setFormDescricao] = useState('');
   const [formAcao, setFormAcao] = useState('');
   const [formPecas, setFormPecas] = useState('');
@@ -49,12 +48,6 @@ const Labin: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, []);
-
-  useEffect(() => {
-    const handleClick = () => setItemDropdownOpen(false);
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
   }, []);
 
   const canCreateLaudo = (hasPermission('TECNICO') && user?.polo === 'Laboratório') || user?.perfil === 'ADMIN';
@@ -359,52 +352,11 @@ const Labin: React.FC = () => {
               {/* Seleção do Equipamento */}
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Equipamento em Manutenção</label>
-                <div className="relative">
-                  <div className="flex items-center bg-surface border border-outline rounded-xl px-3 py-2">
-                    <Search size={14} className="text-outline-variant shrink-0 mr-2" />
-                    <input
-                      type="text"
-                      placeholder="Buscar equipamento por nome ou patrimônio..."
-                      value={selectedItemId
-                        ? (() => { const found = itensInManutencao.find(i => i.id === selectedItemId); return found ? `${found.nome} (${found.numero_patrimonio || 'S/N: ' + found.numero_serie})` : itemSearch; })()
-                        : itemSearch
-                      }
-                      onChange={(e) => { setItemSearch(e.target.value); setSelectedItemId(''); setItemDropdownOpen(true); }}
-                      onFocus={() => setItemDropdownOpen(true)}
-                      className="bg-transparent border-none focus:ring-0 text-xs w-full text-on-surface placeholder:text-outline"
-                    />
-                    {selectedItemId && (
-                      <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSelectedItemId(''); setItemSearch(''); }} className="ml-2 text-outline-variant hover:text-outline">
-                        <X size={14} />
-                      </button>
-                    )}
-                  </div>
-                  {itemDropdownOpen && (
-                    <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                      {itensInManutencao
-                        .filter(i => {
-                          const q = itemSearch.toLowerCase();
-                          return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || '').toLowerCase().includes(q) || (i.numero_serie || '').toLowerCase().includes(q);
-                        })
-                        .map(i => (
-                          <button
-                            key={i.id}
-                            type="button"
-                            onMouseDown={() => { setSelectedItemId(i.id); setItemSearch(''); setItemDropdownOpen(false); }}
-                            className="w-full text-left px-3 py-2 text-xs hover:bg-primary/10 text-on-surface border-b border-outline-variant/10 last:border-0"
-                          >
-                            {i.nome} <span className="text-outline">(Pat: {i.numero_patrimonio || 'S/N: ' + i.numero_serie})</span>
-                          </button>
-                        ))}
-                      {itensInManutencao.filter(i => {
-                        const q = itemSearch.toLowerCase();
-                        return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || '').toLowerCase().includes(q) || (i.numero_serie || '').toLowerCase().includes(q);
-                      }).length === 0 && (
-                        <p className="px-3 py-2 text-xs text-outline">Nenhum equipamento encontrado.</p>
-                      )}
-                    </div>
-                  )}
-                </div>
+                <BuscaEquipamento
+                  itens={itensInManutencao}
+                  selectedItemId={selectedItemId}
+                  onSelect={(id) => setSelectedItemId(id)}
+                />
               </div>
 
               {/* Status do Serviço */}

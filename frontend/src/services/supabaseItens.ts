@@ -163,10 +163,9 @@ const MAX_ITEMS = 5000;
 
 export async function fetchAllItens(filters?: FetchItensFilters): Promise<Item[]> {
   try {
-    let allData: Item[] = [];
-    let from = 0;
     const pageSize = 1000;
     const maxPages = Math.ceil(MAX_ITEMS / pageSize);
+    const promises: Promise<{ data: any[] | null; error: any }>[] = [];
 
     for (let page = 0; page < maxPages; page++) {
       let query = supabase
@@ -175,23 +174,28 @@ export async function fetchAllItens(filters?: FetchItensFilters): Promise<Item[]
         
       query = applyFiltersToQuery(query, filters);
 
-      const { data, error } = await query
-        .order("created_at", { ascending: false })
-        .range(from, from + pageSize - 1);
+      const from = page * pageSize;
+      promises.push(
+        query
+          .order("created_at", { ascending: false })
+          .range(from, from + pageSize - 1)
+      );
+    }
 
+    const results = await Promise.all(promises);
+
+    let allData: Item[] = [];
+    for (const { data, error } of results) {
       if (error) {
         console.error("Erro ao buscar itens para exportação:", error);
         break;
       }
-
       if (!data || data.length === 0) break;
-
       allData = [...allData, ...(data as Item[])];
       if (data.length < pageSize) break;
-      from += pageSize;
     }
 
-    return allData as Item[];
+    return allData;
   } catch (err) {
     console.error("Falha ao buscar itens para exportação:", err);
     return [];

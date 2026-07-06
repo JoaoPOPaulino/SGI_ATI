@@ -36,6 +36,7 @@ import {
 import { z } from "zod";
 import ConfirmDialog from "../components/DialogoConfirmacao";
 import UserDetailModal from "../components/ModalDetalhesUsuario";
+import { useToast } from "../components/SistemaToast";
 
 const isValidCpf = (cpf: string): boolean => {
   const digits = cpf.replace(/\D/g, "");
@@ -75,6 +76,7 @@ interface ConfirmState {
 
 const Admin: React.FC = () => {
   const { user: currentUser, changeProfile } = useAuth();
+  const { toast } = useToast();
 
   const [usuarios, setUsuarios] = useState<SupabaseUsuario[]>([]);
   const [allUsuarios, setAllUsuarios] = useState<SupabaseUsuario[]>([]);
@@ -292,7 +294,7 @@ const Admin: React.FC = () => {
 
   const requestToggleStatus = (id: string, currentStatus: boolean) => {
     if (id === currentUser?.id) {
-      alert("Você não pode desativar sua própria conta.");
+      toast("error", "Você não pode desativar sua própria conta.");
       return;
     }
 
@@ -415,7 +417,7 @@ const Admin: React.FC = () => {
 
   const requestDeleteUser = (id: string) => {
     if (id === currentUser?.id) {
-      alert("Você não pode excluir sua própria conta.");
+      toast("error", "Você não pode excluir sua própria conta.");
       return;
     }
 
@@ -445,7 +447,7 @@ const Admin: React.FC = () => {
     try {
       const deleted = await deleteUser(id);
       if (!deleted) {
-        alert("Falha ao excluir usuário. Tente novamente.");
+        toast("error", "Falha ao excluir usuário. Tente novamente.");
         return;
       }
 
@@ -461,7 +463,8 @@ const Admin: React.FC = () => {
       setSelectedUser(null);
       await loadUsuarios();
     } catch {
-      alert(
+      toast(
+        "error",
         "Erro ao processar a exclusão. Verifique a conexão com o servidor.",
       );
     }

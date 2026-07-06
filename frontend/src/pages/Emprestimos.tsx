@@ -39,6 +39,8 @@ import {
   Search,
 } from "lucide-react";
 import ConfirmDialog from "../components/DialogoConfirmacao";
+import BuscaEquipamento from "../components/BuscaEquipamento";
+import { useToast } from "../components/SistemaToast";
 
 interface EmprestimosProps {
   section?: 'emprestimos' | 'eventos';
@@ -46,6 +48,7 @@ interface EmprestimosProps {
 
 const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) => {
   const { user, hasPermission } = useAuth();
+  const { toast } = useToast();
 
   const [itens, setItens] = useState<Item[]>([]);
   const [eventos, setEventos] = useState<Evento[]>([]);
@@ -74,11 +77,6 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
   const [manageEventId, setManageEventId] = useState<string | null>(null);
   const [showAddItemToEvent, setShowAddItemToEvent] = useState(false);
   const [itemToAddToEvent, setItemToAddToEvent] = useState("");
-
-  const [loanSearch, setLoanSearch] = useState("");
-  const [loanDropdownOpen, setLoanDropdownOpen] = useState(false);
-  const [eventItemSearch, setEventItemSearch] = useState("");
-  const [eventItemDropdownOpen, setEventItemDropdownOpen] = useState(false);
 
   const [confirm, setConfirm] = useState<{
     open: boolean;
@@ -150,15 +148,6 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
 
   useEffect(() => {
     loadData();
-  }, []);
-
-  useEffect(() => {
-    const handleClick = () => {
-      setLoanDropdownOpen(false);
-      setEventItemDropdownOpen(false);
-    };
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   const canModify = hasPermission("TECNICO");
@@ -573,60 +562,18 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
             </h2>
             <form onSubmit={handleCreateLoan} className="space-y-4">
               <div>
-              <label
-                htmlFor="loan-equipamento"
-                className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
-              >
-                Equipamento
-              </label>
-              <div className="relative">
-                <div className="flex items-center bg-surface border border-outline rounded-xl px-3 py-2">
-                  <Search size={14} className="text-outline-variant shrink-0 mr-2" />
-                  <input
-                    id="loan-equipamento"
-                    type="text"
-                    placeholder="Buscar equipamento por nome ou patrimônio..."
-                    value={selectedItemId
-                      ? (() => { const found = itensDisponiveis.find((i) => i.id === selectedItemId); return found ? `${found.nome} (${found.numero_patrimonio || found.numero_serie || "S/N"})` : loanSearch; })()
-                      : loanSearch
-                    }
-                    onChange={(e) => { setLoanSearch(e.target.value); setSelectedItemId(""); setLoanDropdownOpen(true); }}
-                    onFocus={() => setLoanDropdownOpen(true)}
-                    className="bg-transparent border-none focus:ring-0 text-xs w-full text-on-surface placeholder:text-outline"
-                  />
-                  {selectedItemId && (
-                    <button type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => { setSelectedItemId(""); setLoanSearch(""); }} className="ml-2 text-outline-variant hover:text-outline">
-                      <X size={14} />
-                    </button>
-                  )}
-                </div>
-                {loanDropdownOpen && (
-                  <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-xl shadow-lg max-h-48 overflow-y-auto">
-                    {itensDisponiveis
-                      .filter((i) => {
-                        const q = loanSearch.toLowerCase();
-                        return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || "").toLowerCase().includes(q) || (i.numero_serie || "").toLowerCase().includes(q);
-                      })
-                      .map((i) => (
-                        <button
-                          key={i.id}
-                          type="button"
-                          onMouseDown={() => { setSelectedItemId(i.id); setLoanSearch(""); setLoanDropdownOpen(false); }}
-                          className="w-full text-left px-3 py-2 text-xs hover:bg-primary/10 text-on-surface border-b border-outline-variant/10 last:border-0"
-                        >
-                          {i.nome} <span className="text-outline">({i.numero_patrimonio || i.numero_serie || "S/N"})</span>
-                        </button>
-                      ))}
-                    {itensDisponiveis.filter((i) => {
-                      const q = loanSearch.toLowerCase();
-                      return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || "").toLowerCase().includes(q) || (i.numero_serie || "").toLowerCase().includes(q);
-                    }).length === 0 && (
-                      <p className="px-3 py-2 text-xs text-outline">Nenhum equipamento encontrado.</p>
-                    )}
-                  </div>
-                )}
+                <label
+                  htmlFor="loan-equipamento"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  Equipamento
+                </label>
+                <BuscaEquipamento
+                  itens={itensDisponiveis}
+                  selectedItemId={selectedItemId}
+                  onSelect={(id) => setSelectedItemId(id)}
+                />
               </div>
-            </div>
               <div>
                 <label
                   htmlFor="loan-responsavel"
@@ -999,53 +946,12 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                           {showAddItemToEvent &&
                           itensAlocaveisParaEvento.length > 0 && (
                             <div className="flex items-end gap-2">
-                              <div className="flex-1 relative">
-                                <label
-                                  htmlFor={`add-item-event-${evt.id}`}
-                                  className="sr-only"
-                                >
-                                  Selecionar item para adicionar ao evento
-                                </label>
-                                <div className="flex items-center bg-surface border border-outline rounded-xl px-2.5 py-1.5">
-                                  <Search size={12} className="text-outline-variant shrink-0 mr-1.5" />
-                                  <input
-                                    id={`add-item-event-${evt.id}`}
-                                    type="text"
-                                    placeholder="Buscar item por nome ou patrimônio..."
-                                    value={itemToAddToEvent
-                                      ? (() => { const found = itensAlocaveisParaEvento.find((i) => i.id === itemToAddToEvent); return found ? `${found.nome} (${found.numero_patrimonio || found.numero_serie || "S/N"})` : eventItemSearch; })()
-                                      : eventItemSearch
-                                    }
-                                    onChange={(e) => { setEventItemSearch(e.target.value); setItemToAddToEvent(""); setEventItemDropdownOpen(true); }}
-                                    onFocus={() => setEventItemDropdownOpen(true)}
-                                    className="bg-transparent border-none focus:ring-0 text-[10px] w-full text-on-surface placeholder:text-outline"
-                                  />
-                                </div>
-                                {eventItemDropdownOpen && (
-                                  <div className="absolute z-20 w-full mt-1 bg-surface border border-outline rounded-xl shadow-lg max-h-40 overflow-y-auto">
-                                    {itensAlocaveisParaEvento
-                                      .filter((i) => {
-                                        const q = eventItemSearch.toLowerCase();
-                                        return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || "").toLowerCase().includes(q) || (i.numero_serie || "").toLowerCase().includes(q);
-                                      })
-                                      .map((i) => (
-                                        <button
-                                          key={i.id}
-                                          type="button"
-                                          onMouseDown={() => { setItemToAddToEvent(i.id); setEventItemSearch(""); setEventItemDropdownOpen(false); }}
-                                          className="w-full text-left px-2.5 py-1.5 text-[10px] hover:bg-primary/10 text-on-surface border-b border-outline-variant/10 last:border-0"
-                                        >
-                                          {i.nome} <span className="text-outline">({i.numero_patrimonio || i.numero_serie || "S/N"})</span>
-                                        </button>
-                                      ))}
-                                    {itensAlocaveisParaEvento.filter((i) => {
-                                      const q = eventItemSearch.toLowerCase();
-                                      return !q || i.nome.toLowerCase().includes(q) || (i.numero_patrimonio || "").toLowerCase().includes(q) || (i.numero_serie || "").toLowerCase().includes(q);
-                                    }).length === 0 && (
-                                      <p className="px-2.5 py-1.5 text-[10px] text-outline">Nenhum item encontrado.</p>
-                                    )}
-                                  </div>
-                                )}
+                              <div className="flex-1">
+                                <BuscaEquipamento
+                                  itens={itensAlocaveisParaEvento}
+                                  selectedItemId={itemToAddToEvent}
+                                  onSelect={(id) => setItemToAddToEvent(id)}
+                                />
                               </div>
                               <button
                                 onClick={addItemToEvent}
@@ -1055,7 +961,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                                 Adicionar
                               </button>
                               <button
-                                onClick={() => { setShowAddItemToEvent(false); setEventItemSearch(""); }}
+                                onClick={() => { setShowAddItemToEvent(false); setItemToAddToEvent(""); }}
                                 className="px-3 py-1.5 text-[10px] text-outline hover:text-on-surface transition-colors"
                               >
                                 Cancelar
