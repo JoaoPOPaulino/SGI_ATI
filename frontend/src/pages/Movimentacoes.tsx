@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
-import {
+import type {
   AssinaturaGuia,
   Item,
   Movimentacao,
+  StatusGuia,
   TipoAssinaturaGuia,
   TipoMovimentacao,
 } from "../services/types";
@@ -53,6 +54,33 @@ const TIPO_ASSINATURA_LABEL: Record<TipoAssinaturaGuia, string> = {
   RECEBIMENTO_LABORATORIO: "Recebimento no Laboratório",
   REQUERENTE_DEVOLUCAO: "Recebimento/Devolução pelo Requerente",
 };
+
+const TRANSICOES_STATUS_GUIA: Record<StatusGuia, StatusGuia[]> = {
+  ABERTA: ["EM_COLETA"],
+  EM_COLETA: ["EM_ATENDIMENTO", "AGUARDANDO_DEVOLUCAO"],
+  EM_ATENDIMENTO: ["EM_SERVICO", "ENCERRADA"],
+  ENVIADO_LABORATORIO: ["EM_SERVICO"],
+  EM_SERVICO: ["ENCERRADA"],
+  AGUARDANDO_DEVOLUCAO: ["ENCERRADA"],
+  ENCERRADA: [],
+};
+
+const STATUS_GUIA_POR_ASSINATURA: Record<TipoAssinaturaGuia, StatusGuia | null> = {
+  EMISSAO_GUIA: null,
+  RESPONSAVEL_COLETA: "EM_COLETA",
+  REQUERENTE_ENTREGA: null,
+  RECEBIMENTO_LABORATORIO: "EM_SERVICO",
+  REQUERENTE_DEVOLUCAO: "ENCERRADA",
+};
+
+function validarTransicaoStatusGuia(
+  atual: StatusGuia | undefined,
+  novo: StatusGuia,
+): boolean {
+  const statusAtual = atual || "ABERTA";
+  const permitidos = TRANSICOES_STATUS_GUIA[statusAtual];
+  return permitidos?.includes(novo) ?? false;
+}
 
 interface CaixaAssinaturaProps {
   value: string;
@@ -207,7 +235,6 @@ const Movimentacoes: React.FC = () => {
   const [formDestinoSetor, setFormDestinoSetor] = useState("");
   const [formDestinoSala, setFormDestinoSala] = useState("");
   const [formDestinoEstacao, setFormDestinoEstacao] = useState("");
-  const [formDestinoLivre, setFormDestinoLivre] = useState("");
   const [formObs, setFormObs] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
@@ -255,7 +282,6 @@ const Movimentacoes: React.FC = () => {
       setFormDestinoSala("");
       setFormDestinoSetor("");
       setFormDestinoEstacao("");
-      setFormDestinoLivre("");
     } else if (formTipo === "VIAGEM") {
       setFormTipoDoc("CONTROLE_ENTRADA_SAIDA");
       setFormDestinoPolo("Laboratorio");
@@ -263,10 +289,8 @@ const Movimentacoes: React.FC = () => {
       setFormDestinoSala("Oficina");
       setFormDestinoSetor("Manutencao");
       setFormDestinoEstacao("Bancada M-1");
-      setFormDestinoLivre("");
     } else {
       setFormTipoDoc("GUIA_MOVIMENTACAO");
-      setFormDestinoLivre("");
     }
   }, [formTipo]);
 
@@ -323,7 +347,7 @@ const Movimentacoes: React.FC = () => {
     const chamadoSelecionado = normalizeChamado(selectedMov.chamado);
     const filtered = movs.filter((m) => {
       if (m.item_id !== selectedMov.item_id) return false;
-      if (!chamadoSelecionado) return m.id === selectedMov.id;
+      if (!chamadoSelecionado) return true;
       return sameChamado(m.chamado, selectedMov.chamado);
     });
     return [...filtered].sort(
@@ -426,6 +450,22 @@ const Movimentacoes: React.FC = () => {
       return;
     }
 
+    let novoStatus: StatusGuia | null = null;
+
+    if (signingTipo === "REQUERENTE_ENTREGA") {
+      novoStatus = signingMov.tipo === "MANUTENCAO" ? "EM_ATENDIMENTO" : "AGUARDANDO_DEVOLUCAO";
+    } else {
+      novoStatus = STATUS_GUIA_POR_ASSINATURA[signingTipo];
+    }
+
+    if (novoStatus && !validarTransicaoStatusGuia(signingMov.status_guia, novoStatus)) {
+      toast(
+        "error",
+        `Transição inválida: de "${signingMov.status_guia || "ABERTA"}" para "${novoStatus}". Verifique a ordem das assinaturas.`,
+      );
+      return;
+    }
+
     const snapshot = getItemSnapshot(signingMov);
     const now = new Date().toISOString();
 
@@ -472,16 +512,40 @@ const Movimentacoes: React.FC = () => {
       return;
     }
 
-    if (signingTipo === "RESPONSAVEL_COLETA")
-      await updateMovimentacao(signingMov.id, { status_guia: "EM_COLETA" });
-    if (signingTipo === "REQUERENTE_ENTREGA")
-      await updateMovimentacao(signingMov.id, {
-        status_guia: signingMov.tipo === "MANUTENCAO" ? "EM_ATENDIMENTO" : "AGUARDANDO_DEVOLUCAO",
-      });
-    if (signingTipo === "RECEBIMENTO_LABORATORIO")
-      await updateMovimentacao(signingMov.id, { status_guia: "EM_SERVICO" });
-    if (signingTipo === "REQUERENTE_DEVOLUCAO")
-      await updateMovimentacao(signingMov.id, { status_guia: "ENCERRADA" });
+    if (novoStatus) {
+      await updateMovimentacao(signingMov.id, { status_guia: novoStatus });
+    }
+
+    if (novoStatus === "ENCERRADA") {
+      const item = itens.find((i) => i.id === signingMov.item_id);
+      if (item && item.status === "EM_MANUTENCAO") {
+        const origemRestauracao = item.localizacao_atual;
+        await updateItem(item.id, {
+          status: "GUARDADO",
+          condicao: "REGULAR",
+          localizacao_atual: "Almoxarifado Central (Manutenção Concluída)",
+          updated_at: now,
+        });
+        await createMovimentacao({
+          id: crypto.randomUUID(),
+          item_id: item.id,
+          item_nome: item.nome,
+          tipo: "CHECK_IN",
+          origem: origemRestauracao,
+          destino: "Almoxarifado Central (Manutenção Concluída)",
+          solicitante_id: user?.id || "usr-anon",
+          solicitante_nome: user?.nome || "Anônimo",
+          aprovador_id: user?.id || "usr-anon",
+          aprovador_nome: user?.nome || "Anônimo",
+          status_aprovacao: "APROVADO",
+          data_movimentacao: now,
+          observacao: `Retorno automático — guia #${signingMov.chamado || signingMov.id.substring(0, 8)} encerrada.`,
+          tipo_documento: "CONTROLE_ENTRADA_SAIDA",
+          signature_token: crypto.randomUUID(),
+        });
+        toast("success", "Guia encerrada. Item restaurado para Almoxarifado Central.");
+      }
+    }
 
     if (
       signingTipo === "RESPONSAVEL_COLETA" &&
@@ -639,6 +703,19 @@ const Movimentacoes: React.FC = () => {
         });
       }
 
+      await createAssinaturaGuia({
+        movimentacao_id: savedMov.id,
+        tipo_assinatura: "EMISSAO_GUIA",
+        assinante_id: user?.id,
+        assinante_nome: user?.nome || "Anônimo",
+        assinante_perfil: user?.perfil,
+        assinatura_base64: "",
+        localizacao: item.localizacao_atual,
+        patrimonio: item.numero_patrimonio,
+        numero_serie: item.numero_serie,
+        chamado,
+      });
+
       setSelectedItemId("");
       setFormChamado("");
       setFormDestinoPolo("");
@@ -646,7 +723,6 @@ const Movimentacoes: React.FC = () => {
       setFormDestinoSetor("");
       setFormDestinoSala("");
       setFormDestinoEstacao("");
-      setFormDestinoLivre("");
       setFormObs("");
       setFormSuccess("Guia emitida com sucesso!");
 
@@ -686,7 +762,7 @@ const Movimentacoes: React.FC = () => {
     <div className="flex items-center gap-1">
       <button type="button" onClick={() => openSigningModal(mov, "RESPONSAVEL_COLETA")} className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="Assinar coleta"><PenLine size={15} /></button>
       <button type="button" onClick={() => openSigningModal(mov, "REQUERENTE_ENTREGA")} className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="Assinatura do requerente"><ShieldCheck size={15} /></button>
-      {mov.tipo === "MANUTENCAO" && mov.destino.includes("Laboratório") && (
+      {(mov.tipo === "MANUTENCAO" || mov.tipo === "VIAGEM") && (
         <button type="button" onClick={() => openSigningModal(mov, "RECEBIMENTO_LABORATORIO")} className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="Assinar recebimento no laboratório"><Wrench size={15} /></button>
       )}
       <button type="button" onClick={() => openSigningModal(mov, "REQUERENTE_DEVOLUCAO")} className="p-1.5 text-primary hover:bg-primary-fixed rounded-lg transition-all" title="Assinar devolução ao requerente"><Check size={15} /></button>
