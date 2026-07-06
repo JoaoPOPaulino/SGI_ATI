@@ -41,6 +41,7 @@ import {
 import ConfirmDialog from "../components/DialogoConfirmacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
 import { useToast } from "../components/SistemaToast";
+import { loanSchema, eventoSchema } from "../services/schemas";
 
 interface EmprestimosProps {
   section?: 'emprestimos' | 'eventos';
@@ -183,23 +184,16 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       setIsSaving(false);
       return;
     }
-    if (!selectedItemId) {
-      setFormLoanError("Selecione o equipamento.");
-      setIsSaving(false);
-      return;
-    }
-    if (!formResponsavel.trim()) {
-      setFormLoanError("Informe o nome do responsável.");
-      setIsSaving(false);
-      return;
-    }
-    if (!formDataRetorno) {
-      setFormLoanError("Informe a data de retorno.");
-      setIsSaving(false);
-      return;
-    }
-    if (new Date(formDataRetorno) <= new Date()) {
-      setFormLoanError("A data de retorno deve ser futura.");
+
+    const parsed = loanSchema.safeParse({
+      itemId: selectedItemId,
+      responsavel: formResponsavel,
+      dataRetorno: formDataRetorno,
+    });
+
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0];
+      setFormLoanError(firstError?.message || "Dados inválidos.");
       setIsSaving(false);
       return;
     }
@@ -268,23 +262,18 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       setIsSaving(false);
       return;
     }
-    if (!formNomeEvento.trim()) {
-      setFormEventError("Informe o nome do evento.");
-      setIsSaving(false);
-      return;
-    }
-    if (!formLocalEvento.trim()) {
-      setFormEventError("Informe o local.");
-      setIsSaving(false);
-      return;
-    }
-    if (!formDataInicio || !formDataFim) {
-      setFormEventError("Informe as datas.");
-      setIsSaving(false);
-      return;
-    }
-    if (new Date(formDataFim) < new Date(formDataInicio)) {
-      setFormEventError("A data de fim não pode ser anterior à data de início.");
+
+    const parsed = eventoSchema.safeParse({
+      nome: formNomeEvento,
+      local: formLocalEvento,
+      dataInicio: formDataInicio,
+      dataFim: formDataFim,
+      itensSelecionados: formItensSelecionados,
+    });
+
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0];
+      setFormEventError(firstError?.message || "Dados inválidos.");
       setIsSaving(false);
       return;
     }

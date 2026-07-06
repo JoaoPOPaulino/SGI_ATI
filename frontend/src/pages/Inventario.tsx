@@ -29,6 +29,7 @@ import StatusBadge from "../components/DistintivoStatus";
 import Paginacao from "../components/Paginacao";
 import { useToast } from "../components/SistemaToast";
 import { exportToExcel } from "../services/utilidades";
+import { itemSchema, type ItemFormData } from "../services/schemas";
 import {
   Search,
   Plus,
@@ -292,62 +293,33 @@ const Inventario: React.FC = () => {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving) return;
+    setFormError("");
+
+    const parsed = itemSchema.safeParse({
+      nome: formNome,
+      tipo: formTipo,
+      categoria: formCategoria,
+      condicao: formCondicao,
+      status: formStatus,
+      predio: formPredio,
+      andar: formAndar,
+      setor: formSetor,
+      sala: formSala,
+      numeroPatrimonio: formPatrimonio,
+      numeroSerie: formSerie,
+      marca: formMarca,
+      modelo: formModelo,
+      quantidade: formQuantidade,
+    });
+
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0];
+      setFormError(firstError?.message || "Dados inválidos.");
+      return;
+    }
+
     setIsSaving(true);
     try {
-      if (!formNome.trim()) {
-        setFormError("O nome do item é obrigatório.");
-        return;
-      }
-      if (!formPredio.trim()) {
-        setFormError("O Prédio é obrigatório.");
-        return;
-      }
-      if (!formAndar.trim()) {
-        setFormError("O Andar é obrigatório.");
-        return;
-      }
-      if (!formSetor.trim()) {
-        setFormError("O Setor é obrigatório.");
-        return;
-      }
-      if (formTipo === "PATRIMONIADO") {
-        const patDigits = formPatrimonio.replace(/\D/g, "");
-        if (patDigits.length > 0 && patDigits.length < 6) {
-          setFormError(
-            "O Nº de Patrimônio deve conter exatamente 6 dígitos (ex: PAT-123456)."
-          );
-          return;
-        }
-        if (patDigits.length === 0) {
-          setFormError(
-            "Itens patrimoniados exigem o Nº de Patrimônio."
-          );
-          return;
-        }
-      }
-      if (formTipo === "SERIALIZADO" && !formSerie.trim()) {
-        setFormError("Itens serializados exigem o Número de Série.");
-        return;
-      }
-      if (formStatus === "ATIVO" && formCondicao === "ESTRAGADO") {
-        setFormError(
-          "Equipamento ESTRAGADO não pode estar ATIVO. Altere o status para EM_MANUTENCAO ou a condição.",
-        );
-        return;
-      }
-      if (
-        formStatus === "EM_MANUTENCAO" &&
-        (formCondicao === "NOVO" || formCondicao === "REGULAR")
-      ) {
-        setFormError(
-          "Equipamento em manutenção deve estar RUIM ou ESTRAGADO. Ajuste a condição.",
-        );
-        return;
-      }
-
-      const now = new Date().toISOString();
-
-      // Concatenar campos hierárquicos para o campo legacy localizacao_atual
       const localConcatenado = [formPredio, formAndar, formSetor, formSala]
         .filter(Boolean)
         .join(" - ");

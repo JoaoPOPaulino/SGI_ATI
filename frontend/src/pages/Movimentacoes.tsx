@@ -29,6 +29,7 @@ import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
 import { useToast } from "../components/SistemaToast";
+import { movimentacaoSchema } from "../services/schemas";
 import {
   fetchAssinaturasGuia,
   createAssinaturaGuia,
@@ -544,13 +545,22 @@ const Movimentacoes: React.FC = () => {
       setIsSaving(false);
       return;
     }
-    if (formTipo !== "VIAGEM" && !formChamado.trim()) {
-      setFormError("Informe o número do chamado.");
-      setIsSaving(false);
-      return;
-    }
-    if (!selectedItemId) {
-      setFormError("Selecione o equipamento que deseja movimentar.");
+
+    const parsed = movimentacaoSchema.safeParse({
+      tipo: formTipo,
+      chamado: formChamado,
+      itemId: selectedItemId,
+      destinoPolo: formDestinoPolo,
+      destinoAndar: formDestinoAndar,
+      destinoSetor: formDestinoSetor,
+      destinoSala: formDestinoSala,
+      destinoEstacao: formDestinoEstacao,
+      observacao: formObs,
+    });
+
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0];
+      setFormError(firstError?.message || "Dados inválidos.");
       setIsSaving(false);
       return;
     }
@@ -566,14 +576,9 @@ const Movimentacoes: React.FC = () => {
       let destinoFinal = "";
       if (formTipo === "MANUTENCAO") {
         destinoFinal = item.localizacao_atual;
-      } else if (formTipo === "VIAGEM") {
-        destinoFinal = [formDestinoPolo, formDestinoAndar, formDestinoSetor, formDestinoSala, formDestinoEstacao]
-          .filter(Boolean).join(" - ");
-        if (!destinoFinal) { setFormError("Informe o destino do laboratório."); setIsSaving(false); return; }
       } else {
         destinoFinal = [formDestinoPolo, formDestinoAndar, formDestinoSetor, formDestinoSala, formDestinoEstacao]
           .filter(Boolean).join(" - ");
-        if (!destinoFinal) { setFormError("Informe o endereço hierárquico de destino."); setIsSaving(false); return; }
       }
 
       const now = new Date().toISOString();

@@ -33,32 +33,10 @@ import {
   Loader2,
   Download,
 } from "lucide-react";
-import { z } from "zod";
 import ConfirmDialog from "../components/DialogoConfirmacao";
 import UserDetailModal from "../components/ModalDetalhesUsuario";
 import { useToast } from "../components/SistemaToast";
-
-const isValidCpf = (cpf: string): boolean => {
-  const digits = cpf.replace(/\D/g, "");
-  if (digits.length !== 11 || /^(\d)\1{10}$/.test(digits)) return false;
-  return true;
-};
-
-const userSchema = z.object({
-  nome: z
-    .string()
-    .min(3, { message: "O nome deve ter no mínimo 3 caracteres." })
-    .max(50, { message: "O nome deve ter no máximo 50 caracteres." }),
-  email: z
-    .string()
-    .email({ message: "Formato de e-mail inválido." })
-    .toLowerCase(),
-  cpf: z.string().refine((v) => isValidCpf(v), {
-    message: "CPF inválido. Informe 11 dígitos.",
-  }),
-  perfil: z.enum(["ESTAGIARIO", "TECNICO", "SUPERIOR", "ADMIN"] as const),
-  polo: z.string().optional(),
-});
+import { userSchema, isValidCpf } from "../services/schemas";
 
 const POLOS_DISPONIVEIS = ["GSM", "Laboratório"];
 
