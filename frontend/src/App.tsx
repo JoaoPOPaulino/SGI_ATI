@@ -21,9 +21,9 @@ import NotFound from './pages/NaoEncontrado';
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
-      <ToastProvider>
-        <AuthProvider>
-          <BrowserRouter>
+      <BrowserRouter>
+        <ToastProvider>
+          <AuthProvider>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/trocar-senha" element={<ChangePassword />} />
@@ -46,9 +46,9 @@ const App: React.FC = () => {
 
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
-        </AuthProvider>
-      </ToastProvider>
+          </AuthProvider>
+        </ToastProvider>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 };
