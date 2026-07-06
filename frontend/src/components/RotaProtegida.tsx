@@ -36,7 +36,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPerfi
     );
   }
 
-  if (requiredPolo && !isLoading && user.polo !== requiredPolo && user.perfil !== 'ADMIN') {
+  if (requiredPolo && !isLoading && user && user.polo !== requiredPolo && user.perfil !== 'ADMIN') {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center animate-fade-in">
         <div className="p-4 bg-error-container/20 border border-error/30 rounded-2xl mb-6 text-error">
@@ -44,7 +44,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPerfi
         </div>
         <h1 className="text-2xl font-bold text-on-surface mb-2">Acesso Restrito</h1>
         <p className="text-on-surface-variant max-w-md">
-          Esta área é exclusiva para o polo <span className="text-error font-bold">{requiredPolo}</span>. Seu polo atual é <span className="text-on-surface font-bold">{user.polo || 'não definido'}</span>.
+          Esta área é exclusiva para o polo <span className="text-error font-bold">{requiredPolo}</span>. Seu polo atual é <span className="text-on-surface font-bold">{user?.polo || 'não definido'}</span>.
         </p>
       </div>
     );

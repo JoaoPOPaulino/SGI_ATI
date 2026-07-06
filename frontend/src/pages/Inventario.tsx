@@ -320,6 +320,7 @@ const Inventario: React.FC = () => {
 
     setIsSaving(true);
     try {
+      const now = new Date().toISOString();
       const localConcatenado = [formPredio, formAndar, formSetor, formSala]
         .filter(Boolean)
         .join(" - ");

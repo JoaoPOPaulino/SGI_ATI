@@ -76,7 +76,6 @@ const Labin: React.FC = () => {
   const openEditLaudo = (laudo: LaudoTecnico) => {
     setEditingLaudoId(laudo.id);
     setSelectedItemId(laudo.item_id);
-    setItemSearch('');
     setFormDescricao(laudo.descricao_problema);
     setFormAcao(laudo.acao_realizada);
     setFormPecas(laudo.pecas_utilizadas);
@@ -218,7 +217,7 @@ const Labin: React.FC = () => {
         <div className="flex items-center gap-3">
           {canCreateLaudo && (
             <button
-              onClick={() => { setSelectedItemId(''); setItemSearch(''); setIsFormOpen(true); }}
+              onClick={() => { setSelectedItemId(''); setIsFormOpen(true); }}
               className="flex items-center gap-2 px-5 py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md"
             >
               <Plus size={16} />

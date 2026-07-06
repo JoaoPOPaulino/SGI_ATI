@@ -9,7 +9,7 @@ export const itemSchema = z
     tipo: z.enum(["PATRIMONIADO", "SERIALIZADO", "NAO_SERIALIZADO"]),
     categoria: z.string().min(1, "A categoria é obrigatória."),
     condicao: z.enum(["NOVO", "BOM", "REGULAR", "RUIM", "ESTRAGADO"], {
-      errorMap: () => ({ message: "Selecione uma condição válida." }),
+      message: "Selecione uma condição válida.",
     }),
     status: z.enum([
       "ATIVO",
