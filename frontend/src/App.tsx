@@ -27,67 +27,45 @@ const PageLoader = () => (
   </div>
 );
 
+const LazyPage: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Suspense fallback={<PageLoader />}>{children}</Suspense>
+);
+
 const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <ToastProvider>
         <AuthProvider>
           <BrowserRouter>
-            <Suspense fallback={<PageLoader />}>
-              <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/trocar-senha" element={<ChangePassword />} />
+            <Routes>
+              <Route path="/login" element={
+                <Suspense fallback={<PageLoader />}><Login /></Suspense>
+              } />
+              <Route path="/trocar-senha" element={
+                <Suspense fallback={<PageLoader />}><ChangePassword /></Suspense>
+              } />
 
-            <Route path="/" element={
-              <ProtectedRoute>
-                <Layout><Dashboard /></Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/inventario" element={
-              <ProtectedRoute>
-                <Layout><Inventario /></Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/movimentacoes" element={
-              <ProtectedRoute>
-                <Layout><Movimentacoes /></Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/emprestimos" element={
-              <ProtectedRoute>
-                <Layout><Emprestimos section="emprestimos" /></Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/eventos" element={
-              <ProtectedRoute>
-                <Layout><Emprestimos section="eventos" /></Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/manutencao" element={
-              <ProtectedRoute>
-                <Layout><Manutencao /></Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/labin" element={
-              <ProtectedRoute>
-                <Layout><Labin /></Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/perfil" element={
-              <ProtectedRoute>
-                <Layout><Perfil /></Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/admin" element={
-              <ProtectedRoute requiredPerfil="ADMIN">
-                <Layout><Admin /></Layout>
-              </ProtectedRoute>
-            } />
+              <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+                <Route index element={<LazyPage><Dashboard /></LazyPage>} />
+                <Route path="inventario" element={<LazyPage><Inventario /></LazyPage>} />
+                <Route path="movimentacoes" element={<LazyPage><Movimentacoes /></LazyPage>} />
+                <Route path="emprestimos" element={<LazyPage><Emprestimos section="emprestimos" /></LazyPage>} />
+                <Route path="eventos" element={<LazyPage><Emprestimos section="eventos" /></LazyPage>} />
+                <Route path="manutencao" element={<LazyPage><Manutencao /></LazyPage>} />
+                <Route path="labin" element={<LazyPage><Labin /></LazyPage>} />
+                <Route path="perfil" element={<LazyPage><Perfil /></LazyPage>} />
+                <Route path="admin" element={
+                  <ProtectedRoute requiredPerfil="ADMIN">
+                    <LazyPage><Admin /></LazyPage>
+                  </ProtectedRoute>
+                } />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
+              <Route path="*" element={
+                <Suspense fallback={<PageLoader />}><NotFound /></Suspense>
+              } />
+            </Routes>
+          </BrowserRouter>
         </AuthProvider>
       </ToastProvider>
     </ErrorBoundary>

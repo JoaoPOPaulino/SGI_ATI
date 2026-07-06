@@ -1,16 +1,15 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import Sidebar from './BarraLateral';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { Menu, X, LogOut, User } from 'lucide-react';
+import { Menu, X, User } from 'lucide-react';
 
-const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, logout } = useAuth();
+const Layout: React.FC = () => {
+  const { user } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <div className="flex h-screen bg-background overflow-hidden text-on-surface font-body">
-      {/* Mobile overlay backdrop */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -18,7 +17,6 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         />
       )}
 
-      {/* Sidebar - hidden on mobile unless toggled */}
       <div className={`
         fixed inset-y-0 left-0 z-50 transform transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0
@@ -27,9 +25,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         <Sidebar onNavigate={() => setSidebarOpen(false)} />
       </div>
 
-      {/* Main content area */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Top bar (mobile only) */}
         <header className="lg:hidden h-14 border-b border-outline-variant/30 bg-surface-container-lowest flex items-center justify-between px-4 shrink-0">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -51,7 +47,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </header>
 
         <main className="grow overflow-y-auto p-4 md:p-8">
-          {children}
+          <Outlet />
         </main>
       </div>
     </div>
