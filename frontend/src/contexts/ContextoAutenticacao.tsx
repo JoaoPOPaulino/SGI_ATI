@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, useRef } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "../services/supabase";
 import type { Usuario, PerfilUsuario } from "../services/types";
 
@@ -38,11 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const userRef = useRef<Usuario | null>(null);
-
-  useEffect(() => {
-    userRef.current = user;
-  }, [user]);
 
   const loadUserProfile = async (authId: string) => {
     const { data, error } = await supabase
@@ -108,19 +103,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const { data: listener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === "INITIAL_SESSION") return;
+        if (event === "TOKEN_REFRESHED") return;
 
         if (event === "SIGNED_OUT") {
-          if (userRef.current) {
-            console.warn("SIGNED_OUT ignorado — usuário estava logado. Faça logout manual.");
-          }
+          setUser(null);
           return;
         }
 
-        if (event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
-          return;
-        }
-
-        if (session?.user && mounted && userRef.current === null) {
+        if (session?.user && mounted) {
           try {
             await loadUserProfile(session.user.id);
           } catch (err) {
@@ -136,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, []);
 
-  const login = useCallback(async (
+  const login = async (
     cpf: string,
     senha?: string,
   ): Promise<{
@@ -190,16 +180,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     try {
-      const { data: email, error: rpcError } = await supabase
-        .rpc("get_user_email_by_cpf", { p_cpf: cleanCpf });
+      const { data: perfilUsuario, error: perfilError } = await supabase
+        .from("usuarios")
+        .select("*")
+        .eq("cpf", cleanCpf)
+        .eq("ativo", true)
+        .maybeSingle();
 
-      if (rpcError || !email) {
+      if (perfilError || !perfilUsuario) {
         return { success: false, error: "Usuário não encontrado ou inativo." };
       }
 
       const { data: authData, error: authError } =
         await supabase.auth.signInWithPassword({
-          email: email as string,
+          email: perfilUsuario.email,
           password: senha,
         });
 
@@ -227,41 +221,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         error: "Serviço de autenticação indisponível. Tente novamente.",
       };
     }
-  }, []);
+  };
 
-  const logout = useCallback(async () => {
+  const logout = async () => {
     setUser(null);
     await supabase.auth.signOut();
-  }, []);
+  };
 
-  const changeProfile = useCallback((perfil: PerfilUsuario) => {
-    setUser((prev) => prev ? { ...prev, perfil } : null);
-  }, []);
+  const changeProfile = (perfil: PerfilUsuario) => {
+    if (!user) return;
+    setUser({ ...user, perfil });
+  };
 
-  const updatePhoto = useCallback(async (fotoBase64: string) => {
-    const currentUser = userRef.current;
-    if (!currentUser) return;
+  const updatePhoto = async (fotoBase64: string) => {
+    if (!user) return;
 
-    setUser((prev) => {
-      if (!prev) return null;
-      return { ...prev, foto: fotoBase64 };
-    });
+    const updatedUser = { ...user, foto: fotoBase64 };
+    setUser(updatedUser);
 
     try {
       const { error } = await supabase
         .from("usuarios")
         .update({ foto: fotoBase64 })
-        .eq("id", currentUser.id);
+        .eq("id", user.id);
       if (error)
         console.warn("Erro ao salvar foto no Supabase:", error.message);
     } catch {
       console.warn("Supabase offline — foto salva apenas na sessão atual.");
     }
-  }, []);
+  };
 
-  const hasPermission = useCallback((requiredPerfil: PerfilUsuario): boolean => {
-    const currentUser = userRef.current;
-    if (!currentUser) return false;
+  const hasPermission = (requiredPerfil: PerfilUsuario): boolean => {
+    if (!user) return false;
 
     const hierarchy: Record<PerfilUsuario, number> = {
       ESTAGIARIO: 1,
@@ -270,21 +261,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       ADMIN: 4,
     };
 
-    return hierarchy[currentUser.perfil] >= hierarchy[requiredPerfil];
-  }, []);
-
-  const value = useMemo(() => ({
-    user,
-    login,
-    logout,
-    changeProfile,
-    updatePhoto,
-    hasPermission,
-    isLoading,
-  }), [user, isLoading, login, logout, changeProfile, updatePhoto, hasPermission]);
+    return hierarchy[user.perfil] >= hierarchy[requiredPerfil];
+  };
 
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        changeProfile,
+        updatePhoto,
+        hasPermission,
+        isLoading,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
