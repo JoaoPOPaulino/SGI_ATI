@@ -13,19 +13,15 @@ export type StatusItem =
 export type TipoMovimentacao =
   | "CHECK_OUT"
   | "CHECK_IN"
-  | "TRANSFERENCIA"
   | "MANUTENCAO"
   | "BAIXA"
   | "EMPRESTIMO"
-  | "VIAGEM";
+  | "ENVIAR_LAB";
 export type StatusAprovacao = "PENDENTE" | "APROVADO" | "REJEITADO";
 export type StatusGuia =
   | "ABERTA"
-  | "EM_COLETA"
-  | "EM_ATENDIMENTO"
-  | "ENVIADO_LABORATORIO"
-  | "EM_SERVICO"
-  | "AGUARDANDO_DEVOLUCAO"
+  | "EM_ANDAMENTO"
+  | "AGUARDANDO_RETIRADA"
   | "ENCERRADA";
 
 export interface Usuario {
@@ -177,11 +173,10 @@ export interface SolicitacaoCadastro {
 }
 
 export type TipoAssinaturaGuia =
-  | "EMISSAO_GUIA"
-  | "RESPONSAVEL_COLETA"
-  | "REQUERENTE_ENTREGA"
-  | "RECEBIMENTO_LABORATORIO"
-  | "REQUERENTE_DEVOLUCAO";
+  | "EMISSAO"
+  | "RECEBIMENTO"
+  | "APROVACAO_SAIDA"
+  | "RETIRADA";
 
 export interface AssinaturaGuia {
   id: string;

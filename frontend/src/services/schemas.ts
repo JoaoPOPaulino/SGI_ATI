@@ -64,41 +64,19 @@ export type ItemFormData = z.infer<typeof itemSchema>;
 
 export const movimentacaoSchema = z
   .object({
-    tipo: z.enum(["TRANSFERENCIA", "MANUTENCAO", "VIAGEM"]),
+    tipo: z.enum(["MANUTENCAO", "ENVIAR_LAB"]),
     chamado: z.string().optional(),
     itemId: z.string().min(1, "Selecione o equipamento."),
-    destinoPolo: z.string().optional(),
-    destinoAndar: z.string().optional(),
-    destinoSetor: z.string().optional(),
-    destinoSala: z.string().optional(),
-    destinoEstacao: z.string().optional(),
+    destino: z.string().optional(),
     observacao: z.string().optional(),
   })
   .superRefine((data, ctx) => {
-    if (data.tipo !== "VIAGEM" && !(data.chamado || "").trim()) {
+    if (data.tipo === "ENVIAR_LAB" && !(data.chamado || "").trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: "Informe o número do chamado.",
         path: ["chamado"],
       });
-    }
-    if (data.tipo === "VIAGEM" || data.tipo === "TRANSFERENCIA") {
-      const destino = [
-        data.destinoPolo,
-        data.destinoAndar,
-        data.destinoSetor,
-        data.destinoSala,
-        data.destinoEstacao,
-      ]
-        .filter(Boolean)
-        .join("");
-      if (!destino) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Informe o endereço hierárquico de destino.",
-          path: ["destinoPolo"],
-        });
-      }
     }
   });
 

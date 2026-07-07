@@ -1595,26 +1595,17 @@ const Inventario: React.FC = () => {
                   <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
                     Status Operacional
                   </label>
-                  {editingItem ? (
-                    <div className="px-3 py-2.5 bg-surface border border-outline rounded-xl">
-                      <StatusBadge type="status" value={formStatus} />
-                      <p className="text-[9px] text-outline mt-1">
-                        Status gerenciado pelo fluxo operacional. Use as páginas
-                        específicas para alterar.
-                      </p>
-                    </div>
-                  ) : (
-                    <select
-                      value={formStatus}
-                      onChange={(e) =>
-                        setFormStatus(e.target.value as StatusItem)
-                      }
-                      className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
-                    >
-                      <option value="ATIVO">Ativo</option>
-                      <option value="EM_ESTOQUE">Guardado</option>
-                    </select>
-                  )}
+                  <select
+                    value={formStatus}
+                    onChange={(e) => setFormStatus(e.target.value as StatusItem)}
+                    className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
+                  >
+                    <option value="ATIVO">Ativo</option>
+                    <option value="EM_ESTOQUE">Em Estoque</option>
+                    {editingItem && (formStatus !== "ATIVO" && formStatus !== "EM_ESTOQUE") && (
+                      <option value={formStatus}>{formStatus}</option>
+                    )}
+                  </select>
                 </div>
               </div>
 
