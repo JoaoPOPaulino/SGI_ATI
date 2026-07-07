@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useRef } from "react";
 import { supabase } from "../services/supabase";
 import type { Usuario, PerfilUsuario } from "../services/types";
 
@@ -38,6 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const userLoaded = useRef(false);
 
   const loadUserProfile = async (authId: string) => {
     const { data, error } = await supabase
@@ -60,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
 
     const mappedUser = mapUsuario(data);
+    userLoaded.current = true;
     setUser(mappedUser);
 
     return data;
@@ -106,11 +108,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (event === "TOKEN_REFRESHED") return;
 
         if (event === "SIGNED_OUT") {
+          userLoaded.current = false;
           setUser(null);
           return;
         }
 
-        if (session?.user && mounted && !user) {
+        if (session?.user && mounted && !userLoaded.current) {
           try {
             await loadUserProfile(session.user.id);
           } catch (err) {
