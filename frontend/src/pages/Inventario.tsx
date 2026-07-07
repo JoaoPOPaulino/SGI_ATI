@@ -24,7 +24,6 @@ import {
 } from "../services/supabaseMovimentacoes";
 import { fetchLocais } from "../services/supabaseLocais";
 import { fetchLaudos } from "../services/supabaseLaudos";
-import { fetchUsuarios, SupabaseUsuario } from "../services/supabaseUsuarios";
 import StatusBadge from "../components/DistintivoStatus";
 import Paginacao from "../components/Paginacao";
 import { useToast } from "../components/SistemaToast";
@@ -115,13 +114,6 @@ const Inventario: React.FC = () => {
 
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
-  const [usuariosAtivos, setUsuariosAtivos] = useState<SupabaseUsuario[]>([]);
-
-  // Responsável pela Custódia no formulário
-  const [formAtribuidoAId, setFormAtribuidoAId] = useState("");
-  const [formAtribuidoANome, setFormAtribuidoANome] = useState("");
-  const [moveAtribuidoAId, setMoveAtribuidoAId] = useState("");
-  const [moveAtribuidoANome, setMoveAtribuidoANome] = useState("");
 
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(10);
@@ -172,15 +164,8 @@ const Inventario: React.FC = () => {
 
   const ensureLocaisLoaded = async () => {
     if (locaisList.length > 0) return;
-
     const allLocais = await fetchLocais();
     setLocaisList(allLocais);
-  };
-
-  const ensureUsuariosLoaded = async () => {
-    if (usuariosAtivos.length > 0) return;
-    const users = await fetchUsuarios();
-    setUsuariosAtivos(users.filter((u) => u.ativo));
   };
 
   useEffect(() => {
@@ -235,7 +220,6 @@ const Inventario: React.FC = () => {
   const openModal = (item: Item | null = null) => {
     if (isEstagiario) return;
     void ensureLocaisLoaded();
-    void ensureUsuariosLoaded();
     if (item && item.status === "BAIXADO") {
       toast("warning", "Nenhuma modificação é permitida num registro BAIXADO.");
       return;
@@ -262,9 +246,6 @@ const Inventario: React.FC = () => {
       setFormAndar(item.andar || "");
       setFormSetor(item.setor || "");
       setFormSala(item.sala || "");
-
-      setFormAtribuidoAId(item.atribuido_a_id || "");
-      setFormAtribuidoANome(item.atribuido_a_nome || "");
     } else {
       setEditingItem(null);
       setFormNome("");
@@ -283,10 +264,7 @@ const Inventario: React.FC = () => {
       setFormSetor("GSM");
       setFormSala("");
 
-      setFormAtribuidoAId("");
-      setFormAtribuidoANome("");
-    }
-    setIsModalOpen(true);
+      setIsModalOpen(true);
   };
 
   // Submissão do Formulário (Cadastro / Edição)
@@ -348,8 +326,8 @@ const Inventario: React.FC = () => {
             formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO"
               ? 1
               : formQuantidade,
-          atribuido_a_id: formAtribuidoAId || undefined,
-          atribuido_a_nome: formAtribuidoANome || undefined,
+          atribuido_a_id: user?.id || undefined,
+          atribuido_a_nome: user?.nome || undefined,
         });
 
         if (
@@ -396,8 +374,8 @@ const Inventario: React.FC = () => {
             formTipo === "PATRIMONIADO" || formTipo === "SERIALIZADO"
               ? 1
               : formQuantidade,
-          atribuido_a_id: formAtribuidoAId || undefined,
-          atribuido_a_nome: formAtribuidoANome || undefined,
+          atribuido_a_id: user?.id || undefined,
+          atribuido_a_nome: user?.nome || undefined,
         };
         await createItem(newItem);
 
@@ -504,7 +482,6 @@ const Inventario: React.FC = () => {
         sala: moveDestinoSala,
         estacao: moveDestinoEstacao,
         updated_at: now,
-        ...(moveAtribuidoAId ? { atribuido_a_id: moveAtribuidoAId, atribuido_a_nome: moveAtribuidoANome } : {}),
       });
 
       await createMovimentacao({
@@ -1616,29 +1593,6 @@ const Inventario: React.FC = () => {
                     </select>
                   )}
                 </div>
-              </div>
-
-              {/* Responsável pela Custódia */}
-              <div>
-                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
-                  Responsável pela Custódia
-                </label>
-                <select
-                  value={formAtribuidoAId}
-                  onChange={(e) => {
-                    setFormAtribuidoAId(e.target.value);
-                    const selected = usuariosAtivos.find((u) => u.id === e.target.value);
-                    setFormAtribuidoANome(selected?.nome || "");
-                  }}
-                  className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
-                >
-                  <option value="">Nenhum (sem responsável)</option>
-                  {usuariosAtivos.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.nome} ({u.perfil})
-                    </option>
-                  ))}
-                </select>
               </div>
 
               {formError && (
