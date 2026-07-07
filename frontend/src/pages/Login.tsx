@@ -1,16 +1,20 @@
 import React, { useState } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { AlertCircle, Eye, LogIn, Lock, User, EyeOff } from "lucide-react";
 
 const Login: React.FC = () => {
-  const { login } = useAuth();
+  const { user, login } = useAuth();
   const [cpf, setCpf] = useState("");
   const [senha, setSenha] = useState("");
   const [error, setError] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
+
+  if (user) {
+    if (user.primeiro_acesso) return <Navigate to="/trocar-senha" replace />;
+    return <Navigate to="/" replace />;
+  }
 
   const formatCpf = (value: string) => {
     return value
@@ -36,18 +40,10 @@ const Login: React.FC = () => {
     setError("");
 
     try {
-      const {
-        success,
-        error: loginError,
-        requirePasswordChange,
-      } = await login(cpf, senha);
+      const { success, error: loginError } = await login(cpf, senha);
 
       if (success) {
-        if (requirePasswordChange) {
-          navigate("/trocar-senha", { replace: true });
-        } else {
-          navigate("/", { replace: true });
-        }
+        setLoading(false);
       } else {
         setError(loginError || "Erro ao autenticar.");
         setLoading(false);
