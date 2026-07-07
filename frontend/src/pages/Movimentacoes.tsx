@@ -273,7 +273,7 @@ const Movimentacoes: React.FC = () => {
 
   const loadItens = async () => {
     const allItens = await fetchAllItens();
-    setItens(allItens.filter((i) => i.status === "ATIVO" || i.status === "GUARDADO"));
+    setItens(allItens.filter((i) => i.status === "ATIVO" || i.status === "EM_ESTOQUE"));
   };
 
   useEffect(() => {
@@ -517,8 +517,8 @@ const Movimentacoes: React.FC = () => {
       if (item && item.status === "EM_MANUTENCAO") {
         const origemRestauracao = item.localizacao_atual;
         await updateItem(item.id, {
-          status: "GUARDADO",
-          condicao: "REGULAR",
+          status: "EM_ESTOQUE",
+          condicao: "USADO",
           localizacao_atual: "Almoxarifado Central (Manutenção Concluída)",
           updated_at: now,
         });
@@ -688,7 +688,7 @@ const Movimentacoes: React.FC = () => {
         });
       } else {
         await updateItem(item.id, {
-          status: item.status === "GUARDADO" ? "ATIVO" : item.status,
+          status: item.status === "EM_ESTOQUE" ? "ATIVO" : item.status,
           localizacao_atual: destinoFinal,
           updated_at: now,
           polo: formDestinoPolo,

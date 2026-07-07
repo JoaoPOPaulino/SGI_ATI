@@ -27,7 +27,7 @@ const Labin: React.FC = () => {
   const [formAcao, setFormAcao] = useState('');
   const [formPecas, setFormPecas] = useState('');
   const [formStatusServico, setFormStatusServico] = useState<'EM_ANALISE' | 'AGUARDANDO_PECA' | 'EM_REPARO' | 'FINALIZADO'>('EM_ANALISE');
-  const [formCondicaoLaudo, setFormCondicaoLaudo] = useState<CondicaoItem>('REGULAR');
+  const [formCondicaoLaudo, setFormCondicaoLaudo] = useState<CondicaoItem>('USADO');
   
   // Estados de Paginação — Laudos
   const [paginaAtual, setPaginaAtual] = useState(1);
@@ -149,7 +149,7 @@ const Labin: React.FC = () => {
 
         await updateItem(item.id, {
           status: 'GUARDADO',
-          condicao: formCondicaoLaudo || 'REGULAR',
+          condicao: formCondicaoLaudo || 'USADO',
           localizacao_atual: 'LABIN',
           updated_at: now
         });
@@ -382,8 +382,7 @@ const Labin: React.FC = () => {
                     className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                   >
                     <option value="NOVO">Novo</option>
-                    <option value="REGULAR">Bom / Regular</option>
-                    <option value="RUIM">Ruim</option>
+                    <option value="USADO">Usado</option>
                   </select>
                 </div>
               )}

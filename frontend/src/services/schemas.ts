@@ -8,7 +8,7 @@ export const itemSchema = z
       .max(200, "Nome muito longo."),
     tipo: z.enum(["PATRIMONIADO", "SERIALIZADO", "NAO_SERIALIZADO"]),
     categoria: z.string().min(1, "A categoria é obrigatória."),
-    condicao: z.enum(["NOVO", "BOM", "REGULAR", "RUIM", "ESTRAGADO"], {
+    condicao: z.enum(["NOVO", "USADO"], {
       message: "Selecione uma condição válida.",
     }),
     status: z.enum([
@@ -16,7 +16,7 @@ export const itemSchema = z
       "EM_MANUTENCAO",
       "AGUARDANDO_BAIXA",
       "BAIXADO",
-      "GUARDADO",
+      "EM_ESTOQUE",
       "EMPRESTADO",
       "EM_EVENTO",
     ]),

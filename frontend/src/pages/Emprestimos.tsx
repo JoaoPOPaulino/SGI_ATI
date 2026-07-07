@@ -72,7 +72,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
   const [isSaving, setIsSaving] = useState(false);
 
   const [activeReturnLoan, setActiveReturnLoan] = useState<Loan | null>(null);
-  const [returnCondicao, setReturnCondicao] = useState<CondicaoItem>("REGULAR");
+  const [returnCondicao, setReturnCondicao] = useState<CondicaoItem>("USADO");
 
   const [manageEventId, setManageEventId] = useState<string | null>(null);
   const [showAddItemToEvent, setShowAddItemToEvent] = useState(false);
@@ -104,7 +104,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     const filteredItens = allItens.filter(
       (i) =>
         i.status === "ATIVO" ||
-        i.status === "GUARDADO" ||
+        i.status === "EM_ESTOQUE" ||
         i.status === "EMPRESTADO" ||
         i.status === "EM_EVENTO",
     );
@@ -121,7 +121,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
         if (item && item.status === "EM_EVENTO") {
           await updateItem(itemId, {
             localizacao_atual: "Almoxarifado Central",
-            status: "GUARDADO",
+            status: "EM_ESTOQUE",
             updated_at: new Date().toISOString(),
           }).catch(() => {});
           await createMovimentacao({
@@ -154,7 +154,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
   const isEstagiario = !canModify;
 
   const itensDisponiveis = useMemo(
-    () => itens.filter((i) => i.status === "GUARDADO"),
+    () => itens.filter((i) => i.status === "EM_ESTOQUE"),
     [itens],
   );
 
@@ -346,7 +346,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     const item = itens.find((i) => i.id === itemToAddToEvent);
     if (!item) return;
 
-    if (item.status !== "GUARDADO" && item.status !== "ATIVO") {
+    if (item.status !== "EM_ESTOQUE" && item.status !== "ATIVO") {
       return;
     }
 
@@ -391,7 +391,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       : item.localizacao_atual;
     await updateItem(itemId, {
       localizacao_atual: destino,
-      status: "GUARDADO",
+      status: "EM_ESTOQUE",
       updated_at: new Date().toISOString(),
     });
 
@@ -425,10 +425,8 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
 
     await updateItem(item.id, {
       condicao: returnCondicao,
-      status: returnCondicao === 'ESTRAGADO' || returnCondicao === 'RUIM' ? 'EM_MANUTENCAO' : 'GUARDADO',
-      localizacao_atual: returnCondicao === 'ESTRAGADO' || returnCondicao === 'RUIM'
-        ? 'Almoxarifado Central (Aguardando Manutenção)'
-        : 'Almoxarifado Central',
+      status: "EM_ESTOQUE",
+      localizacao_atual: "Almoxarifado Central",
       updated_at: new Date().toISOString(),
     });
 
@@ -1057,12 +1055,8 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                   }
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                 >
-                  <option value="NOVO">Como Novo</option>
-                  <option value="REGULAR">Regular</option>
-                  <option value="RUIM">Ruim (Avarias)</option>
-                  <option value="ESTRAGADO">
-                    Estragado (Reparo necessário)
-                  </option>
+                  <option value="NOVO">Novo</option>
+                  <option value="USADO">Usado</option>
                 </select>
               </div>
               <div className="pt-4 border-t border-outline-variant/20 flex justify-end gap-3">

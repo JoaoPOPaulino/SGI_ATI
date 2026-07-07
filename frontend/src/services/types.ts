@@ -1,13 +1,13 @@
 export type PerfilUsuario = "ESTAGIARIO" | "TECNICO" | "SUPERVISOR" | "ADMIN";
 export type TipoItem = "PATRIMONIADO" | "SERIALIZADO" | "NAO_SERIALIZADO";
 export type CategoriaItem = string;
-export type CondicaoItem = "NOVO" | "BOM" | "REGULAR" | "RUIM" | "ESTRAGADO";
+export type CondicaoItem = "NOVO" | "USADO";
 export type StatusItem =
   | "ATIVO"
   | "EM_MANUTENCAO"
   | "AGUARDANDO_BAIXA"
   | "BAIXADO"
-  | "GUARDADO"
+  | "EM_ESTOQUE"
   | "EMPRESTADO"
   | "EM_EVENTO";
 export type TipoMovimentacao =

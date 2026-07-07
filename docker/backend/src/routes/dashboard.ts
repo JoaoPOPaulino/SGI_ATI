@@ -20,7 +20,6 @@ dashboardRouter.get("/", requireAuth, async (req: Request, res: Response) => {
     res.json({
       stats: {
         total: itens.length,
-        estragados: itens.filter(i => i.condicao === "ESTRAGADO").length,
         manutencao: itens.filter(i => i.status === "EM_MANUTENCAO").length,
         emprestados: itens.filter(i => i.status === "EMPRESTADO").length,
         emEvento: itens.filter(i => i.status === "EM_EVENTO").length,
@@ -35,7 +34,7 @@ dashboardRouter.get("/", requireAuth, async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     res.status(500).json({
-      stats: { total: 0, estragados: 0, manutencao: 0, emprestados: 0, emEvento: 0, disponiveis: 0, aguardandoBaixa: 0, prontosRetirada: 0 },
+      stats: { total: 0, manutencao: 0, emprestados: 0, emEvento: 0, disponiveis: 0, aguardandoBaixa: 0, prontosRetirada: 0 },
       pendingMovs: [], recentMovs: [], overdueLoans: [], chartData: [],
     });
   }

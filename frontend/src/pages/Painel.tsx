@@ -39,7 +39,6 @@ const TIPO_MOV_LABEL: Record<string, { label: string; color: string }> = {
 
 const INITIAL_STATS: DashboardStats = {
   total: 0,
-  estragados: 0,
   manutencao: 0,
   emprestados: 0,
   emEvento: 0,
@@ -441,7 +440,7 @@ const Dashboard: React.FC = () => {
           Visão Geral do Acervo
         </h2>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
           <button
             type="button"
             onClick={() => navigate("/inventario")}
@@ -530,26 +529,7 @@ const Dashboard: React.FC = () => {
             <h4 className="text-xl font-black text-orange-500 mt-0.5">
               {stats.manutencao}
             </h4>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate("/manutencao")}
-            className="text-left bg-surface-container-lowest p-4 rounded-xl shadow-sm border-b-4 border-red-600/50 hover:shadow-md transition-all cursor-pointer"
-          >
-            <div className="flex justify-between items-start mb-2">
-              <div className="p-2 bg-red-500/10 rounded-lg">
-                <AlertTriangle size={16} className="text-red-500" />
-              </div>
-            </div>
-            <p className="text-on-surface-variant text-[10px] font-bold uppercase tracking-wider">
-              Estragados
-            </p>
-            <h4 className="text-xl font-black text-red-500 mt-0.5">
-              {stats.estragados}
-            </h4>
-          </button>
-        </div>
+          </button>        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-8">

@@ -128,7 +128,7 @@ export function getReversedStatus(
   const lastMov = sorted[0];
   switch (lastMov.tipo) {
     case 'CHECK_IN':
-      return 'GUARDADO';
+      return 'EM_ESTOQUE';
     case 'CHECK_OUT':
       return 'ATIVO';
     case 'MANUTENCAO':

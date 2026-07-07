@@ -22,7 +22,7 @@ const Manutencao: React.FC = () => {
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
   const [repairTarget, setRepairTarget] = useState<Item | null>(null);
-  const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('REGULAR');
+  const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('USADO');
   const [rejectTarget, setRejectTarget] = useState<Item | null>(null);
   const [rejectMotivo, setRejectMotivo] = useState('');
   const [approveTarget, setApproveTarget] = useState<Item | null>(null);
@@ -37,9 +37,7 @@ const Manutencao: React.FC = () => {
     setMaintenanceItens(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
     setActiveItens(allItens.filter(i =>
-      i.condicao === 'ESTRAGADO'
-        ? (i.status !== 'BAIXADO' && i.status !== 'AGUARDANDO_BAIXA' && i.status !== 'EMPRESTADO' && i.status !== 'EM_EVENTO')
-        : (i.status === 'ATIVO' || i.status === 'GUARDADO') && i.condicao === 'RUIM'
+      (i.status === 'ATIVO' || i.status === 'EM_ESTOQUE')
     ));
     setLoading(false);
   };
@@ -152,7 +150,7 @@ const Manutencao: React.FC = () => {
     if (!repairTarget || !canModify) return;
     try {
       const now = new Date().toISOString();
-      await updateItem(repairTarget.id, { status: 'GUARDADO', condicao: repairCondicao, localizacao_atual: 'Almoxarifado Central (Manutenção Concluída)', updated_at: now });
+      await updateItem(repairTarget.id, { status: 'EM_ESTOQUE', condicao: repairCondicao, localizacao_atual: 'Almoxarifado Central (Manutenção Concluída)', updated_at: now });
       await createMovimentacao({
         id: crypto.randomUUID(), item_id: repairTarget.id, item_nome: repairTarget.nome, tipo: 'CHECK_IN',
         origem: 'Oficina / Laboratório', destino: 'Almoxarifado Central (Manutenção Concluída)',
@@ -301,10 +299,9 @@ const Manutencao: React.FC = () => {
             <label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1.5`}>Condição Pós-Reparo</label>
             <select value={repairCondicao} onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)} className="w-full px-3 py-2.5 bg-surface border border-outline rounded-lg text-[11px] focus:ring-2 focus:ring-primary mb-5">
               <option value="NOVO">Novo</option>
-              <option value="REGULAR">Bom / Regular</option>
-              <option value="RUIM">Ruim</option>
+              <option value="USADO">Usado</option>
             </select>
-            <p className="text-[10px] text-outline mb-5 bg-surface-container p-2.5 rounded-lg">O item será movido para <strong>Almoxarifado Central</strong> com status <strong>GUARDADO</strong>, pronto para retirada.</p>
+            <p className="text-[10px] text-outline mb-5 bg-surface-container p-2.5 rounded-lg">O item será movido para <strong>Almoxarifado Central</strong> com status <strong>EM_ESTOQUE</strong>, pronto para retirada.</p>
             <div className="flex gap-2.5">
               <button onClick={() => setRepairTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button>
               <button onClick={handleCompleteRepair} className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">Confirmar Reparo</button>

@@ -777,7 +777,7 @@ const Inventario: React.FC = () => {
             >
               <option value="TODOS">Status</option>
               <option value="ATIVO">Ativo</option>
-              <option value="GUARDADO">Guardado</option>
+              <option value="EM_ESTOQUE">Guardado</option>
               <option value="EMPRESTADO">Emprestado</option>
               <option value="EM_EVENTO">Em Evento</option>
               <option value="EM_MANUTENCAO">Manutenção</option>
@@ -796,9 +796,7 @@ const Inventario: React.FC = () => {
             >
               <option value="TODAS">Condições</option>
               <option value="NOVO">Novo</option>
-              <option value="REGULAR">Regular</option>
-              <option value="RUIM">Ruim</option>
-              <option value="ESTRAGADO">Estragado</option>
+              <option value="USADO">Usado</option>
             </select>
           </div>
         </div>
@@ -1585,18 +1583,11 @@ const Inventario: React.FC = () => {
                   </label>
                   <select
                     value={formCondicao}
-                    onChange={(e) => {
-                      const c = e.target.value as CondicaoItem;
-                      setFormCondicao(c);
-                      if (c === "ESTRAGADO" && formStatus === "ATIVO")
-                        setFormStatus("EM_MANUTENCAO");
-                    }}
+                    onChange={(e) => setFormCondicao(e.target.value as CondicaoItem)}
                     className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                   >
                     <option value="NOVO">Novo</option>
-                    <option value="REGULAR">Regular</option>
-                    <option value="RUIM">Ruim</option>
-                    <option value="ESTRAGADO">Estragado</option>
+                    <option value="USADO">Usado</option>
                   </select>
                 </div>
 
@@ -1621,7 +1612,7 @@ const Inventario: React.FC = () => {
                       className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                     >
                       <option value="ATIVO">Ativo</option>
-                      <option value="GUARDADO">Guardado</option>
+                      <option value="EM_ESTOQUE">Guardado</option>
                     </select>
                   )}
                 </div>

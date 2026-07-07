@@ -3,7 +3,6 @@ import type { Movimentacao, Loan, Item } from "./types";
 
 export interface DashboardStats {
   total: number;
-  estragados: number;
   manutencao: number;
   emprestados: number;
   emEvento: number;
