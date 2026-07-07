@@ -1,4 +1,5 @@
 import { Router, Request, Response } from "express";
+import bcrypt from "bcrypt";
 import { query } from "../config/database.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
@@ -13,6 +14,25 @@ usuariosRouter.get("/", requireAuth, async (req: Request, res: Response) => {
     res.json(result.rows);
   } catch (err: any) {
     res.status(500).json([]);
+  }
+});
+
+// PATCH /api/usuarios/:id/senha
+usuariosRouter.patch("/:id/senha", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { senha } = req.body;
+    if (!senha || senha.length < 6) {
+      res.status(400).json({ error: "Senha deve ter no mínimo 6 caracteres." });
+      return;
+    }
+    const hash = await bcrypt.hash(senha, 10);
+    await query(
+      "UPDATE public.usuarios SET senha_hash = $1, primeiro_acesso = false WHERE id = $2",
+      [hash, req.params.id]
+    );
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: "Erro ao alterar senha." });
   }
 });
 
