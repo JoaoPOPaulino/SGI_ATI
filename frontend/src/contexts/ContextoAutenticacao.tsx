@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, useRef } from "react";
-import { supabase } from "../services/supabase";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import type { Usuario, PerfilUsuario } from "../services/types";
+import { loginApi, getMe, logoutApi, inviteUserApi, deleteUserApi } from "../services/apiAuth";
+import { api } from "../services/api";
 
 interface AuthContextType {
   user: Usuario | null;
@@ -17,55 +18,23 @@ interface AuthContextType {
   updatePhoto: (fotoBase64: string) => void;
   hasPermission: (requiredPerfil: PerfilUsuario) => boolean;
   isLoading: boolean;
+  inviteUser: (payload: {
+    nome: string;
+    email: string;
+    cpf: string;
+    perfil: string;
+    polo?: string;
+  }) => Promise<{ success: boolean; error?: string; user?: any }>;
+  deleteUser: (userId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-const mapUsuario = (data: any): Usuario => ({
-  id: data.id,
-  nome: data.nome,
-  email: data.email,
-  cpf: data.cpf,
-  perfil: data.perfil,
-  ativo: data.ativo ?? true,
-  polo: data.polo || undefined,
-  foto: data.foto || undefined,
-  primeiro_acesso: data.primeiro_acesso ?? false,
-});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [user, setUser] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const userLoaded = useRef(false);
-
-  const loadUserProfile = async (authId: string) => {
-    const { data, error } = await supabase
-      .from("usuarios")
-      .select("*")
-      .eq("auth_id", authId)
-      .eq("ativo", true)
-      .maybeSingle();
-
-    if (error) {
-      console.error("Erro ao buscar perfil:", error);
-      setUser(null);
-      return null;
-    }
-
-    if (!data) {
-      console.error("Perfil não encontrado para auth_id:", authId);
-      setUser(null);
-      return null;
-    }
-
-    const mappedUser = mapUsuario(data);
-    userLoaded.current = true;
-    setUser(mappedUser);
-
-    return data;
-  };
 
   useEffect(() => {
     let mounted = true;
@@ -73,59 +42,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const initSession = async () => {
       try {
         setIsLoading(true);
-
-        const { data, error } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error("Erro ao carregar sessão:", error);
-          if (mounted) setUser(null);
-          return;
+        const profile = await getMe();
+        if (mounted && profile) {
+          setUser(profile);
         }
-
-        const session = data.session;
-
-        if (!session?.user) {
-          if (mounted) setUser(null);
-          return;
-        }
-
-        await loadUserProfile(session.user.id);
-      } catch (err) {
-        console.error("Erro inesperado ao iniciar sessão:", err);
+      } catch {
         if (mounted) setUser(null);
       } finally {
-        if (mounted) {
-          setIsLoading(false);
-        }
+        if (mounted) setIsLoading(false);
       }
     };
 
     initSession();
 
-    const { data: listener } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        if (event === "INITIAL_SESSION") return;
-        if (event === "TOKEN_REFRESHED") return;
-
-        if (event === "SIGNED_OUT") {
-          userLoaded.current = false;
-          setUser(null);
-          return;
-        }
-
-        if (session?.user && mounted && !userLoaded.current) {
-          try {
-            await loadUserProfile(session.user.id);
-          } catch (err) {
-            console.error("Erro ao atualizar sessão:", err);
-          }
-        }
-      },
-    );
+    window.addEventListener("auth:unauthorized", () => {
+      setUser(null);
+    });
 
     return () => {
       mounted = false;
-      listener.subscription.unsubscribe();
     };
   }, []);
 
@@ -137,120 +72,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     error?: string;
     requirePasswordChange?: boolean;
   }> => {
-    const cleanCpf = cpf.replace(/\D/g, "");
-
     if (!senha) {
       return { success: false, error: "Informe a senha." };
     }
 
-    let requirePasswordChange = false;
+    const result = await loginApi({ cpf, senha });
 
-    try {
-      const { data: fnData, error: fnError } = await supabase.functions.invoke(
-        "login-cpf",
-        {
-          body: { cpf: cleanCpf, senha },
-        },
-      );
-
-      if (!fnError && fnData?.success) {
-        if (fnData.session) {
-          await supabase.auth.setSession({
-            access_token: fnData.session.access_token,
-            refresh_token: fnData.session.refresh_token,
-          });
-        }
-        const profile = await loadUserProfile(
-          fnData.user.auth_id || fnData.user.id,
-        );
-        if (profile) {
-          requirePasswordChange = profile.primeiro_acesso || false;
-        }
-        if (!profile) {
-          return {
-            success: false,
-            error: "Erro ao carregar perfil. Tente novamente.",
-          };
-        }
-        return { success: true, requirePasswordChange };
-      }
-
-      if (fnData?.error?.includes("Confirme seu e-mail")) {
-        return { success: false, error: fnData.error };
-      }
-    } catch (err) {
-      console.error("login-cpf Edge Function fallback error:", err);
+    if (result.success && result.user) {
+      setUser(result.user);
     }
 
-    try {
-      const { data: perfilUsuario, error: perfilError } = await supabase
-        .from("usuarios")
-        .select("*")
-        .eq("cpf", cleanCpf)
-        .eq("ativo", true)
-        .maybeSingle();
-
-      if (perfilError || !perfilUsuario) {
-        return { success: false, error: "Usuário não encontrado ou inativo." };
-      }
-
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({
-          email: perfilUsuario.email,
-          password: senha,
-        });
-
-      if (authError || !authData.user) {
-        return {
-          success: false,
-          error: "CPF ou senha incorretos, ou e-mail ainda não confirmado.",
-        };
-      }
-
-      const profile = await loadUserProfile(authData.user.id);
-
-      if (!profile) {
-        await supabase.auth.signOut();
-        return { success: false, error: "Perfil do usuário não encontrado." };
-      }
-
-      return {
-        success: true,
-        requirePasswordChange: profile.primeiro_acesso || false,
-      };
-    } catch {
-      return {
-        success: false,
-        error: "Serviço de autenticação indisponível. Tente novamente.",
-      };
-    }
+    return result;
   };
 
   const logout = async () => {
+    logoutApi();
     setUser(null);
-    await supabase.auth.signOut();
   };
 
   const changeProfile = (perfil: PerfilUsuario) => {
-    if (!user) return;
-    setUser({ ...user, perfil });
+    setUser((prev) => prev ? { ...prev, perfil } : null);
   };
 
   const updatePhoto = async (fotoBase64: string) => {
     if (!user) return;
 
-    const updatedUser = { ...user, foto: fotoBase64 };
-    setUser(updatedUser);
+    setUser((prev) => prev ? { ...prev, foto: fotoBase64 } : null);
 
     try {
-      const { error } = await supabase
-        .from("usuarios")
-        .update({ foto: fotoBase64 })
-        .eq("id", user.id);
-      if (error)
-        console.warn("Erro ao salvar foto no Supabase:", error.message);
+      await api.patch(`/usuarios/${user.id}/foto`, { foto: fotoBase64 });
     } catch {
-      console.warn("Supabase offline — foto salva apenas na sessão atual.");
+      console.warn("API offline — foto salva apenas na sessão atual.");
     }
   };
 
@@ -267,6 +119,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return hierarchy[user.perfil] >= hierarchy[requiredPerfil];
   };
 
+  const inviteUser = async (payload: {
+    nome: string;
+    email: string;
+    cpf: string;
+    perfil: string;
+    polo?: string;
+  }) => {
+    return inviteUserApi(payload);
+  };
+
+  const deleteUser = async (userId: string): Promise<boolean> => {
+    const result = await deleteUserApi(userId);
+    return result.success;
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -277,6 +144,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         updatePhoto,
         hasPermission,
         isLoading,
+        inviteUser,
+        deleteUser,
       }}
     >
       {children}

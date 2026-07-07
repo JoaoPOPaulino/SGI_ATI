@@ -1,5 +1,10 @@
-import { supabase } from './supabase';
-import type { Movimentacao } from './types';
+import {
+  fetchMovimentacoesApi,
+  fetchMovimentacoesByItemApi,
+  createMovimentacaoApi,
+  updateMovimentacaoApi,
+} from "./apiMovimentacoes";
+import type { Movimentacao } from "./types";
 
 export interface FetchMovimentacoesResult {
   data: Movimentacao[];
@@ -11,126 +16,22 @@ export async function fetchMovimentacoesComBusca(
   pageSize = 10,
   search?: string,
 ): Promise<FetchMovimentacoesResult> {
-  const from = (page - 1) * pageSize;
-  const to = from + pageSize - 1;
-
-  try {
-    let query = supabase
-      .from('movimentacoes')
-      .select('*', { count: 'exact' });
-
-    if (search) {
-      const term = `%${search}%`;
-      query = query.or(
-        `item_nome.ilike.${term},chamado.ilike.${term},item_patrimonio.ilike.${term},item_numero_serie.ilike.${term},destino.ilike.${term},origem.ilike.${term},solicitante_nome.ilike.${term}`
-      );
-    }
-
-    const { data, error, count } = await query
-      .order('data_movimentacao', { ascending: false })
-      .range(from, to);
-
-    if (error) {
-      console.error('Erro ao buscar movimentações:', error);
-      return { data: [], count: 0 };
-    }
-
-    return { data: (data || []) as Movimentacao[], count: count || 0 };
-  } catch (err) {
-    console.error('Falha ao buscar movimentações:', err);
-    return { data: [], count: 0 };
-  }
+  return fetchMovimentacoesApi(page, pageSize, search);
 }
 
 export async function fetchMovimentacoesByItemId(itemId: string): Promise<Movimentacao[]> {
-  try {
-    const { data, error } = await supabase
-      .from('movimentacoes')
-      .select('*')
-      .eq('item_id', itemId)
-      .eq('status_aprovacao', 'APROVADO')
-      .order('data_movimentacao', { ascending: false });
-
-    if (error) {
-      console.error('Erro ao buscar movimentações do item:', error);
-      return [];
-    }
-
-    return (data || []) as Movimentacao[];
-  } catch (err) {
-    console.error('Falha ao buscar movimentações do item:', err);
-    return [];
-  }
+  return fetchMovimentacoesByItemApi(itemId);
 }
 
-const MAX_MOVIMENTACOES = 5000;
-
 export async function fetchAllMovimentacoes(): Promise<Movimentacao[]> {
-  try {
-    let allData: Movimentacao[] = [];
-    const pageSize = 1000;
-    const maxPages = Math.ceil(MAX_MOVIMENTACOES / pageSize);
-
-    for (let page = 0; page < maxPages; page++) {
-      const { data, error } = await supabase
-        .from('movimentacoes')
-        .select('*')
-        .order('data_movimentacao', { ascending: false })
-        .range(page * pageSize, (page + 1) * pageSize - 1);
-
-      if (error) {
-        console.error('Erro ao buscar movimentações:', error);
-        break;
-      }
-      if (!data || data.length === 0) break;
-      allData = [...allData, ...(data as Movimentacao[])];
-      if (data.length < pageSize) break;
-    }
-
-    return allData;
-  } catch (err) {
-    console.error('Falha ao buscar movimentações:', err);
-    return [];
-  }
+  const result = await fetchMovimentacoesApi(1, 5000);
+  return result.data;
 }
 
 export async function createMovimentacao(mov: Movimentacao): Promise<Movimentacao | null> {
-  try {
-    const { data, error } = await supabase
-      .from('movimentacoes')
-      .insert(mov)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Erro ao criar movimentação:', error);
-      return null;
-    }
-
-    return data as Movimentacao;
-  } catch (err) {
-    console.error('Falha ao criar movimentação:', err);
-    return null;
-  }
+  return createMovimentacaoApi(mov);
 }
 
 export async function updateMovimentacao(id: string, updates: Partial<Movimentacao>): Promise<Movimentacao | null> {
-  try {
-    const { data, error } = await supabase
-      .from('movimentacoes')
-      .update(updates)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Erro ao atualizar movimentação:', error);
-      return null;
-    }
-
-    return data as Movimentacao;
-  } catch (err) {
-    console.error('Falha ao atualizar movimentação:', err);
-    return null;
-  }
+  return updateMovimentacaoApi(id, updates);
 }

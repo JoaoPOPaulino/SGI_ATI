@@ -74,3 +74,17 @@ usuariosRouter.get("/:id/audit", requireAdmin, async (req: Request, res: Respons
     res.status(500).json([]);
   }
 });
+
+// POST /api/usuarios/audit
+usuariosRouter.post("/audit", requireAuth, async (req: Request, res: Response) => {
+  try {
+    const { admin_id, admin_name, action, target_user_id, target_user_name, details } = req.body;
+    await query(
+      "INSERT INTO public.audit_logs (admin_id, admin_name, action, target_user_id, target_user_name, details) VALUES ($1,$2,$3,$4,$5,$6)",
+      [admin_id, admin_name, action, target_user_id, target_user_name, details || ""]
+    );
+    res.status(201).json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ success: false });
+  }
+});

@@ -1,66 +1,26 @@
-import { supabase } from "./supabase";
+import { api } from "./api";
 import type { Loan } from "./types";
 
 export async function fetchLoans(limit = 100): Promise<Loan[]> {
   try {
-    const { data, error } = await supabase
-      .from('loans')
-      .select('*')
-      .order('data_retorno_prevista', { ascending: false })
-      .limit(limit);
-
-    if (error) {
-      console.error('Erro ao buscar empréstimos:', error);
-      return [];
-    }
-
-    return (data || []) as Loan[];
-  } catch (err) {
-    console.error('Falha ao buscar empréstimos:', err);
+    return await api.get<Loan[]>("/emprestimos");
+  } catch {
     return [];
   }
 }
 
 export async function createLoan(loan: Loan): Promise<Loan | null> {
   try {
-    const { data, error } = await supabase
-      .from("loans")
-      .insert(loan)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Erro ao criar empréstimo:", error);
-      return null;
-    }
-
-    return data as Loan;
-  } catch (err) {
-    console.error("Falha ao criar empréstimo:", err);
+    return await api.post<Loan>("/emprestimos", loan);
+  } catch {
     return null;
   }
 }
 
-export async function updateLoan(
-  id: string,
-  updates: Partial<Loan>,
-): Promise<Loan | null> {
+export async function updateLoan(id: string, updates: Partial<Loan>): Promise<Loan | null> {
   try {
-    const { data, error } = await supabase
-      .from("loans")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) {
-      console.error("Erro ao atualizar empréstimo:", error);
-      return null;
-    }
-
-    return data as Loan;
-  } catch (err) {
-    console.error("Falha ao atualizar empréstimo:", err);
+    return await api.put<Loan>(`/emprestimos/${id}`, updates);
+  } catch {
     return null;
   }
 }
