@@ -58,25 +58,6 @@ export const itemSchema = z
         path: ["numeroSerie"],
       });
     }
-    if (data.status === "ATIVO" && data.condicao === "ESTRAGADO") {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Equipamento ESTRAGADO não pode estar ATIVO. Altere o status para EM_MANUTENCAO ou a condição.",
-        path: ["status"],
-      });
-    }
-    if (
-      data.status === "EM_MANUTENCAO" &&
-      (data.condicao === "NOVO" || data.condicao === "REGULAR")
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          "Equipamento em manutenção deve estar RUIM ou ESTRAGADO. Ajuste a condição.",
-        path: ["condicao"],
-      });
-    }
   });
 
 export type ItemFormData = z.infer<typeof itemSchema>;

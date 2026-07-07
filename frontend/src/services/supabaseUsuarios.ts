@@ -34,7 +34,7 @@ export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
   }
 }
 
-export async function toggleUserStatus(userId: string, ativo: boolean): Promise<boolean> {
+export async function toggleUserStatus(userId: string, _ativo: boolean): Promise<boolean> {
   try {
     await api.patch(`/usuarios/${userId}/toggle`);
     return true;

@@ -199,7 +199,7 @@ const Manutencao: React.FC = () => {
                       <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide mt-1 inline-block">{item.categoria}</span>
                     </div>
                     {canModify ? (
-                      <button onClick={() => { setRepairTarget(item); setRepairCondicao('REGULAR'); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
+                      <button onClick={() => { setRepairTarget(item); setRepairCondicao('USADO'); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
                         <Hammer size={12} />Concluir Reparo
                       </button>
                     ) : (

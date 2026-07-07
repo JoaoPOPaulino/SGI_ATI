@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+﻿import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
   LaudoTecnico, Item, Movimentacao, CondicaoItem
@@ -8,23 +8,17 @@ import { fetchAllMovimentacoes, createMovimentacao } from '../services/supabaseM
 import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudos';
 import { exportToExcel } from '../services/utilidades';
 import StatusBadge from '../components/DistintivoStatus';
-import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil, Download, Package, ArrowLeftRight, Send } from 'lucide-react';
+import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil, Download } from 'lucide-react';
 import Paginacao from '../components/Paginacao';
 import BuscaEquipamento from '../components/BuscaEquipamento';
 
 const Labin: React.FC = () => {
   const { user, hasPermission } = useAuth();
-
-  const [abaAtiva, setAbaAtiva] = useState<'laudos' | 'subinventario' | 'ces'>('laudos');
-
+  
+  // Estados
   const [laudos, setLaudos] = useState<LaudoTecnico[]>([]);
   const [itensInManutencao, setItensInManutencao] = useState<Item[]>([]);
-  const [itensLaboratorio, setItensLaboratorio] = useState<Item[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const [cederItem, setCederItem] = useState<Item | null>(null);
-  const [cederPara, setCederPara] = useState('');
-  const [isCedendo, setIsCedendo] = useState(false);
   
   // Estados do Form
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -50,21 +44,6 @@ const Labin: React.FC = () => {
     const [allLaudos, allItens] = await Promise.all([fetchLaudos(), fetchAllItens()]);
     setLaudos(allLaudos);
     setItensInManutencao(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
-    setItensLaboratorio(allItens.filter(i => i.polo === 'Laboratório' && i.status !== 'BAIXADO'));
-  };
-
-  const handleCeder = async () => {
-    if (!cederItem || !cederPara.trim()) return;
-    setIsCedendo(true);
-    try {
-      const destino = cederPara.trim();
-      await updateItem(cederItem.id, { localizacao_atual: destino, polo: 'GSM', updated_at: new Date().toISOString(), atribuido_a_nome: destino });
-      await createMovimentacao({ id: crypto.randomUUID(), item_id: cederItem.id, item_nome: cederItem.nome, tipo: 'TRANSFERENCIA', origem: cederItem.localizacao_atual, destino, solicitante_id: user?.id || '', solicitante_nome: user?.nome || '', status_aprovacao: 'APROVADO', data_movimentacao: new Date().toISOString(), observacao: `Cedido pelo LABIN para: ${destino}` });
-      await loadData();
-      setCederItem(null);
-      setCederPara('');
-    } catch (err) { console.error('Erro ao ceder:', err); }
-    finally { setIsCedendo(false); }
   };
 
   useEffect(() => {
@@ -169,7 +148,7 @@ const Labin: React.FC = () => {
         }
 
         await updateItem(item.id, {
-          status: 'GUARDADO',
+          status: 'EM_ESTOQUE',
           condicao: formCondicaoLaudo || 'USADO',
           localizacao_atual: 'LABIN',
           updated_at: now
@@ -229,7 +208,7 @@ const Labin: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight text-primary">LABIN</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight text-primary">LABIN — Laudos Técnicos</h1>
           <p className="text-xs text-outline font-semibold">
             Registro e controle técnico de manutenções da ATI.
             {!canCreateLaudo && ' Visualização disponível para todos os polos.'}
@@ -243,26 +222,6 @@ const Labin: React.FC = () => {
             >
               <Plus size={16} />
               Novo Laudo Técnico
-            </button>
-          )}
-          <button
-            onClick={handleExportLaudosExcel}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
-          >
-            <Download size={12} />
-            Excel
-          </button>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex items-center bg-surface-container-low border border-outline rounded-xl p-0.5 gap-0.5">
-        <button onClick={() => setAbaAtiva('laudos')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='laudos'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><PenTool size={14}/>Laudos</button>
-        <button onClick={() => setAbaAtiva('subinventario')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='subinventario'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><Package size={14}/>Subinventário</button>
-        <button onClick={() => setAbaAtiva('ces')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='ces'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><ArrowLeftRight size={14}/>CES</button>
-      </div>
-
-      {abaAtiva === 'laudos' && (
             </button>
           )}
           <button
@@ -474,7 +433,7 @@ const Labin: React.FC = () => {
               <div className="pt-4 flex justify-end gap-3 border-t border-surface-container-low">
                 <button
                   type="button"
-                onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); setFormCondicaoLaudo('REGULAR'); }}
+                onClick={() => { setIsFormOpen(false); setEditingLaudoId(null); setFormCondicaoLaudo('USADO'); }}
                   className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs"
                 >
                   Cancelar
@@ -596,51 +555,6 @@ const Labin: React.FC = () => {
           </div>
         </div>
       )}
-      )}
-
-      {/* ABA: SUBINVENTÁRIO */}
-      {abaAtiva === 'subinventario' && (
-        <div className="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 p-6">
-          <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2"><Package size={18}/>Subinventário do Laboratório</h2>
-          <p className="text-xs text-outline mb-4">Itens de consumo e equipamentos sob responsabilidade do LABIN.</p>
-          {itensLaboratorio.length === 0 ? (
-            <p className="text-xs text-outline text-center py-8">Nenhum item no laboratório.</p>
-          ) : (
-            <div className="overflow-x-auto"><table className="w-full text-left border-collapse text-xs">
-              <thead><tr className="border-b border-outline-variant/20"><th className="py-2 px-3 text-[10px] font-black text-outline uppercase">Item</th><th className="py-2 px-3 text-[10px] font-black text-outline uppercase">Cat</th><th className="py-2 px-3 text-[10px] font-black text-outline uppercase">Cond</th><th className="py-2 px-3 text-[10px] font-black text-outline uppercase">Status</th><th className="py-2 px-3 text-right"></th></tr></thead>
-              <tbody>{itensLaboratorio.map(item => (<tr key={item.id} className="border-b border-outline-variant/10 hover:bg-surface-bright"><td className="py-2 px-3 font-bold truncate max-w-40">{item.nome}</td><td className="py-2 px-3 text-outline">{item.categoria}</td><td className="py-2 px-3"><StatusBadge type="condicao" value={item.condicao}/></td><td className="py-2 px-3"><StatusBadge type="status" value={item.status}/></td><td className="py-2 px-3 text-right"><button onClick={()=>setCederItem(item)} className="px-2.5 py-1.5 text-[10px] font-bold bg-primary/10 text-primary rounded-lg hover:bg-primary/20 flex items-center gap-1"><Send size={12}/>Ceder</button></td></tr>))}</tbody>
-            </table></div>
-          )}
-        </div>
-      )}
-
-      {/* ABA: CES */}
-      {abaAtiva === 'ces' && (
-        <div className="flex justify-center"><div className="w-full max-w-xl bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-6 shadow-sm">
-          <h2 className="text-sm font-bold text-primary mb-4 flex items-center gap-2"><ArrowLeftRight size={18}/>Controle de Entrada e Saída</h2>
-          <form onSubmit={async(e)=>{e.preventDefault();if(!selectedItemId)return;const a=(e.target as any).tipoCES.value;const it=itensLaboratorio.find(i=>i.id===selectedItemId)||itensInManutencao.find(i=>i.id===selectedItemId);if(!it)return;await createMovimentacao({id:crypto.randomUUID(),item_id:it.id,item_nome:it.nome,tipo:a==='saida'?'CHECK_OUT':'CHECK_IN',origem:a==='saida'?it.localizacao_atual:'Externo',destino:a==='saida'?'Em uso externo':'Almoxarifado Central',solicitante_id:user?.id||'',solicitante_nome:user?.nome||'',status_aprovacao:'APROVADO',data_movimentacao:new Date().toISOString(),observacao:(e.target as any).obs?.value||''});await updateItem(it.id,{status:a==='saida'?'EM_MANUTENCAO':'EM_ESTOQUE',localizacao_atual:a==='saida'?'Em uso externo':'Almoxarifado Central',updated_at:new Date().toISOString()});setSelectedItemId('');await loadData()}} className="space-y-4">
-            <div><label className="block text-[10px] font-black text-outline uppercase mb-1.5">Equipamento</label><BuscaEquipamento itens={[...itensLaboratorio,...itensInManutencao]} selectedItemId={selectedItemId} onSelect={(id)=>setSelectedItemId(id)}/></div>
-            <div><label className="block text-[10px] font-black text-outline uppercase mb-1.5">Tipo</label><select name="tipoCES" defaultValue="saida" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs"><option value="saida">Saída (Retirada)</option><option value="entrada">Entrada (Devolução)</option></select></div>
-            <div><label className="block text-[10px] font-black text-outline uppercase mb-1.5">Observação</label><textarea name="obs" rows={2} placeholder="Motivo..." className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs"/></div>
-            <button type="submit" className="w-full py-3 custom-gradient-btn text-white font-bold rounded-xl text-xs">Registrar</button>
-          </form>
-        </div></div>
-      )}
-
-      {/* Modal Ceder */}
-      {cederItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"><div className="bg-surface-container-lowest w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-outline-variant/10 animate-slide-up">
-          <h3 className="text-sm font-bold text-primary mb-2">Ceder Equipamento</h3>
-          <p className="text-xs text-outline mb-4">Item: <strong>{cederItem.nome}</strong></p>
-          <label className="block text-[10px] font-black text-outline uppercase mb-1.5">Nome do responsável ATI</label>
-          <input type="text" value={cederPara} onChange={e=>setCederPara(e.target.value)} placeholder="Nome do colaborador" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs mb-4"/>
-          <div className="flex justify-end gap-3">
-            <button onClick={()=>{setCederItem(null);setCederPara('')}} className="px-4 py-2 text-xs font-bold text-outline hover:bg-surface-container-high rounded-xl">Cancelar</button>
-            <button onClick={handleCeder} disabled={isCedendo||!cederPara.trim()} className="px-4 py-2 text-xs font-bold custom-gradient-btn text-white rounded-xl disabled:opacity-50">{isCedendo?'Cedendo...':'Confirmar Cessão'}</button>
-          </div>
-        </div></div>
-      )}
-
     </div>
   );
 };

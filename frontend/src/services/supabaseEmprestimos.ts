@@ -1,7 +1,7 @@
 import { api } from "./api";
 import type { Loan } from "./types";
 
-export async function fetchLoans(limit = 100): Promise<Loan[]> {
+export async function fetchLoans(_limit = 100): Promise<Loan[]> {
   try {
     return await api.get<Loan[]>("/emprestimos");
   } catch {

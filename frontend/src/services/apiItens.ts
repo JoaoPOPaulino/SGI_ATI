@@ -36,17 +36,9 @@ export async function fetchItemByIdApi(id: string): Promise<Item | null> {
   return api.get<Item>(`/itens/${id}`).catch(() => null);
 }
 
-export async function fetchInventarioStatsApi(): Promise<{
-  total: number;
-  ativos: number;
-  manutencao: number;
-  baixas: number;
-}> {
+export async function fetchInventarioStatsApi(): Promise<any> {
   return api.get("/itens/stats").catch(() => ({
-    total: 0,
-    ativos: 0,
-    manutencao: 0,
-    baixas: 0,
+    total: 0, ativos: 0, manutencao: 0, baixas: 0,
   }));
 }
 

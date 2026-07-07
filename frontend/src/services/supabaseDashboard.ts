@@ -60,6 +60,6 @@ export async function fetchDashboardChartData(days = 7): Promise<DashboardChartP
   return result;
 }
 
-export async function fetchMeusItens(userId: string): Promise<Item[]> {
+export async function fetchMeusItens(_userId: string): Promise<Item[]> {
   return fetchMeusItensApi();
 }
