@@ -230,15 +230,6 @@ const Labin: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-primary">LABIN</h1>
-
-      {/* Tabs */}
-      <div className="flex items-center bg-surface-container-low border border-outline rounded-xl p-0.5 gap-0.5">
-        <button onClick={() => setAbaAtiva('laudos')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='laudos'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><PenTool size={14}/>Laudos</button>
-        <button onClick={() => setAbaAtiva('subinventario')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='subinventario'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><Package size={14}/>Subinventário</button>
-        <button onClick={() => setAbaAtiva('ces')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='ces'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><ArrowLeftRight size={14}/>CES</button>
-      </div>
-
-      {abaAtiva === 'laudos' && (
           <p className="text-xs text-outline font-semibold">
             Registro e controle técnico de manutenções da ATI.
             {!canCreateLaudo && ' Visualização disponível para todos os polos.'}
@@ -252,6 +243,26 @@ const Labin: React.FC = () => {
             >
               <Plus size={16} />
               Novo Laudo Técnico
+            </button>
+          )}
+          <button
+            onClick={handleExportLaudosExcel}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold text-[10px] rounded-lg transition-all"
+          >
+            <Download size={12} />
+            Excel
+          </button>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex items-center bg-surface-container-low border border-outline rounded-xl p-0.5 gap-0.5">
+        <button onClick={() => setAbaAtiva('laudos')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='laudos'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><PenTool size={14}/>Laudos</button>
+        <button onClick={() => setAbaAtiva('subinventario')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='subinventario'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><Package size={14}/>Subinventário</button>
+        <button onClick={() => setAbaAtiva('ces')} className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${abaAtiva==='ces'?'bg-primary text-white shadow-sm':'text-outline hover:text-primary'}`}><ArrowLeftRight size={14}/>CES</button>
+      </div>
+
+      {abaAtiva === 'laudos' && (
             </button>
           )}
           <button
