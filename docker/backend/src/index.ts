@@ -12,8 +12,8 @@ import { feedbackRouter } from "./routes/feedback.js";
 import { emprestimosRouter } from "./routes/emprestimos.js";
 import { eventosRouter } from "./routes/eventos.js";
 import { laudosRouter } from "./routes/laudos.js";
-import { locaisRouter } from "./routes/locais.js";
-import { assinaturasRouter } from "./routes/assinaturas.js";
+import { locaisRouter } from "./routes/laudos.js";
+import { assinaturasRouter } from "./routes/laudos.js";
 
 dotenv.config();
 
