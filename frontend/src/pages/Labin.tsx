@@ -287,7 +287,7 @@ const Labin: React.FC = () => {
                     </td>
                     <td className="px-8 py-4 text-right">
                       <div className="flex items-center gap-1 justify-end">
-                        {laudo.status_servico !== 'FINALIZADO' && (
+                        {laudo.status_servico !== 'FINALIZADO' && canCreateLaudo && (
                           <button
                             onClick={() => openEditLaudo(laudo)}
                             className="p-2 text-amber-600 hover:bg-amber-50 rounded-lg transition-all"
@@ -458,7 +458,7 @@ const Labin: React.FC = () => {
             <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4 mb-6">
               <div>
                 <h1 className="text-xl font-extrabold uppercase leading-none tracking-tight text-slate-900">Laudo Técnico Corretivo</h1>
-                <span className="text-[9px] font-black text-outline uppercase tracking-widest block mt-1">SGI-ATI / Laboratório de Infraestrutura (LABIN)</span>
+                <span className="text-[9px] font-black text-outline uppercase tracking-widest block mt-1">SGI-ATI / Laboratório (LABIN)</span>
               </div>
               <button
                 onClick={() => setActiveLaudoPrint(null)}
@@ -484,14 +484,10 @@ const Labin: React.FC = () => {
 
               <div>
                 <h3 className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">Identificação do Ativo</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4">
                   <div>
                     <span className="text-[10px] text-outline block">Equipamento:</span>
                     <span className="font-bold text-slate-900">{activeLaudoPrint.item_nome}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-outline block">ID do Equipamento:</span>
-                    <span className="font-mono text-slate-700">{activeLaudoPrint.item_id}</span>
                   </div>
                 </div>
               </div>
