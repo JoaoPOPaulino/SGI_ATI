@@ -72,12 +72,13 @@ const Manutencao: React.FC = () => {
     const guia = getGuiaLab(item.id);
     if (!guia) { toast("error", "Guia de laboratório não encontrada."); return; }
     try {
-      await createAssinaturaGuia({
+      const sig = await createAssinaturaGuia({
         movimentacao_id: guia.id, tipo_assinatura: "RECEBIMENTO",
         assinante_id: user?.id, assinante_nome: user?.nome || "", assinante_perfil: user?.perfil,
         assinatura_base64: "", localizacao: item.localizacao_atual,
         patrimonio: item.numero_patrimonio, numero_serie: item.numero_serie, chamado: guia.chamado,
       });
+      if (!sig) { toast("error", "Erro ao criar assinatura. Verifique a conexão."); return; }
       setApproveEntryTarget(null);
       toast("success", "Entrada aprovada! Inicie o laudo técnico no LABIN.");
       await loadData();
@@ -90,12 +91,13 @@ const Manutencao: React.FC = () => {
     const guia = getGuiaLab(item.id);
     if (!guia) { toast("error", "Guia de laboratório não encontrada."); return; }
     try {
-      await createAssinaturaGuia({
+      const sig = await createAssinaturaGuia({
         movimentacao_id: guia.id, tipo_assinatura: "APROVACAO_SAIDA",
         assinante_id: user?.id, assinante_nome: user?.nome || "", assinante_perfil: user?.perfil,
         assinatura_base64: "", localizacao: item.localizacao_atual,
         patrimonio: item.numero_patrimonio, numero_serie: item.numero_serie, chamado: guia.chamado,
       });
+      if (!sig) { toast("error", "Erro ao criar assinatura. Verifique a conexão."); return; }
       setApproveExitTarget(null);
       toast("success", "Saída aprovada! Item disponível para retirada.");
       await loadData();
