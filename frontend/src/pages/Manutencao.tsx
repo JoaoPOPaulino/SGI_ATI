@@ -8,6 +8,7 @@ import { createAssinaturaGuia } from '../services/supabaseAssinaturasGuia';
 import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Search, X, LogIn, LogOut } from 'lucide-react';
 import Paginacao from '../components/Paginacao';
 import BuscaEquipamento from '../components/BuscaEquipamento';
+import CaixaAssinatura from '../components/CaixaAssinatura';
 import { useToast } from '../components/SistemaToast';
 import StatusBadge from '../components/DistintivoStatus';
 import { getReversedStatus } from '../services/utilidades';
@@ -31,6 +32,8 @@ const Manutencao: React.FC = () => {
   const [laudosList, setLaudosList] = useState<LaudoTecnico[]>([]);
   const [approveEntryTarget, setApproveEntryTarget] = useState<Item | null>(null);
   const [approveExitTarget, setApproveExitTarget] = useState<Item | null>(null);
+  const [assinaturaEntrada, setAssinaturaEntrada] = useState("");
+  const [assinaturaSaida, setAssinaturaSaida] = useState("");
 
   const [paginaManutencao, setPaginaManutencao] = useState(1);
   const [itensPorPaginaManut, setItensPorPaginaManut] = useState(5);
@@ -77,6 +80,7 @@ const Manutencao: React.FC = () => {
 
   const handleApproveEntry = async () => {
     if (!approveEntryTarget || !isLab) return;
+    if (!assinaturaEntrada) { toast("error", "Realize a assinatura no canvas."); return; }
     const item = approveEntryTarget;
     const guia = getGuiaLab(item.id);
     if (!guia) { toast("error", "Guia de laboratório não encontrada."); return; }
@@ -84,11 +88,11 @@ const Manutencao: React.FC = () => {
       const sig = await createAssinaturaGuia({
         movimentacao_id: guia.id, tipo_assinatura: "RECEBIMENTO",
         assinante_id: user?.id, assinante_nome: user?.nome || "", assinante_perfil: user?.perfil,
-        assinatura_base64: "", localizacao: item.localizacao_atual,
+        assinatura_base64: assinaturaEntrada, localizacao: item.localizacao_atual,
         patrimonio: item.numero_patrimonio, numero_serie: item.numero_serie, chamado: guia.chamado,
       });
       if (!sig) { toast("error", "Erro ao criar assinatura. Verifique a conexão."); return; }
-      setApproveEntryTarget(null);
+      setApproveEntryTarget(null); setAssinaturaEntrada("");
       toast("success", "Entrada aprovada! Inicie o laudo técnico no LABIN.");
       await loadData();
     } catch { toast("error", "Erro ao aprovar entrada."); }
@@ -96,6 +100,7 @@ const Manutencao: React.FC = () => {
 
   const handleApproveExit = async () => {
     if (!approveExitTarget || !isLab) return;
+    if (!assinaturaSaida) { toast("error", "Realize a assinatura no canvas."); return; }
     const item = approveExitTarget;
     const guia = getGuiaLab(item.id);
     if (!guia) { toast("error", "Guia de laboratório não encontrada."); return; }
@@ -103,11 +108,11 @@ const Manutencao: React.FC = () => {
       const sig = await createAssinaturaGuia({
         movimentacao_id: guia.id, tipo_assinatura: "APROVACAO_SAIDA",
         assinante_id: user?.id, assinante_nome: user?.nome || "", assinante_perfil: user?.perfil,
-        assinatura_base64: "", localizacao: item.localizacao_atual,
+        assinatura_base64: assinaturaSaida, localizacao: item.localizacao_atual,
         patrimonio: item.numero_patrimonio, numero_serie: item.numero_serie, chamado: guia.chamado,
       });
       if (!sig) { toast("error", "Erro ao criar assinatura. Verifique a conexão."); return; }
-      setApproveExitTarget(null);
+      setApproveExitTarget(null); setAssinaturaSaida("");
       toast("success", "Saída aprovada! Item disponível para retirada.");
       await loadData();
     } catch { toast("error", "Erro ao aprovar saída."); }
@@ -213,12 +218,12 @@ const Manutencao: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {isLab && guiaAberta && (
-                          <button onClick={() => setApproveEntryTarget(item)} className={btnSm + ' bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700'}>
+                          <button onClick={() => { setApproveEntryTarget(item); setAssinaturaEntrada(""); }} className={btnSm + ' bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700'}>
                             <LogIn size={10} />Aprovar Entrada
                           </button>
                         )}
                         {isLab && laudoOk && (
-                          <button onClick={() => setApproveExitTarget(item)} className={btnSm + ' bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700'}>
+                          <button onClick={() => { setApproveExitTarget(item); setAssinaturaSaida(""); }} className={btnSm + ' bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700'}>
                             <LogOut size={10} />Aprovar Saída
                           </button>
                         )}
@@ -282,12 +287,12 @@ const Manutencao: React.FC = () => {
 
       {/* Modal Aprovar Entrada */}
       {approveEntryTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"><div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setApproveEntryTarget(null)} /><div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-sm w-full animate-slide-up p-5"><h3 className="text-sm font-bold text-emerald-700 mb-2 flex items-center gap-2"><LogIn size={16} />Aprovar Entrada no Laboratório</h3><p className="text-[11px] text-on-surface-variant mb-4">Confirmar recebimento de <strong>{approveEntryTarget.nome}</strong>?</p><p className="text-[10px] text-outline bg-surface-container p-2.5 rounded-lg mb-5">O item será registrado como recebido e você pode iniciar o laudo técnico no LABIN.</p><div className="flex gap-2.5"><button onClick={() => setApproveEntryTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button><button onClick={handleApproveEntry} className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">Confirmar Entrada</button></div></div></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"><div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setApproveEntryTarget(null); setAssinaturaEntrada(""); }} /><div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-md w-full animate-slide-up p-5 max-h-[90vh] overflow-y-auto"><h3 className="text-sm font-bold text-emerald-700 mb-2 flex items-center gap-2"><LogIn size={16} />Aprovar Entrada no Laboratório</h3><p className="text-[11px] text-on-surface-variant mb-2">Confirmar recebimento de <strong>{approveEntryTarget.nome}</strong></p><p className="text-[10px] text-primary bg-primary/5 p-2 rounded-lg mb-4">Assinando como <strong>{user?.nome}</strong> ({user?.cpf})</p><label className="block text-[10px] font-black text-outline uppercase mb-1.5">Assinatura *</label><CaixaAssinatura value={assinaturaEntrada} onChange={setAssinaturaEntrada} /><div className="flex gap-2.5 mt-4 pt-3 border-t border-outline-variant/10"><button onClick={() => { setApproveEntryTarget(null); setAssinaturaEntrada(""); }} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button><button onClick={handleApproveEntry} disabled={!assinaturaEntrada} className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95 disabled:opacity-50">Confirmar Entrada</button></div></div></div>
       )}
 
       {/* Modal Aprovar Saída */}
       {approveExitTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"><div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setApproveExitTarget(null)} /><div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-sm w-full animate-slide-up p-5"><h3 className="text-sm font-bold text-violet-700 mb-2 flex items-center gap-2"><LogOut size={16} />Aprovar Saída do Laboratório</h3><p className="text-[11px] text-on-surface-variant mb-4">Confirmar liberação de <strong>{approveExitTarget.nome}</strong>?</p><p className="text-[10px] text-outline bg-surface-container p-2.5 rounded-lg mb-5">O item ficará disponível para retirada no Almoxarifado Central.</p><div className="flex gap-2.5"><button onClick={() => setApproveExitTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button><button onClick={handleApproveExit} className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">Liberar Saída</button></div></div></div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"><div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setApproveExitTarget(null); setAssinaturaSaida(""); }} /><div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-md w-full animate-slide-up p-5 max-h-[90vh] overflow-y-auto"><h3 className="text-sm font-bold text-violet-700 mb-2 flex items-center gap-2"><LogOut size={16} />Aprovar Saída do Laboratório</h3><p className="text-[11px] text-on-surface-variant mb-2">Confirmar liberação de <strong>{approveExitTarget.nome}</strong></p><p className="text-[10px] text-primary bg-primary/5 p-2 rounded-lg mb-4">Assinando como <strong>{user?.nome}</strong> ({user?.cpf})</p><label className="block text-[10px] font-black text-outline uppercase mb-1.5">Assinatura *</label><CaixaAssinatura value={assinaturaSaida} onChange={setAssinaturaSaida} /><div className="flex gap-2.5 mt-4 pt-3 border-t border-outline-variant/10"><button onClick={() => { setApproveExitTarget(null); setAssinaturaSaida(""); }} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button><button onClick={handleApproveExit} disabled={!assinaturaSaida} className="flex-1 py-2.5 bg-violet-600 hover:bg-violet-700 text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95 disabled:opacity-50">Liberar Saída</button></div></div></div>
       )}
     </div>
   );

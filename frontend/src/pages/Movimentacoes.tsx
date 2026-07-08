@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao } from "../services/types";
 import { fetchAllItens, updateItem } from "../services/supabaseItens";
@@ -9,6 +9,7 @@ import Paginacao from "../components/Paginacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
 import { useToast } from "../components/SistemaToast";
 import { createAssinaturaGuia } from "../services/supabaseAssinaturasGuia";
+import CaixaAssinatura from "../components/CaixaAssinatura";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
   CHECK_OUT: "Saída",
@@ -56,9 +57,6 @@ const Movimentacoes: React.FC = () => {
   const [signingCpf, setSigningCpf] = useState("");
   const [signingAssinatura, setSigningAssinatura] = useState("");
   const [signingObservacao, setSigningObservacao] = useState("");
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const drawingRef = useRef(false);
-  const hasDrawnRef = useRef(false);
 
   const isTecnicoOrHigher = hasPermission("TECNICO");
 
@@ -85,31 +83,6 @@ const Movimentacoes: React.FC = () => {
   }, [formTipo]);
 
   const selectedItem = itens.find(i => i.id === selectedItemId) || null;
-
-  // ----- Canvas -----
-  const canvasGetPoint = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const c = canvasRef.current; if (!c) return { x: 0, y: 0 };
-    const r = c.getBoundingClientRect();
-    return { x: ((e.clientX - r.left) / r.width) * c.width, y: ((e.clientY - r.top) / r.height) * c.height };
-  };
-  const canvasStart = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    const c = canvasRef.current; if (!c) return; const ctx = c.getContext("2d"); if (!ctx) return;
-    drawingRef.current = true; hasDrawnRef.current = true;
-    const p = canvasGetPoint(e); ctx.beginPath(); ctx.moveTo(p.x, p.y);
-    c.setPointerCapture(e.pointerId);
-  };
-  const canvasDraw = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!drawingRef.current) return; const c = canvasRef.current; if (!c) return; const ctx = c.getContext("2d"); if (!ctx) return;
-    const p = canvasGetPoint(e); ctx.lineWidth = 2.4; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#111827"; ctx.lineTo(p.x, p.y); ctx.stroke();
-  };
-  const canvasStop = () => {
-    if (!drawingRef.current) return; drawingRef.current = false; const c = canvasRef.current;
-    if (!c || !hasDrawnRef.current) return; setSigningAssinatura(c.toDataURL("image/png"));
-  };
-  const canvasClear = () => {
-    const c = canvasRef.current; if (!c) return; const ctx = c.getContext("2d"); if (!ctx) return;
-    ctx.clearRect(0, 0, c.width, c.height); hasDrawnRef.current = false; setSigningAssinatura("");
-  };
 
   // ----- Emissão -----
   const handleRequest = async (e: React.FormEvent) => {
@@ -360,10 +333,7 @@ const Movimentacoes: React.FC = () => {
               </div>
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-2">Assinatura *</label>
-                <div className="bg-white border border-outline rounded-xl overflow-hidden">
-                  <canvas ref={canvasRef} width={600} height={180} className="block w-full h-32 touch-none cursor-crosshair" onPointerDown={canvasStart} onPointerMove={canvasDraw} onPointerUp={canvasStop} onPointerLeave={canvasStop} />
-                </div>
-                <button type="button" onClick={canvasClear} className="mt-1 text-[10px] font-bold text-primary hover:underline">Limpar</button>
+                <CaixaAssinatura value={signingAssinatura} onChange={setSigningAssinatura} />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-1.5">Observação</label>
