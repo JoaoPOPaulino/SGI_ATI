@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
-import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao } from "../services/types";
+import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao, AssinaturaGuia } from "../services/types";
 import { fetchAllItens, updateItem } from "../services/supabaseItens";
 import { createMovimentacao, fetchMovimentacoesComBusca } from "../services/supabaseMovimentacoes";
 import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X } from "lucide-react";
@@ -8,7 +8,10 @@ import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
 import { useToast } from "../components/SistemaToast";
-import { createAssinaturaGuia } from "../services/supabaseAssinaturasGuia";
+import {
+  fetchAssinaturasGuia,
+  createAssinaturaGuia,
+} from "../services/supabaseAssinaturasGuia";
 import CaixaAssinatura from "../components/CaixaAssinatura";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
@@ -41,6 +44,7 @@ const Movimentacoes: React.FC = () => {
   const [itensPorPagina, setItensPorPagina] = useState(10);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedMov, setSelectedMov] = useState<Movimentacao | null>(null);
+  const [assinaturas, setAssinaturas] = useState<AssinaturaGuia[]>([]);
 
   const [formTipo, setFormTipo] = useState<TipoMovimentacao>("MANUTENCAO");
   const [formChamado, setFormChamado] = useState("");
@@ -263,7 +267,7 @@ const Movimentacoes: React.FC = () => {
                 {movs.length === 0 ? (
                   <div className="text-center text-outline py-12"><FileText size={36} className="mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Nenhum registro.</p></div>
                 ) : movs.map(m => (
-                  <button key={m.id} onClick={() => setSelectedMov(m)} className={`w-full text-left p-4 border rounded-xl transition-all ${selectedMov?.id === m.id ? "bg-primary-fixed/50 border-primary/30" : "bg-surface border-outline-variant/20 hover:bg-surface-container-low"}`}>
+                  <button key={m.id} onClick={() => { setSelectedMov(m); fetchAssinaturasGuia(m.id).then(setAssinaturas); }} className={`w-full text-left p-4 border rounded-xl transition-all ${selectedMov?.id === m.id ? "bg-primary-fixed/50 border-primary/30" : "bg-surface border-outline-variant/20 hover:bg-surface-container-low"}`}>
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       <input type="checkbox" checked={selectedIds.has(m.id)} onChange={() => toggleSelect(m.id)} onClick={e => e.stopPropagation()} className="w-3.5 h-3.5 rounded accent-primary shrink-0" />
                       <span className="text-[10px] font-bold text-outline">{new Date(m.data_movimentacao).toLocaleDateString("pt-BR")}</span>
@@ -301,6 +305,31 @@ const Movimentacoes: React.FC = () => {
                       )}
                       {selectedMov.chamado && <span className="text-[10px] text-outline">Chamado: {selectedMov.chamado}</span>}
                     </div>
+
+                    {assinaturas.length > 0 && (
+                      <div className="border-t border-outline-variant/10 pt-4">
+                        <p className="text-[10px] font-black text-outline uppercase mb-3">Assinaturas</p>
+                        <div className="space-y-2">
+                          {assinaturas.map((a, i) => (
+                            <div key={a.id} className="flex items-start gap-3 p-2 bg-surface-container-lowest rounded-lg border border-outline-variant/10">
+                              <span className="text-[10px] font-black text-primary bg-primary/10 w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-[10px] font-bold text-on-surface">{ASSINATURA_LABEL[a.tipo_assinatura]}</span>
+                                  <span className="text-[9px] text-outline">{a.assinante_nome}</span>
+                                  {a.assinante_cpf && <span className="text-[9px] text-outline">CPF: {a.assinante_cpf}</span>}
+                                </div>
+                                <p className="text-[9px] text-outline">{new Date(a.data_assinatura).toLocaleString("pt-BR")}</p>
+                                {a.observacao && <p className="text-[9px] text-outline mt-0.5">{a.observacao}</p>}
+                                {a.assinatura_base64 && a.assinatura_base64.length > 20 && (
+                                  <img src={a.assinatura_base64} alt="Assinatura" className="mt-2 h-12 max-w-[160px] object-contain bg-white border border-outline-variant/20 rounded" />
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
