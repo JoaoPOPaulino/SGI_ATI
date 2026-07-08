@@ -11,18 +11,19 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate }) => {
-  const { hasPermission, logout } = useAuth();
+  const { user, hasPermission, logout } = useAuth();
   const [isHovered, setIsHovered] = useState(false);
   const [emprestimosOpen, setEmprestimosOpen] = useState(false);
   const isCollapsed = !isHovered;
 
   const isAdmin = hasPermission('ADMIN');
+  const isLabOrSupervisor = user?.polo === 'Laboratório' || hasPermission('SUPERVISOR');
 
   const menuItems = [
     { to: '/', label: 'Dashboard', icon: LayoutGrid },
     { to: '/inventario', label: 'Inventário', icon: Package },
     { to: '/movimentacoes', label: 'Movimentações', icon: ArrowLeftRight },
-    { to: '/manutencao', label: 'Manutenção & Baixas', icon: Wrench },
+    ...(isLabOrSupervisor ? [{ to: '/manutencao' as string, label: 'Manutenção & Baixas', icon: Wrench }] : []),
     { to: '/labin', label: 'LABIN (Laudo Técnico)', icon: PenTool },
     { to: '/perfil', label: 'Meu Perfil', icon: User },
   ];

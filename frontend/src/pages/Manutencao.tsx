@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
+import { Navigate } from 'react-router-dom';
 import { Item, Movimentacao, LaudoTecnico } from '../services/types';
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchAllMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
@@ -68,6 +69,8 @@ const Manutencao: React.FC = () => {
   const canModify = hasPermission('TECNICO');
   const isSupervisorOrAdmin = hasPermission('SUPERVISOR');
   const isLab = user?.polo === 'Laboratório';
+
+  if (!isLab && !isSupervisorOrAdmin) return <Navigate to="/" replace />;
 
   const totalPaginasManut = Math.ceil(maintenanceItens.length / itensPorPaginaManut);
   const itensPaginadosManut = maintenanceItens.slice(
