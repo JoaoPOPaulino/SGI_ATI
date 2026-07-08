@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { Item, StatusItem, Movimentacao, LaudoTecnico } from '../services/types';
+import { Item, Movimentacao, LaudoTecnico } from '../services/types';
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchAllMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos } from '../services/supabaseLaudos';
@@ -10,8 +10,6 @@ import Paginacao from '../components/Paginacao';
 import BuscaEquipamento from '../components/BuscaEquipamento';
 import CaixaAssinatura from '../components/CaixaAssinatura';
 import { useToast } from '../components/SistemaToast';
-import StatusBadge from '../components/DistintivoStatus';
-import { getReversedStatus } from '../services/utilidades';
 
 const Manutencao: React.FC = () => {
   const { user, hasPermission } = useAuth();
@@ -53,7 +51,11 @@ const Manutencao: React.FC = () => {
       return false;
     }));
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
-    setActiveItens(allItens.filter(i => i.status === 'ATIVO' || i.status === 'EM_ESTOQUE'));
+    setActiveItens(allItens.filter(i => {
+      if (i.status !== 'EM_MANUTENCAO') return false;
+      const guia = guias.find(m => m.item_id === i.id && m.tipo === 'ENVIAR_LAB');
+      return guia && guia.status_guia === 'EM_ANDAMENTO';
+    }));
     setGuiasLab(allMovs.filter(m => m.tipo === 'ENVIAR_LAB'));
     setLaudosList(allLaudos);
     setLoading(false);
@@ -151,13 +153,11 @@ const Manutencao: React.FC = () => {
     if (!motivo) return;
     try {
       const currentMovs = await fetchAllMovimentacoes();
-      const itemMovs = currentMovs.filter(m => m.item_id === item.id && m.status_aprovacao === 'APROVADO' && m.tipo !== 'BAIXA').sort((a, b) => new Date(b.data_movimentacao).getTime() - new Date(a.data_movimentacao).getTime());
-      const revertedStatus = getReversedStatus(itemMovs) as StatusItem;
-      await updateItem(item.id, { status: revertedStatus, updated_at: new Date().toISOString() });
       const baixaMov = currentMovs.find(m => m.item_id === item.id && m.tipo === 'BAIXA' && m.status_aprovacao !== 'REJEITADO');
       if (baixaMov) await updateMovimentacao(baixaMov.id, { status_aprovacao: 'REJEITADO', aprovador_id: user?.id, aprovador_nome: user?.nome, observacao: baixaMov.observacao + ` | REJEITADO: ${motivo}`, data_movimentacao: new Date().toISOString() });
+      await updateItem(item.id, { status: 'EM_MANUTENCAO', updated_at: new Date().toISOString() });
       await loadData(); setRejectTarget(null);
-      toast("success", `Baixa rejeitada. Item restaurado para "${revertedStatus}".`);
+      toast("success", "Baixa rejeitada. Item voltou para manutenção.");
     } catch { toast("error", "Erro ao rejeitar baixa."); }
   };
 
