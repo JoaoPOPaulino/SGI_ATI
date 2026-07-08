@@ -8,7 +8,7 @@ export interface DashboardStats {
   emEvento: number;
   disponiveis: number;
   aguardandoBaixa: number;
-  prontosRetirada: number;
+  aguardandoRetirada: number;
 }
 
 export type DashboardMovimentacao = Pick<

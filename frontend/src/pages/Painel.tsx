@@ -30,11 +30,10 @@ import {
 const TIPO_MOV_LABEL: Record<string, { label: string; color: string }> = {
   CHECK_OUT: { label: "Saída", color: "text-blue-400" },
   CHECK_IN: { label: "Entrada", color: "text-emerald-400" },
-  TRANSFERENCIA: { label: "Transferência", color: "text-violet-400" },
-  MANUTENCAO: { label: "Manutenção", color: "text-orange-400" },
+  MANUTENCAO: { label: "CES", color: "text-orange-400" },
   BAIXA: { label: "Baixa", color: "text-red-400" },
   EMPRESTIMO: { label: "Empréstimo", color: "text-cyan-400" },
-  VIAGEM: { label: "Laboratório", color: "text-indigo-400" },
+  ENVIAR_LAB: { label: "Enviar p/ Lab", color: "text-indigo-400" },
 };
 
 const INITIAL_STATS: DashboardStats = {
@@ -44,7 +43,7 @@ const INITIAL_STATS: DashboardStats = {
   emEvento: 0,
   disponiveis: 0,
   aguardandoBaixa: 0,
-  prontosRetirada: 0,
+  aguardandoRetirada: 0,
 };
 
 const Dashboard: React.FC = () => {
@@ -331,7 +330,7 @@ const Dashboard: React.FC = () => {
       </div>
 
       <div className="space-y-3">
-        {stats.prontosRetirada > 0 && (
+        {stats.aguardandoRetirada > 0 && (
           <button
             type="button"
             onClick={() => navigate("/inventario")}
@@ -344,18 +343,15 @@ const Dashboard: React.FC = () => {
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
                 <h3 className="text-sm font-bold text-emerald-700">
-                  Itens Prontos para Retirada
+                  Itens Aguardando Retirada
                 </h3>
                 <span className="text-[9px] font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded">
                   Todos os perfis
                 </span>
               </div>
               <p className="text-xs text-emerald-600">
-                {stats.prontosRetirada} equipamento
-                {stats.prontosRetirada > 1 ? "s" : ""} reparado
-                {stats.prontosRetirada > 1 ? "s" : ""} e disponível
-                {stats.prontosRetirada > 1 ? "eis" : ""} no Almoxarifado
-                Central.
+                {stats.aguardandoRetirada} equipamento
+                {stats.aguardandoRetirada > 1 ? "s" : ""} aguardando retirada.
               </p>
             </div>
           </button>
@@ -419,7 +415,7 @@ const Dashboard: React.FC = () => {
           </button>
         )}
 
-        {stats.prontosRetirada === 0 &&
+        {stats.aguardandoRetirada === 0 &&
           overdueLoans.length === 0 &&
           stats.aguardandoBaixa === 0 && (
             <div className="bg-surface-container-lowest border border-outline-variant/10 rounded-xl p-6 text-center">

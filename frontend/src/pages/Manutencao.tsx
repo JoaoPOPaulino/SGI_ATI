@@ -9,6 +9,7 @@ import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Search, X, LogIn, L
 import Paginacao from '../components/Paginacao';
 import BuscaEquipamento from '../components/BuscaEquipamento';
 import CaixaAssinatura from '../components/CaixaAssinatura';
+import StatusBadge from '../components/DistintivoStatus';
 import { useToast } from '../components/SistemaToast';
 
 const Manutencao: React.FC = () => {
