@@ -165,10 +165,6 @@ const Movimentacoes: React.FC = () => {
       setSelectedItemId(""); setFormChamado(""); setFormDestino(""); setFormObs("");
       setFormSuccess("Guia emitida!");
 
-      setSigningMov(saved);
-      setSigningTipo("RECEBIMENTO");
-      setSigningNome(""); setSigningCpf(""); setSigningAssinatura(""); setSigningObservacao("");
-
       await loadMovimentacoes();
     } catch { setFormError("Erro ao emitir guia."); }
     finally { setIsSaving(false); }
@@ -178,6 +174,7 @@ const Movimentacoes: React.FC = () => {
   const saveAssinatura = async () => {
     if (!signingMov) return;
     if (!signingNome.trim()) { toast("error", "Informe o nome do assinante."); return; }
+    if (!signingAssinatura) { toast("error", "Realize a assinatura no canvas."); return; }
 
     const saved = await createAssinaturaGuia({
       movimentacao_id: signingMov.id, tipo_assinatura: signingTipo,
@@ -194,6 +191,20 @@ const Movimentacoes: React.FC = () => {
     toast("success", "Assinatura registrada!");
     setSigningMov(null);
     await loadMovimentacoes();
+  };
+
+  const abrirAssinatura = (mov: Movimentacao, tipo: TipoAssinaturaGuia) => {
+    setSigningMov(mov);
+    setSigningTipo(tipo);
+    setSigningAssinatura("");
+    setSigningObservacao("");
+    if (tipo === "APROVACAO_SAIDA" || (tipo === "RECEBIMENTO" && mov.tipo === "ENVIAR_LAB")) {
+      setSigningNome(user?.nome || "");
+      setSigningCpf(user?.cpf || "");
+    } else {
+      setSigningNome("");
+      setSigningCpf("");
+    }
   };
 
   const podeAssinar = (mov: Movimentacao, tipo: TipoAssinaturaGuia): boolean => {
@@ -319,7 +330,7 @@ const Movimentacoes: React.FC = () => {
                     <div className="flex flex-wrap gap-2">
                       {(["RECEBIMENTO", "APROVACAO_SAIDA", "RETIRADA"] as TipoAssinaturaGuia[]).map(tipo => (
                         podeAssinar(selectedMov, tipo) && (
-                          <button key={tipo} onClick={() => { setSigningMov(selectedMov); setSigningTipo(tipo); setSigningNome(""); setSigningCpf(""); setSigningAssinatura(""); setSigningObservacao(""); }} className="px-3 py-2 text-[10px] font-bold bg-primary/10 text-primary rounded-lg hover:bg-primary/20">
+                          <button key={tipo} onClick={() => abrirAssinatura(selectedMov, tipo)} className="px-3 py-2 text-[10px] font-bold bg-primary/10 text-primary rounded-lg hover:bg-primary/20">
                             ✍️ {ASSINATURA_LABEL[tipo]}
                           </button>
                         )
@@ -345,16 +356,21 @@ const Movimentacoes: React.FC = () => {
               <button onClick={() => setSigningMov(null)} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"><X size={18}/></button>
             </div>
             <div className="space-y-4">
+              {(signingTipo === "APROVACAO_SAIDA" || (signingTipo === "RECEBIMENTO" && signingMov.tipo === "ENVIAR_LAB")) && (
+                <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl text-xs text-primary">
+                  Assinando como <strong>{user?.nome}</strong> (CPF: {user?.cpf}) — seus dados foram preenchidos automaticamente.
+                </div>
+              )}
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-1.5">Nome do Assinante *</label>
-                <input type="text" value={signingNome} onChange={e => setSigningNome(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                <input type="text" value={signingNome} onChange={e => setSigningNome(e.target.value)} placeholder="Nome completo" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-1.5">CPF</label>
-                <input type="text" value={signingCpf} onChange={e => setSigningCpf(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                <input type="text" value={signingCpf} onChange={e => setSigningCpf(e.target.value)} placeholder="Apenas números" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
               </div>
               <div>
-                <label className="block text-[10px] font-black text-outline uppercase mb-2">Assinatura</label>
+                <label className="block text-[10px] font-black text-outline uppercase mb-2">Assinatura *</label>
                 <div className="bg-white border border-outline rounded-xl overflow-hidden">
                   <canvas ref={canvasRef} width={600} height={180} className="block w-full h-32 touch-none cursor-crosshair" onPointerDown={canvasStart} onPointerMove={canvasDraw} onPointerUp={canvasStop} onPointerLeave={canvasStop} />
                 </div>
