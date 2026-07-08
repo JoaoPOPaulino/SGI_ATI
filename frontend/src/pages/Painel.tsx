@@ -1,20 +1,14 @@
-import React, { useMemo, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
   fetchDashboardStats,
-  fetchRecentMovimentacoes,
-  fetchPendingMovimentacoes,
   fetchOverdueLoans,
   fetchDashboardChartData,
-  fetchMeusItens,
   DashboardStats,
-  DashboardMovimentacao,
   DashboardLoanAlert,
   DashboardChartPoint,
 } from "../services/supabaseDashboard";
-import type { Item } from "../services/types";
-import StatusBadge from "../components/DistintivoStatus";
 import {
   Package,
   Wrench,
@@ -22,19 +16,7 @@ import {
   AlertTriangle,
   CheckCircle,
   User,
-  Shield,
-  Clock,
-  HardDrive,
 } from "lucide-react";
-
-const TIPO_MOV_LABEL: Record<string, { label: string; color: string }> = {
-  CHECK_OUT: { label: "Saída", color: "text-blue-400" },
-  CHECK_IN: { label: "Entrada", color: "text-emerald-400" },
-  MANUTENCAO: { label: "CES", color: "text-orange-400" },
-  BAIXA: { label: "Baixa", color: "text-red-400" },
-  EMPRESTIMO: { label: "Empréstimo", color: "text-cyan-400" },
-  ENVIAR_LAB: { label: "Enviar p/ Lab", color: "text-indigo-400" },
-};
 
 const INITIAL_STATS: DashboardStats = {
   total: 0,
@@ -51,77 +33,31 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
 
   const [stats, setStats] = useState<DashboardStats>(INITIAL_STATS);
-  const [pendingMovs, setPendingMovs] = useState<DashboardMovimentacao[]>([]);
-  const [recentMovs, setRecentMovs] = useState<DashboardMovimentacao[]>([]);
   const [overdueLoans, setOverdueLoans] = useState<DashboardLoanAlert[]>([]);
   const [chartData, setChartData] = useState<DashboardChartPoint[]>([]);
-  const [meusItens, setMeusItens] = useState<Item[]>([]);
-  const [isLoadingDashboard, setIsLoadingDashboard] = useState(true);
 
   const isSupervisorOrAdmin = hasPermission("SUPERVISOR");
 
   useEffect(() => {
     let mounted = true;
-
     const loadData = async () => {
       try {
-        setIsLoadingDashboard(true);
-
-        const [
-          statsData,
-          pendingMovsData,
-          recentMovsData,
-          overdueLoansData,
-          chartDataResult,
-        ] = await Promise.all([
+        const [statsData, overdueLoansData, chartDataResult] = await Promise.all([
           fetchDashboardStats(),
-          fetchPendingMovimentacoes(20),
-          fetchRecentMovimentacoes(5),
           fetchOverdueLoans(10),
           fetchDashboardChartData(7),
         ]);
-
         if (!mounted) return;
-
         setStats(statsData);
-        setPendingMovs(pendingMovsData);
-        setRecentMovs(recentMovsData);
         setOverdueLoans(overdueLoansData);
         setChartData(chartDataResult);
-
-        if (user?.id) {
-          const meus = await fetchMeusItens(user.id);
-          if (mounted) setMeusItens(meus);
-        }
       } catch (err) {
         console.error("Dashboard: falha ao carregar dados", err);
-      } finally {
-        if (mounted) {
-          setIsLoadingDashboard(false);
-        }
       }
     };
-
     loadData();
-
-    return () => {
-      mounted = false;
-    };
+    return () => { mounted = false; };
   }, []);
-
-  const meusDados = useMemo(() => {
-    if (!user) return { minhasSolicitacoes: [], aprovarPendentes: [] };
-
-    const minhasSolicitacoes = pendingMovs.filter(
-      (m) => m.solicitante_id === user.id,
-    );
-
-    const aprovarPendentes = pendingMovs.filter(
-      (m) => m.solicitante_id !== user.id,
-    );
-
-    return { minhasSolicitacoes, aprovarPendentes };
-  }, [pendingMovs, user]);
 
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
@@ -147,186 +83,6 @@ const Dashboard: React.FC = () => {
             {user?.perfil}
           </span>
         </div>
-      </div>
-
-      <div className="bg-linear-to-br from-primary/5 via-surface-container-lowest to-secondary/5 p-6 rounded-2xl border border-primary/15 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-2.5 bg-primary/15 rounded-xl text-primary">
-            <Shield size={20} />
-          </div>
-          <div>
-            <h2 className="text-lg font-extrabold text-primary tracking-tight">
-              Minha Responsabilidade
-            </h2>
-            <p className="text-[10px] text-outline font-semibold">
-              Suas solicitações pendentes e itens aguardando aprovação
-            </p>
-          </div>
-        </div>
-
-        <div
-          className={`grid grid-cols-1 gap-4 mb-4 ${
-            isSupervisorOrAdmin ? "sm:grid-cols-3" : "sm:grid-cols-2"
-          }`}
-        >
-          <button
-            type="button"
-            onClick={() => navigate("/inventario")}
-            className="text-left bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10 cursor-pointer hover:shadow-md transition-all"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <HardDrive size={14} className="text-emerald-500" />
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                Sob minha custódia
-              </span>
-            </div>
-            <h3 className="text-2xl font-black text-emerald-500">
-              {meusItens.length}
-            </h3>
-            {meusItens.length > 0 && (
-              <p className="text-[9px] text-outline mt-1 truncate">
-                {meusItens.slice(0, 2).map((i) => i.nome).join(", ")}
-                {meusItens.length > 2 ? "..." : ""}
-              </p>
-            )}
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate("/movimentacoes")}
-            className="text-left bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10 cursor-pointer hover:shadow-md transition-all"
-          >
-            <div className="flex items-center gap-2 mb-2">
-              <Clock size={14} className="text-amber-500" />
-              <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                Minhas Pendências
-              </span>
-            </div>
-            <h3 className="text-2xl font-black text-amber-500">
-              {meusDados.minhasSolicitacoes.length}
-            </h3>
-          </button>
-
-          {isSupervisorOrAdmin && (
-            <button
-              type="button"
-              onClick={() => navigate("/movimentacoes")}
-              className="text-left bg-surface-container-lowest/80 backdrop-blur-sm p-4 rounded-xl border border-outline-variant/10 cursor-pointer hover:shadow-md transition-all"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Shield size={14} className="text-violet-500" />
-                <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
-                  Aguardam Aprovação
-                </span>
-              </div>
-              <h3 className="text-2xl font-black text-violet-500">
-                {meusDados.aprovarPendentes.length}
-              </h3>
-            </button>
-          )}
-        </div>
-
-        {isLoadingDashboard && (
-          <p className="text-xs text-outline font-semibold">
-            Atualizando indicadores...
-          </p>
-        )}
-
-        {meusDados.minhasSolicitacoes.length > 0 && (
-          <div className="mb-4">
-            <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Clock size={12} />
-              Minhas Solicitações Pendentes
-            </h4>
-            <div className="space-y-2">
-              {meusDados.minhasSolicitacoes.map((mov) => {
-                const tipoInfo = TIPO_MOV_LABEL[mov.tipo] || {
-                  label: mov.tipo,
-                  color: "text-outline",
-                };
-
-                return (
-                  <button
-                    type="button"
-                    key={mov.id}
-                    onClick={() => navigate("/movimentacoes")}
-                    className="w-full text-left bg-surface-container-lowest/90 backdrop-blur-sm p-4 rounded-xl border border-amber-500/20 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer"
-                  >
-                    <div className="p-2.5 bg-amber-500/10 rounded-lg text-amber-500">
-                      <Clock size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-on-surface truncate">
-                        {mov.item_nome}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-1 text-[10px]">
-                        <span className={`font-bold ${tipoInfo.color}`}>
-                          {tipoInfo.label}
-                        </span>
-                        <span className="text-on-surface-variant">{">"}</span>
-                        <span className="text-on-surface-variant truncate">
-                          {mov.destino}
-                        </span>
-                      </div>
-                    </div>
-                    <StatusBadge type="aprovacao" value="PENDENTE" />
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {isSupervisorOrAdmin && meusDados.aprovarPendentes.length > 0 && (
-          <div>
-            <h4 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-3 flex items-center gap-2">
-              <Shield size={12} />
-              Aguardando Sua Aprovação
-            </h4>
-            <div className="space-y-2">
-              {meusDados.aprovarPendentes.map((mov) => {
-                const tipoInfo = TIPO_MOV_LABEL[mov.tipo] || {
-                  label: mov.tipo,
-                  color: "text-outline",
-                };
-
-                return (
-                  <button
-                    type="button"
-                    key={mov.id}
-                    onClick={() => navigate("/movimentacoes")}
-                    className="w-full text-left bg-surface-container-lowest/90 backdrop-blur-sm p-4 rounded-xl border border-violet-500/20 flex items-center gap-4 hover:shadow-md transition-all cursor-pointer"
-                  >
-                    <div className="p-2.5 bg-violet-500/10 rounded-lg text-violet-500">
-                      <Shield size={16} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-on-surface truncate">
-                        {mov.item_nome}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-1 text-[10px]">
-                        <span className={`font-bold ${tipoInfo.color}`}>
-                          {tipoInfo.label}
-                        </span>
-                        <span className="text-on-surface-variant">por</span>
-                        <span className="font-bold text-on-surface truncate">
-                          {mov.solicitante_nome}
-                        </span>
-                      </div>
-                      <span className="text-[9px] text-outline font-semibold">
-                        {new Date(mov.data_movimentacao).toLocaleDateString(
-                          "pt-BR",
-                        )}
-                      </span>
-                    </div>
-                    <span className="text-[10px] font-bold bg-violet-50 text-violet-700 px-2.5 py-1 rounded-full border border-violet-200">
-                      Aprovar
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="space-y-3">
@@ -574,60 +330,6 @@ const Dashboard: React.FC = () => {
             {chartData.map((data, index) => (
               <span key={`${data.label}-label-${index}`}>{data.label}</span>
             ))}
-          </div>
-        </div>
-
-        <div className="bg-surface-container-lowest p-8 rounded-xl shadow-sm border border-outline-variant/10 flex flex-col justify-between">
-          <div>
-            <h5 className="text-lg font-bold tracking-tight text-primary mb-6">
-              Atividades Recentes
-            </h5>
-
-            <div className="space-y-5">
-              {recentMovs.length === 0 ? (
-                <p className="text-outline text-xs text-center py-6">
-                  Nenhuma atividade registrada.
-                </p>
-              ) : (
-                recentMovs.map((mov) => {
-                  const tipoInfo = TIPO_MOV_LABEL[mov.tipo] || {
-                    label: mov.tipo,
-                    color: "text-outline",
-                  };
-
-                  return (
-                    <button
-                      type="button"
-                      key={mov.id}
-                      onClick={() => navigate("/movimentacoes")}
-                      className="w-full text-left flex gap-4 cursor-pointer hover:bg-surface-container-low rounded-lg p-2 -mx-2 transition-colors"
-                    >
-                      <div className="mt-1 w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center shrink-0 text-primary">
-                        <ArrowLeftRight size={14} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-on-surface truncate">
-                          {mov.item_nome}
-                        </p>
-                        <div className="text-[10px] text-on-surface-variant font-medium flex items-center gap-1.5 mt-0.5">
-                          <span className={`font-semibold ${tipoInfo.color}`}>
-                            {tipoInfo.label}
-                          </span>
-                          <span>{">"}</span>
-                          <span className="truncate">{mov.destino}</span>
-                        </div>
-                        <span className="text-[9px] text-outline font-semibold block mt-1">
-                          {new Date(mov.data_movimentacao).toLocaleDateString(
-                            "pt-BR",
-                          )}{" "}
-                          por {mov.solicitante_nome}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
           </div>
         </div>
       </div>
