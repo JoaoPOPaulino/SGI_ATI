@@ -209,13 +209,10 @@ const Manutencao: React.FC = () => {
 
                   return (
                     <div key={item.id} className="p-3.5 bg-surface border border-outline-variant/10 rounded-xl flex items-center gap-3 hover:border-outline-variant/30 transition-all group">
-                      <StatusBadge type="condicao" value={item.condicao} />
                       <div className="flex-1 min-w-0">
                         <span className="text-[9px] font-mono font-bold text-outline block mb-0.5">{item.numero_patrimonio || 'S/N: ' + item.numero_serie || 'Consumível'}</span>
                         <h3 className="text-[11px] font-bold text-on-surface truncate">{item.nome}</h3>
-                        <span className="text-[9px] font-bold text-primary bg-primary/10 px-1.5 py-0.5 rounded border border-primary/10 uppercase tracking-wide mt-1 inline-block">{item.categoria}</span>
-                        {guia && <span className="text-[9px] text-outline ml-1">Guia: {guia.status_guia || 'ABERTA'}</span>}
-                        {laudoOk && <span className="text-[9px] text-emerald-600 font-bold ml-1">✓ Reparado</span>}
+                        {laudoOk && <span className="text-[9px] text-emerald-600 font-bold">✓ Reparado</span>}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
                         {isLab && guiaAberta && (
@@ -228,7 +225,7 @@ const Manutencao: React.FC = () => {
                             <LogOut size={10} />Aprovar Saída
                           </button>
                         )}
-                        {!isLab && !guiaAberta && !laudoOk && canModify && (
+                        {!isLab && !guiaAberta && !laudoOk && (
                           <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">Em Reparo — LABIN</span>
                         )}
                       </div>
