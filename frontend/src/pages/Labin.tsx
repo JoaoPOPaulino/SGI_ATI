@@ -148,9 +148,7 @@ const Labin: React.FC = () => {
         }
 
         await updateItem(item.id, {
-          status: 'EM_ESTOQUE',
           condicao: formCondicaoLaudo || 'USADO',
-          localizacao_atual: 'LABIN',
           updated_at: now
         });
 
