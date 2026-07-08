@@ -39,7 +39,16 @@ const Manutencao: React.FC = () => {
     const [allItens, allMovs, allLaudos] = await Promise.all([
       fetchAllItens(), fetchAllMovimentacoes(), fetchLaudos(),
     ]);
-    setMaintenanceItens(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
+    const guias = allMovs.filter(m => m.tipo === 'ENVIAR_LAB');
+
+    setMaintenanceItens(allItens.filter(i => {
+      if (i.status !== 'EM_MANUTENCAO') return false;
+      const guia = guias.find(m => m.item_id === i.id);
+      if (!guia) return true;
+      if (guia.status_guia === 'ABERTA') return true;
+      if (guia.status_guia === 'EM_ANDAMENTO' && allLaudos.some(l => l.item_id === i.id && l.status_servico === 'FINALIZADO')) return true;
+      return false;
+    }));
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
     setActiveItens(allItens.filter(i => i.status === 'ATIVO' || i.status === 'EM_ESTOQUE'));
     setGuiasLab(allMovs.filter(m => m.tipo === 'ENVIAR_LAB'));
