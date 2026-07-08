@@ -4,6 +4,35 @@ import { requireAuth, requireTecnicoOuSuperior } from "../middleware/auth.js";
 
 export const movimentacoesRouter = Router();
 
+const ALLOWED_INSERT_COLUMNS = [
+  "item_id", "item_nome", "tipo", "origem", "destino",
+  "solicitante_id", "solicitante_nome", "aprovador_id", "aprovador_nome",
+  "status_aprovacao", "data_movimentacao", "observacao", "tipo_documento",
+  "signature_token", "chamado", "status_guia",
+  "item_patrimonio", "item_numero_serie", "local_retirada",
+  "requerente_nome", "requerente_contato", "defeito_reclamado",
+  "servicos_solicitados", "laudo_tecnico"
+];
+
+const ALLOWED_UPDATE_COLUMNS = [
+  "status_guia", "observacao", "status_aprovacao", "aprovador_id", "aprovador_nome",
+  "destino", "origem", "chamado", "data_movimentacao",
+  "item_patrimonio", "item_numero_serie", "local_retirada",
+  "requerente_nome", "requerente_contato", "defeito_reclamado",
+  "servicos_solicitados", "laudo_tecnico", "tipo_documento", "signature_token"
+];
+
+const TRANSICOES_STATUS_GUIA: Record<string, string[]> = {
+  ABERTA: ["EM_ANDAMENTO"],
+  EM_ANDAMENTO: ["AGUARDANDO_RETIRADA"],
+  AGUARDANDO_RETIRADA: ["ENCERRADA"],
+  ENCERRADA: [],
+};
+
+function validarTransicao(atual: string, nova: string): boolean {
+  return TRANSICOES_STATUS_GUIA[atual]?.includes(nova) ?? false;
+}
+
 // GET /api/movimentacoes (paginada com busca)
 movimentacoesRouter.get("/", requireAuth, async (req: Request, res: Response) => {
   try {
@@ -54,12 +83,24 @@ movimentacoesRouter.get("/item/:itemId", requireAuth, async (req: Request, res: 
 // POST /api/movimentacoes
 movimentacoesRouter.post("/", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
   try {
-    const columns = Object.keys(req.body).join(", ");
-    const values = Object.values(req.body);
+    const filtered: Record<string, unknown> = {};
+    for (const key of Object.keys(req.body)) {
+      if (ALLOWED_INSERT_COLUMNS.includes(key)) {
+        filtered[key] = req.body[key];
+      }
+    }
+
+    const columns = Object.keys(filtered);
+    if (columns.length === 0) {
+      res.status(400).json({ error: "Nenhum campo válido para inserção." });
+      return;
+    }
+
+    const values = Object.values(filtered);
     const placeholders = values.map((_, i) => `$${i + 1}`).join(", ");
 
     const result = await query(
-      `INSERT INTO public.movimentacoes (${columns}) VALUES (${placeholders}) RETURNING *`,
+      `INSERT INTO public.movimentacoes (${columns.join(", ")}) VALUES (${placeholders}) RETURNING *`,
       values
     );
 
@@ -72,13 +113,36 @@ movimentacoesRouter.post("/", requireTecnicoOuSuperior, async (req: Request, res
 // PUT /api/movimentacoes/:id
 movimentacoesRouter.put("/:id", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
   try {
-    const fields = req.body;
+    const filtered: Record<string, unknown> = {};
+    for (const key of Object.keys(req.body)) {
+      if (ALLOWED_UPDATE_COLUMNS.includes(key)) {
+        filtered[key] = req.body[key];
+      }
+    }
+
+    if (Object.keys(filtered).length === 0) {
+      res.status(400).json({ error: "Nenhum campo válido para atualização." });
+      return;
+    }
+
+    if (filtered.status_guia) {
+      const current = await query("SELECT status_guia FROM public.movimentacoes WHERE id = $1", [req.params.id]);
+      if (current.rows.length === 0) {
+        res.status(404).json({ error: "Movimentação não encontrada." });
+        return;
+      }
+      const atual = current.rows[0].status_guia || "ABERTA";
+      if (!validarTransicao(atual, filtered.status_guia as string)) {
+        res.status(400).json({ error: `Transição inválida: de "${atual}" para "${filtered.status_guia}".` });
+        return;
+      }
+    }
+
     const setClauses: string[] = [];
     const values: any[] = [];
     let idx = 1;
 
-    for (const [key, value] of Object.entries(fields)) {
-      if (key === "id") continue;
+    for (const [key, value] of Object.entries(filtered)) {
       setClauses.push(`${key} = $${idx++}`);
       values.push(value);
     }

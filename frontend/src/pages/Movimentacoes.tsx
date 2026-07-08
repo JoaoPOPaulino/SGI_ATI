@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import type { Item, Movimentacao, StatusGuia, TipoAssinaturaGuia, TipoMovimentacao } from "../services/types";
 import { fetchAllItens, updateItem } from "../services/supabaseItens";
-import { createMovimentacao, fetchMovimentacoesComBusca, updateMovimentacao } from "../services/supabaseMovimentacoes";
+import { createMovimentacao, fetchMovimentacoesComBusca } from "../services/supabaseMovimentacoes";
 import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X } from "lucide-react";
 import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
@@ -151,6 +151,8 @@ const Movimentacoes: React.FC = () => {
 
       if (formTipo === "ENVIAR_LAB") {
         await updateItem(item.id, { status: "EM_MANUTENCAO", localizacao_atual: destino, updated_at: now });
+      } else {
+        await updateItem(item.id, { localizacao_atual: destino, updated_at: now });
       }
 
       await createAssinaturaGuia({
@@ -163,11 +165,9 @@ const Movimentacoes: React.FC = () => {
       setSelectedItemId(""); setFormChamado(""); setFormDestino(""); setFormObs("");
       setFormSuccess("Guia emitida!");
 
-      if (formTipo === "MANUTENCAO") {
-        setSigningMov(saved);
-        setSigningTipo("RECEBIMENTO");
-        setSigningNome(""); setSigningCpf(""); setSigningAssinatura(""); setSigningObservacao("");
-      }
+      setSigningMov(saved);
+      setSigningTipo("RECEBIMENTO");
+      setSigningNome(""); setSigningCpf(""); setSigningAssinatura(""); setSigningObservacao("");
 
       await loadMovimentacoes();
     } catch { setFormError("Erro ao emitir guia."); }
@@ -179,14 +179,11 @@ const Movimentacoes: React.FC = () => {
     if (!signingMov) return;
     if (!signingNome.trim()) { toast("error", "Informe o nome do assinante."); return; }
 
-    const novoStatus = PROXIMO_STATUS[signingMov.status_guia || "ABERTA"]?.[signingTipo];
-    if (!novoStatus) { toast("error", "Esta assinatura não é válida no momento."); return; }
-
-    const now = new Date().toISOString();
     const saved = await createAssinaturaGuia({
       movimentacao_id: signingMov.id, tipo_assinatura: signingTipo,
-      assinante_id: signingTipo === "RECEBIMENTO" || signingTipo === "RETIRADA" ? undefined : user?.id,
+      assinante_id: user?.id,
       assinante_nome: signingNome.trim(), assinante_cpf: signingCpf.trim() || undefined,
+      assinante_perfil: user?.perfil,
       assinatura_base64: signingAssinatura || "",
       localizacao: signingMov.destino,
       patrimonio: signingMov.item_patrimonio, numero_serie: signingMov.item_numero_serie,
@@ -194,24 +191,17 @@ const Movimentacoes: React.FC = () => {
     });
     if (!saved) { toast("error", "Erro ao salvar assinatura."); return; }
 
-    await updateMovimentacao(signingMov.id, { status_guia: novoStatus });
-
-    if (novoStatus === "AGUARDANDO_RETIRADA") {
-      const item = itens.find(i => i.id === signingMov.item_id);
-      if (item) await updateItem(item.id, { status: "EM_ESTOQUE", localizacao_atual: "Almoxarifado Central", updated_at: now });
-      toast("success", "Item liberado para retirada!");
-    }
-
+    toast("success", "Assinatura registrada!");
     setSigningMov(null);
     await loadMovimentacoes();
   };
 
   const podeAssinar = (mov: Movimentacao, tipo: TipoAssinaturaGuia): boolean => {
     const s = mov.status_guia || "ABERTA";
-    const ok = PROXIMO_STATUS[s]?.[tipo] !== null && PROXIMO_STATUS[s]?.[tipo] !== undefined;
+    const ok = PROXIMO_STATUS[s]?.[tipo] != null;
     if (!ok) return false;
-    if (tipo === "RECEBIMENTO" && mov.tipo === "ENVIAR_LAB" && !isLab) return false;
-    if (tipo === "APROVACAO_SAIDA" && !isLab) return false;
+    if (mov.tipo === "MANUTENCAO" && tipo === "APROVACAO_SAIDA") return false;
+    if ((tipo === "RECEBIMENTO" || tipo === "APROVACAO_SAIDA") && mov.tipo === "ENVIAR_LAB" && !isLab) return false;
     return true;
   };
 

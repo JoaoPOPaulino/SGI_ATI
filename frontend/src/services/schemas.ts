@@ -62,26 +62,6 @@ export const itemSchema = z
 
 export type ItemFormData = z.infer<typeof itemSchema>;
 
-export const movimentacaoSchema = z
-  .object({
-    tipo: z.enum(["MANUTENCAO", "ENVIAR_LAB"]),
-    chamado: z.string().optional(),
-    itemId: z.string().min(1, "Selecione o equipamento."),
-    destino: z.string().optional(),
-    observacao: z.string().optional(),
-  })
-  .superRefine((data, ctx) => {
-    if (data.tipo === "ENVIAR_LAB" && !(data.chamado || "").trim()) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Informe o número do chamado.",
-        path: ["chamado"],
-      });
-    }
-  });
-
-export type MovimentacaoFormData = z.infer<typeof movimentacaoSchema>;
-
 export const loanSchema = z.object({
   itemId: z.string().min(1, "Selecione o equipamento."),
   responsavel: z.string().min(1, "Informe o nome do responsável."),
