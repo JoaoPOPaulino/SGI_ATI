@@ -33,9 +33,6 @@ lerna-debug.log*
 # Supabase local CLI
 supabase/.temp/
 
-# Documentation (planning/design docs stay local)
-*.md
-
 # Python
 __pycache__/
 *.py[cod]
