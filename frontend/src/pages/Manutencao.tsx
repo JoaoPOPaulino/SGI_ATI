@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
-import { Item, StatusItem, Movimentacao, CondicaoItem, LaudoTecnico } from '../services/types';
+import { Item, StatusItem, Movimentacao, LaudoTecnico } from '../services/types';
 import { fetchAllItens, updateItem } from '../services/supabaseItens';
 import { fetchAllMovimentacoes, createMovimentacao, updateMovimentacao } from '../services/supabaseMovimentacoes';
 import { fetchLaudos } from '../services/supabaseLaudos';
 import { createAssinaturaGuia } from '../services/supabaseAssinaturasGuia';
-import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Hammer, Search, X, LogIn, LogOut } from 'lucide-react';
+import { Wrench, Trash2, CheckCircle2, ShieldCheck, XCircle, Search, X, LogIn, LogOut } from 'lucide-react';
 import Paginacao from '../components/Paginacao';
 import BuscaEquipamento from '../components/BuscaEquipamento';
 import { useToast } from '../components/SistemaToast';
@@ -23,8 +23,6 @@ const Manutencao: React.FC = () => {
   const [formMotivoBaixa, setFormMotivoBaixa] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
-  const [repairTarget, setRepairTarget] = useState<Item | null>(null);
-  const [repairCondicao, setRepairCondicao] = useState<CondicaoItem>('USADO');
   const [rejectTarget, setRejectTarget] = useState<Item | null>(null);
   const [rejectMotivo, setRejectMotivo] = useState('');
   const [approveTarget, setApproveTarget] = useState<Item | null>(null);
@@ -164,17 +162,6 @@ const Manutencao: React.FC = () => {
     } catch { toast("error", "Erro ao efetivar baixa."); }
   };
 
-  const handleCompleteRepair = async () => {
-    if (!repairTarget || !canModify) return;
-    try {
-      const now = new Date().toISOString();
-      await updateItem(repairTarget.id, { status: 'EM_ESTOQUE', condicao: repairCondicao, localizacao_atual: 'Almoxarifado Central (Manutenção Concluída)', updated_at: now });
-      await createMovimentacao({ id: crypto.randomUUID(), item_id: repairTarget.id, item_nome: repairTarget.nome, tipo: 'CHECK_IN', origem: 'Oficina / Laboratório', destino: 'Almoxarifado Central (Manutenção Concluída)', solicitante_id: user?.id || 'usr-anon', solicitante_nome: user?.nome || 'Anônimo', aprovador_id: user?.id, aprovador_nome: user?.nome, status_aprovacao: 'APROVADO', data_movimentacao: now, observacao: `Reparo concluído. Condição: ${repairCondicao}.`, tipo_documento: 'CONTROLE_ENTRADA_SAIDA' });
-      setRepairTarget(null); await loadData();
-      toast("success", "Reparo concluído!");
-    } catch { toast("error", "Erro ao concluir reparo."); }
-  };
-
   const lbl = 'text-[10px]';
   const hdr = 'text-sm font-bold text-on-surface mb-2 flex items-center gap-2 border-b border-outline-variant/20 pb-3';
   const btnSm = 'flex items-center gap-1 px-2.5 py-1.5 font-bold text-[10px] rounded-lg transition-all shrink-0';
@@ -224,12 +211,7 @@ const Manutencao: React.FC = () => {
                             <LogOut size={10} />Aprovar Saída
                           </button>
                         )}
-                        {canModify && (
-                          <button onClick={() => { setRepairTarget(item); setRepairCondicao('USADO'); }} className="flex items-center gap-1 px-3 py-1.5 bg-primary hover:bg-primary-dark text-white font-bold text-[10px] rounded-lg transition-all active:scale-95 shadow-sm shrink-0">
-                            <Hammer size={12} />Concluir Reparo
-                          </button>
-                        )}
-                        {!canModify && !guiaAberta && !laudoOk && (
+                        {!isLab && !guiaAberta && !laudoOk && canModify && (
                           <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">Em Reparo — LABIN</span>
                         )}
                       </div>
@@ -276,11 +258,6 @@ const Manutencao: React.FC = () => {
           )}
         </div>
       </div>
-
-      {/* Modal Concluir Reparo */}
-      {repairTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-fade-in"><div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setRepairTarget(null)} /><div className="relative bg-surface-container-lowest rounded-2xl border border-outline-variant/20 shadow-2xl max-w-sm w-full animate-slide-up p-5"><h3 className="text-sm font-bold text-on-surface mb-2">Concluir Reparo</h3><p className="text-[11px] text-on-surface-variant mb-5">Equipamento: <strong>{repairTarget.nome}</strong>{repairTarget.numero_patrimonio ? ` (Pat: ${repairTarget.numero_patrimonio})` : ''}</p><label className={`block ${lbl} font-bold text-outline uppercase tracking-wider mb-1.5`}>Condição Pós-Reparo</label><select value={repairCondicao} onChange={(e) => setRepairCondicao(e.target.value as CondicaoItem)} className="w-full px-3 py-2.5 bg-surface border border-outline rounded-lg text-[11px] focus:ring-2 focus:ring-primary mb-5"><option value="NOVO">Novo</option><option value="USADO">Usado</option></select><div className="flex gap-2.5"><button onClick={() => setRepairTarget(null)} className="flex-1 py-2.5 bg-surface-container-high hover:bg-surface-container-highest rounded-lg text-[11px] font-bold text-outline transition-colors">Cancelar</button><button onClick={handleCompleteRepair} className="flex-1 py-2.5 bg-primary hover:bg-primary-dark text-white rounded-lg text-[11px] font-bold transition-colors active:scale-95">Confirmar Reparo</button></div></div></div>
-      )}
 
       {/* Modal Rejeitar Baixa */}
       {rejectTarget && (
