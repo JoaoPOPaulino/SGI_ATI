@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
   Item,
@@ -16,14 +16,14 @@ import {
   fetchAllItens,
   createItem,
   updateItem,
-  deleteItem as deleteSupabaseItem,
-} from "../services/supabaseItens";
+  deleteItem as deleteItemService,
+} from "../services/itensService";
 import {
   fetchMovimentacoesByItemId,
   createMovimentacao,
-} from "../services/supabaseMovimentacoes";
-import { fetchLocais } from "../services/supabaseLocais";
-import { fetchLaudos } from "../services/supabaseLaudos";
+} from "../services/movimentacoesService";
+import { fetchLocais } from "../services/locaisService";
+import { fetchLaudos } from "../services/laudosService";
 import StatusBadge from "../components/DistintivoStatus";
 import Paginacao from "../components/Paginacao";
 import { useToast } from "../components/SistemaToast";
@@ -522,7 +522,7 @@ const Inventario: React.FC = () => {
         "Tem certeza que deseja remover este item permanentemente do inventário?",
       )
     ) {
-      const result = await deleteSupabaseItem(id);
+      const result = await deleteItemService(id);
       if (!result.success) {
         toast(
           "error",

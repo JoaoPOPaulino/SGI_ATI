@@ -1,7 +1,7 @@
 import React from 'react';
 import { X, Mail, Shield, MapPin, Circle, Clock, Users, UserPlus, ToggleLeft, Pencil, Trash2, ClipboardCheck, Ban, Fingerprint } from 'lucide-react';
 import type { AdminAction } from '../services/types';
-import { AuditLogRecord } from '../services/supabaseUsuarios';
+import { AuditLogRecord } from '../services/usuariosService';
 
 interface ModalUser {
   id: string;

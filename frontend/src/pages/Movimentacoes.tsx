@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao, AssinaturaGuia } from "../services/types";
-import { fetchAllItens, updateItem } from "../services/supabaseItens";
-import { createMovimentacao, fetchMovimentacoesComBusca } from "../services/supabaseMovimentacoes";
+import { fetchAllItens, updateItem } from "../services/itensService";
+import { createMovimentacao, fetchMovimentacoesComBusca } from "../services/movimentacoesService";
 import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X } from "lucide-react";
 import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
@@ -11,7 +11,7 @@ import { useToast } from "../components/SistemaToast";
 import {
   fetchAssinaturasGuia,
   createAssinaturaGuia,
-} from "../services/supabaseAssinaturasGuia";
+} from "../services/assinaturasService";
 import CaixaAssinatura from "../components/CaixaAssinatura";
 
 const TIPO_MOV_LABEL: Record<string, string> = {

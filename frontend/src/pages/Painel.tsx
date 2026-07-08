@@ -8,7 +8,7 @@ import {
   DashboardStats,
   DashboardLoanAlert,
   DashboardChartPoint,
-} from "../services/supabaseDashboard";
+} from "../services/dashboardService";
 import {
   Package,
   Wrench,

@@ -1,7 +1,7 @@
 import { api } from "./api";
 import { deleteUserApi, inviteUserApi } from "./apiAuth";
 
-export interface SupabaseUsuario {
+export interface UsuarioRecord {
   id: string;
   auth_id?: string | null;
   nome: string;
@@ -26,9 +26,9 @@ export interface AuditLogRecord {
   timestamp: string;
 }
 
-export async function fetchUsuarios(): Promise<SupabaseUsuario[]> {
+export async function fetchUsuarios(): Promise<UsuarioRecord[]> {
   try {
-    return await api.get<SupabaseUsuario[]>("/usuarios");
+    return await api.get<UsuarioRecord[]>("/usuarios");
   } catch {
     return [];
   }

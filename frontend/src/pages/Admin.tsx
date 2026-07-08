@@ -10,9 +10,9 @@ import {
   fetchAuditLogsByUser,
   insertAuditLog,
   inviteUser,
-  SupabaseUsuario,
+  UsuarioRecord,
   AuditLogRecord,
-} from "../services/supabaseUsuarios";
+} from "../services/usuariosService";
 import { exportToExcel } from "../services/utilidades";
 import {
   Users,
@@ -56,8 +56,8 @@ const Admin: React.FC = () => {
   const { user: currentUser, changeProfile } = useAuth();
   const { toast } = useToast();
 
-  const [usuarios, setUsuarios] = useState<SupabaseUsuario[]>([]);
-  const [allUsuarios, setAllUsuarios] = useState<SupabaseUsuario[]>([]);
+  const [usuarios, setUsuarios] = useState<UsuarioRecord[]>([]);
+  const [allUsuarios, setAllUsuarios] = useState<UsuarioRecord[]>([]);
 
   const [nome, setNome] = useState("");
   const [email, setEmail] = useState("");
@@ -78,7 +78,7 @@ const Admin: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>("nome");
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
 
-  const [selectedUser, setSelectedUser] = useState<SupabaseUsuario | null>(
+  const [selectedUser, setSelectedUser] = useState<UsuarioRecord | null>(
     null,
   );
   const [auditLogs, setAuditLogs] = useState<AuditLogRecord[]>([]);
@@ -449,7 +449,7 @@ const Admin: React.FC = () => {
     closeConfirm();
   };
 
-  const openUserDetail = async (user: SupabaseUsuario) => {
+  const openUserDetail = async (user: UsuarioRecord) => {
     setSelectedUser(user);
     const logs = await fetchAuditLogsByUser(user.id);
     setAuditLogs(logs);

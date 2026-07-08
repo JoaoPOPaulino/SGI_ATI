@@ -7,20 +7,20 @@ import {
   Loan,
   Movimentacao,
 } from "../services/types";
-import { fetchItens, updateItem, fetchAllItens } from "../services/supabaseItens";
+import { fetchItens, updateItem, fetchAllItens } from "../services/itensService";
 import {
   createMovimentacao,
-} from "../services/supabaseMovimentacoes";
+} from "../services/movimentacoesService";
 import {
   fetchEventos,
   createEvento,
   updateEvento,
-} from "../services/supabaseEventos";
+} from "../services/eventosService";
 import {
   fetchLoans,
   createLoan,
   updateLoan,
-} from "../services/supabaseEmprestimos";
+} from "../services/emprestimosService";
 import { exportToExcel } from "../services/utilidades";
 import {
   CalendarRange,

@@ -1,11 +1,11 @@
-﻿import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
   LaudoTecnico, Item, Movimentacao, CondicaoItem
 } from '../services/types';
-import { fetchAllItens, updateItem } from '../services/supabaseItens';
-import { fetchAllMovimentacoes, createMovimentacao } from '../services/supabaseMovimentacoes';
-import { fetchLaudos, createLaudo, updateLaudo } from '../services/supabaseLaudos';
+import { fetchAllItens, updateItem } from '../services/itensService';
+import { fetchAllMovimentacoes, createMovimentacao } from '../services/movimentacoesService';
+import { fetchLaudos, createLaudo, updateLaudo } from '../services/laudosService';
 import { exportToExcel } from '../services/utilidades';
 import StatusBadge from '../components/DistintivoStatus';
 import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil, Download } from 'lucide-react';
