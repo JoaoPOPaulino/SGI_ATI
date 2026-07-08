@@ -98,7 +98,7 @@ assinaturasRouter.post("/", requireAuth, async (req: Request, res: Response) => 
     if (novoStatus === "AGUARDANDO_RETIRADA" && guia.tipo === "ENVIAR_LAB") {
       const guiaMov = await query("SELECT item_id FROM public.movimentacoes WHERE id = $1", [movimentacao_id]);
       if (guiaMov.rows.length > 0) {
-        await query("UPDATE public.itens SET status = 'EM_ESTOQUE', localizacao_atual = 'Almoxarifado Central', updated_at = NOW() WHERE id = $1", [guiaMov.rows[0].item_id]);
+        await query("UPDATE public.itens SET status = 'EM_ESTOQUE', updated_at = NOW() WHERE id = $1", [guiaMov.rows[0].item_id]);
       }
     }
 
