@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
-import type { Item, Movimentacao, StatusGuia, TipoAssinaturaGuia, TipoMovimentacao } from "../services/types";
+import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao } from "../services/types";
 import { fetchAllItens, updateItem } from "../services/supabaseItens";
 import { createMovimentacao, fetchMovimentacoesComBusca } from "../services/supabaseMovimentacoes";
 import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X } from "lucide-react";
@@ -24,13 +24,6 @@ const ASSINATURA_LABEL: Record<TipoAssinaturaGuia, string> = {
   RECEBIMENTO: "Recebimento",
   APROVACAO_SAIDA: "Aprovação de Saída",
   RETIRADA: "Retirada",
-};
-
-const PROXIMO_STATUS: Record<StatusGuia, Record<TipoAssinaturaGuia, StatusGuia | null>> = {
-  ABERTA: { EMISSAO: null, RECEBIMENTO: "EM_ANDAMENTO", APROVACAO_SAIDA: null, RETIRADA: null },
-  EM_ANDAMENTO: { EMISSAO: null, RECEBIMENTO: null, APROVACAO_SAIDA: "AGUARDANDO_RETIRADA", RETIRADA: null },
-  AGUARDANDO_RETIRADA: { EMISSAO: null, RECEBIMENTO: null, APROVACAO_SAIDA: null, RETIRADA: "ENCERRADA" },
-  ENCERRADA: { EMISSAO: null, RECEBIMENTO: null, APROVACAO_SAIDA: null, RETIRADA: null },
 };
 
 const Movimentacoes: React.FC = () => {
@@ -68,7 +61,6 @@ const Movimentacoes: React.FC = () => {
   const hasDrawnRef = useRef(false);
 
   const isTecnicoOrHigher = hasPermission("TECNICO");
-  const isLab = user?.polo === "Laboratório";
 
   const toggleSelect = (id: string) => setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
 
@@ -165,6 +157,12 @@ const Movimentacoes: React.FC = () => {
       setSelectedItemId(""); setFormChamado(""); setFormDestino(""); setFormObs("");
       setFormSuccess("Guia emitida!");
 
+      if (formTipo === "MANUTENCAO") {
+        setSigningMov(saved);
+        setSigningTipo("RECEBIMENTO");
+        setSigningNome(""); setSigningCpf(""); setSigningAssinatura(""); setSigningObservacao("");
+      }
+
       await loadMovimentacoes();
     } catch { setFormError("Erro ao emitir guia."); }
     finally { setIsSaving(false); }
@@ -205,15 +203,6 @@ const Movimentacoes: React.FC = () => {
       setSigningNome("");
       setSigningCpf("");
     }
-  };
-
-  const podeAssinar = (mov: Movimentacao, tipo: TipoAssinaturaGuia): boolean => {
-    const s = mov.status_guia || "ABERTA";
-    const ok = PROXIMO_STATUS[s]?.[tipo] != null;
-    if (!ok) return false;
-    if (mov.tipo === "MANUTENCAO" && tipo === "APROVACAO_SAIDA") return false;
-    if ((tipo === "RECEBIMENTO" || tipo === "APROVACAO_SAIDA") && mov.tipo === "ENVIAR_LAB" && !isLab) return false;
-    return true;
   };
 
   // ----- Export -----
@@ -328,16 +317,16 @@ const Movimentacoes: React.FC = () => {
                     </div>
 
                     <div className="flex flex-wrap gap-2">
-                      {(["RECEBIMENTO", "APROVACAO_SAIDA", "RETIRADA"] as TipoAssinaturaGuia[]).map(tipo => (
-                        podeAssinar(selectedMov, tipo) && (
-                          <button key={tipo} onClick={() => abrirAssinatura(selectedMov, tipo)} className="px-3 py-2 text-[10px] font-bold bg-primary/10 text-primary rounded-lg hover:bg-primary/20">
-                            ✍️ {ASSINATURA_LABEL[tipo]}
-                          </button>
-                        )
-                      ))}
-                      {!podeAssinar(selectedMov, "RECEBIMENTO") && !podeAssinar(selectedMov, "APROVACAO_SAIDA") && !podeAssinar(selectedMov, "RETIRADA") && selectedMov.status_guia === "ENCERRADA" && (
-                        <span className="text-[10px] text-outline font-bold">Guia encerrada</span>
+                      {selectedMov.status_guia === "ENCERRADA" ? (
+                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded">✓ Guia Encerrada</span>
+                      ) : selectedMov.status_guia === "AGUARDANDO_RETIRADA" ? (
+                        <span className="text-[10px] text-violet-600 font-bold bg-violet-50 px-2 py-1 rounded">Aguardando Retirada</span>
+                      ) : selectedMov.status_guia === "EM_ANDAMENTO" ? (
+                        <span className="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded">Em Andamento</span>
+                      ) : (
+                        <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">Aberta</span>
                       )}
+                      {selectedMov.chamado && <span className="text-[10px] text-outline">Chamado: {selectedMov.chamado}</span>}
                     </div>
                   </div>
                 )}
