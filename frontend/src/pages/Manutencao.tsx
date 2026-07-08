@@ -69,6 +69,7 @@ const Manutencao: React.FC = () => {
   const canModify = hasPermission('TECNICO');
   const isSupervisorOrAdmin = hasPermission('SUPERVISOR');
   const isLab = user?.polo === 'Laboratório';
+  const canInteract = isLab && hasPermission('TECNICO');
 
   if (!isLab && !isSupervisorOrAdmin) return <Navigate to="/" replace />;
 
@@ -218,17 +219,17 @@ const Manutencao: React.FC = () => {
                         {laudoOk && <span className="text-[9px] text-emerald-600 font-bold">✓ Reparado</span>}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {isLab && guiaAberta && (
+                        {canInteract && guiaAberta && (
                           <button onClick={() => { setApproveEntryTarget(item); setAssinaturaEntrada(""); }} className={btnSm + ' bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700'}>
                             <LogIn size={10} />Aprovar Entrada
                           </button>
                         )}
-                        {isLab && laudoOk && (
+                        {canInteract && laudoOk && (
                           <button onClick={() => { setApproveExitTarget(item); setAssinaturaSaida(""); }} className={btnSm + ' bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700'}>
                             <LogOut size={10} />Aprovar Saída
                           </button>
                         )}
-                        {!isLab && !guiaAberta && !laudoOk && (
+                        {!canInteract && !guiaAberta && !laudoOk && isLab && (
                           <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">Em Reparo — LABIN</span>
                         )}
                       </div>

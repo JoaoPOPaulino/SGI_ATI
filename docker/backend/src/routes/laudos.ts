@@ -78,7 +78,7 @@ assinaturasRouter.post("/", requireAuth, async (req: Request, res: Response) => 
 
     // Autorização por polo: RECEBIMENTO e APROVACAO_SAIDA para ENVIAR_LAB só por lab
     if ((tipo_assinatura === "RECEBIMENTO" || tipo_assinatura === "APROVACAO_SAIDA") && guia.tipo === "ENVIAR_LAB") {
-      if (req.user?.polo !== "Laboratório" && req.user?.perfil !== "ADMIN") {
+      if ((req.user?.polo !== "Laboratório" || req.user?.perfil === "ESTAGIARIO") && req.user?.perfil !== "ADMIN") {
         res.status(403).json({ error: "Apenas usuários do Laboratório podem executar esta assinatura." });
         return;
       }
