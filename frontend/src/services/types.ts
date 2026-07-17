@@ -16,7 +16,9 @@ export type TipoMovimentacao =
   | "MANUTENCAO"
   | "BAIXA"
   | "EMPRESTIMO"
-  | "ENVIAR_LAB";
+  | "ENVIAR_LAB"
+  | "TRANSFERENCIA"
+  | "VIAGEM";
 export type StatusAprovacao = "PENDENTE" | "APROVADO" | "REJEITADO";
 export type StatusGuia =
   | "ABERTA"
@@ -76,9 +78,9 @@ export interface Movimentacao {
   data_movimentacao: string;
   observacao: string;
   tipo_documento?:
-  | "GUIA_MOVIMENTACAO"
-  | "CONTROLE_ENTRADA_SAIDA"
-  | "LAUDO_TECNICO";
+    | "GUIA_MOVIMENTACAO"
+    | "CONTROLE_ENTRADA_SAIDA"
+    | "LAUDO_TECNICO";
   signature_token?: string;
   chamado?: string;
   status_guia?: StatusGuia;

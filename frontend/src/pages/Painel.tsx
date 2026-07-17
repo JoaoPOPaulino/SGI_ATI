@@ -16,6 +16,7 @@ import {
   AlertTriangle,
   CheckCircle,
   User,
+  Clock,
 } from "lucide-react";
 
 const INITIAL_STATS: DashboardStats = {

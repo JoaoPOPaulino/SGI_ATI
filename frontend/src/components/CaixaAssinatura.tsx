@@ -6,7 +6,10 @@ interface CaixaAssinaturaProps {
   onClear?: () => void;
 }
 
-const CaixaAssinatura: React.FC<CaixaAssinaturaProps> = ({ value, onChange, onClear }) => {
+const CaixaAssinatura: React.FC<CaixaAssinaturaProps> = ({
+  onChange,
+  onClear,
+}) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const drawingRef = useRef(false);
   const hasDrawnRef = useRef(false);
@@ -15,7 +18,10 @@ const CaixaAssinatura: React.FC<CaixaAssinaturaProps> = ({ value, onChange, onCl
     const c = canvasRef.current;
     if (!c) return { x: 0, y: 0 };
     const r = c.getBoundingClientRect();
-    return { x: ((e.clientX - r.left) / r.width) * c.width, y: ((e.clientY - r.top) / r.height) * c.height };
+    return {
+      x: ((e.clientX - r.left) / r.width) * c.width,
+      y: ((e.clientY - r.top) / r.height) * c.height,
+    };
   };
 
   const startDrawing = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -83,7 +89,11 @@ const CaixaAssinatura: React.FC<CaixaAssinaturaProps> = ({ value, onChange, onCl
         <p className="text-[10px] text-outline font-semibold">
           Assine dentro da área branca usando mouse ou touch.
         </p>
-        <button type="button" onClick={clearSignature} className="px-3 py-1.5 text-[10px] font-bold text-primary border border-outline rounded-lg hover:bg-surface-container-high">
+        <button
+          type="button"
+          onClick={clearSignature}
+          className="px-3 py-1.5 text-[10px] font-bold text-primary border border-outline rounded-lg hover:bg-surface-container-high"
+        >
           Limpar
         </button>
       </div>
