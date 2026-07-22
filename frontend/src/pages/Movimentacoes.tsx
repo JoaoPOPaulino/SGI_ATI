@@ -119,7 +119,7 @@ const Movimentacoes: React.FC = () => {
       if (!saved) { setFormError("Erro ao criar guia."); setIsSaving(false); return; }
 
       if (formTipo === "ENVIAR_LAB") {
-        await updateItem(item.id, { status: "EM_MANUTENCAO", localizacao_atual: destino, updated_at: now });
+        await updateItem(item.id, { status: "EM_MANUTENCAO", polo: "Laboratório", localizacao_atual: destino, updated_at: now });
       } else {
         await updateItem(item.id, { localizacao_atual: destino, updated_at: now });
       }
