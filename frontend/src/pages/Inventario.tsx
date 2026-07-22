@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
   Item,
@@ -99,6 +99,17 @@ const Inventario: React.FC = () => {
   const [itemHistory, setItemHistory] = useState<Movimentacao[]>([]);
   const [itemLaudos, setItemLaudos] = useState<LaudoTecnico[]>([]);
 
+  // Estado do Modal de Movimentação Rápida (Issue #6)
+  const [activeQuickMoveItem, setActiveQuickMoveItem] = useState<Item | null>(
+    null,
+  );
+  const [moveDestinoPolo, setMoveDestinoPolo] = useState("");
+  const [moveDestinoAndar, setMoveDestinoAndar] = useState("");
+  const [moveDestinoSetor, setMoveDestinoSetor] = useState("");
+  const [moveDestinoSala, setMoveDestinoSala] = useState("");
+  const [moveDestinoEstacao, setMoveDestinoEstacao] = useState("");
+  const [moveObservacao, setMoveObservacao] = useState("");
+  const [moveError, setMoveError] = useState("");
 
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
@@ -406,6 +417,97 @@ const Inventario: React.FC = () => {
 
     const filteredLaudos = allLaudos.filter((l) => l.item_id === item.id);
     setItemLaudos(filteredLaudos);
+  };
+
+  // Exibição de Movimentação Rápida (Issue #6)
+  const openQuickMove = (item: Item) => {
+    if (isEstagiario) return;
+    void ensureLocaisLoaded()
+    if (item.status === "BAIXADO") {
+      toast("warning", "Nenhuma movimentação é permitida num registro BAIXADO.");
+      return;
+    }
+    if (item.status === "EMPRESTADO" || item.status === "EM_EVENTO") {
+      toast(
+        "warning",
+        "Itens emprestados ou alocados em eventos não podem ser movimentados. Realize a devolução ou desalocação primeiro.",
+      );
+      return;
+    }
+    if (item.status === "EM_MANUTENCAO" || item.status === "AGUARDANDO_BAIXA") {
+      toast(
+        "warning",
+        "Itens em manutenção ou aguardando baixa não podem ser movimentados. Utilize a página de Manutenção.",
+      );
+      return;
+    }
+    setActiveQuickMoveItem(item);
+    setMoveDestinoPolo(item.polo || "GSM");
+    setMoveDestinoAndar("");
+    setMoveDestinoSetor("");
+    setMoveDestinoSala("");
+    setMoveDestinoEstacao("");
+    setMoveObservacao("");
+    setMoveError("");
+  };
+
+  // Efetuar Movimentação Rápida
+  const handleSaveQuickMove = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (isSaving || !activeQuickMoveItem) return;
+    setIsSaving(true);
+    try {
+      if (!moveDestinoPolo.trim()) {
+        setMoveError("Informe o Polo de destino.");
+        return;
+      }
+
+      const now = new Date().toISOString();
+      const localConcatenado = [
+        moveDestinoPolo,
+        moveDestinoAndar,
+        moveDestinoSetor,
+        moveDestinoSala,
+        moveDestinoEstacao,
+      ]
+        .filter(Boolean)
+        .join(" - ");
+
+      await updateItem(activeQuickMoveItem.id, {
+        localizacao_atual: localConcatenado,
+        polo: moveDestinoPolo,
+        andar: moveDestinoAndar,
+        setor: moveDestinoSetor,
+        sala: moveDestinoSala,
+        estacao: moveDestinoEstacao,
+        updated_at: now,
+      });
+
+      await createMovimentacao({
+        id: crypto.randomUUID(),
+        item_id: activeQuickMoveItem.id,
+        item_nome: activeQuickMoveItem.nome,
+        tipo: "TRANSFERENCIA",
+        origem: activeQuickMoveItem.localizacao_atual,
+        destino: localConcatenado,
+        solicitante_id: user?.id || "usr-anon",
+        solicitante_nome: user?.nome || "Anônimo",
+        aprovador_id: user?.id || "usr-anon",
+        aprovador_nome: user?.nome || "Anônimo",
+        status_aprovacao: "APROVADO",
+        data_movimentacao: now,
+        observacao:
+          moveObservacao || "Transferência de alocação rápida do inventário.",
+        tipo_documento: "GUIA_MOVIMENTACAO",
+        signature_token: `sha256-quick-${Math.random().toString(36).substring(2, 10)}`,
+      });
+
+      setActiveQuickMoveItem(null);
+      await loadItens();
+      toast("success", "Equipamento transferido de localização com sucesso!");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Exclusão Logística (Somente Admin)
@@ -1048,76 +1150,6 @@ const Inventario: React.FC = () => {
                             <span className="text-on-surface font-bold">
                               {m.destino}
                             </span>
-      {/* Modal de Movimentação Rápida */}
-      {activeQuickMoveItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-surface-container-lowest w-full max-w-lg rounded-2xl p-8 shadow-2xl border border-outline-variant/10 animate-slide-up">
-            <div className="flex justify-between items-center mb-6">
-              <div>
-                <h2 className="text-lg font-black text-primary">Movimentação Rápida</h2>
-                <p className="text-xs text-outline mt-1 truncate">{activeQuickMoveItem.nome}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setActiveQuickMoveItem(null)}
-                className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleSaveQuickMove} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Polo *</label>
-                  <input type="text" value={moveDestinoPolo} onChange={(e) => setMoveDestinoPolo(e.target.value)}
-                    placeholder="Ex: GSM" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Andar</label>
-                  <input type="text" value={moveDestinoAndar} onChange={(e) => setMoveDestinoAndar(e.target.value)}
-                    placeholder="Ex: Térreo" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Setor</label>
-                  <input type="text" value={moveDestinoSetor} onChange={(e) => setMoveDestinoSetor(e.target.value)}
-                    placeholder="Ex: GSM" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Sala</label>
-                  <input type="text" value={moveDestinoSala} onChange={(e) => setMoveDestinoSala(e.target.value)}
-                    placeholder="Ex: Sala 101" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
-                </div>
-                <div className="col-span-2">
-                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Estação</label>
-                  <input type="text" value={moveDestinoEstacao} onChange={(e) => setMoveDestinoEstacao(e.target.value)}
-                    placeholder="Ex: Estação 03" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">Observação</label>
-                <input type="text" value={moveObservacao} onChange={(e) => setMoveObservacao(e.target.value)}
-                  placeholder="Motivo da transferência..." className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
-              </div>
-
-              {moveError && (
-                <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{moveError}</div>
-              )}
-
-              <div className="pt-4 flex justify-end gap-3 border-t border-surface-container-low">
-                <button type="button" onClick={() => setActiveQuickMoveItem(null)}
-                  className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
-                <button type="submit" disabled={isSaving}
-                  className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50">
-                  {isSaving ? "Movendo..." : "Confirmar Transferência"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-    </div>
-                          <span className="text-[9px] text-outline block mt-0.5">
       {/* Modal de Movimentação Rápida */}
       {activeQuickMoveItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
