@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao, AssinaturaGuia } from "../services/types";
 import { fetchAllItens, updateItem } from "../services/itensService";
-import { createMovimentacao, fetchMovimentacoesComBusca } from "../services/movimentacoesService";
+import { createMovimentacao, fetchMovimentacoesByItemId } from "../services/movimentacoesService";
 import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X } from "lucide-react";
 import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
@@ -35,16 +35,11 @@ const Movimentacoes: React.FC = () => {
   const { toast } = useToast();
 
   const [abaAtiva, setAbaAtiva] = useState<"emitir" | "consultar">("emitir");
-  const [movs, setMovs] = useState<Movimentacao[]>([]);
-  const [totalMovs, setTotalMovs] = useState(0);
   const [itens, setItens] = useState<Item[]>([]);
-  const [isLoadingMovs, setIsLoadingMovs] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [paginaAtual, setPaginaAtual] = useState(1);
-  const [itensPorPagina, setItensPorPagina] = useState(10);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-  const [selectedMov, setSelectedMov] = useState<Movimentacao | null>(null);
-  const [assinaturas, setAssinaturas] = useState<AssinaturaGuia[]>([]);
+
+  const [itemSelecionado, setItemSelecionado] = useState<Item | null>(null);
+  const [historicoMovs, setHistoricoMovs] = useState<Movimentacao[]>([]);
+  const [assinaturasPorMov, setAssinaturasPorMov] = useState<Record<string, AssinaturaGuia[]>>({});
 
   const [formTipo, setFormTipo] = useState<TipoMovimentacao>("MANUTENCAO");
   const [formChamado, setFormChamado] = useState("");
@@ -64,22 +59,23 @@ const Movimentacoes: React.FC = () => {
 
   const isTecnicoOrHigher = hasPermission("TECNICO");
 
-  const toggleSelect = (id: string) => setSelectedIds(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
-
-  const loadMovimentacoes = async () => {
-    setIsLoadingMovs(true);
-    const { data, count } = await fetchMovimentacoesComBusca(paginaAtual, itensPorPagina, searchQuery || undefined);
-    setMovs(data); setTotalMovs(count); setIsLoadingMovs(false);
-  };
-
   const loadItens = async () => {
     const all = await fetchAllItens();
     setItens(all.filter(i => i.status !== "BAIXADO" && i.status !== "EM_MANUTENCAO"));
   };
 
-  useEffect(() => { loadMovimentacoes(); }, [paginaAtual, itensPorPagina, searchQuery]);
   useEffect(() => { loadItens(); }, []);
-  useEffect(() => { setPaginaAtual(1); }, [searchQuery]);
+
+  const carregarHistorico = async (item: Item) => {
+    setItemSelecionado(item);
+    const movs = await fetchMovimentacoesByItemId(item.id);
+    setHistoricoMovs(movs);
+    const sigsMap: Record<string, AssinaturaGuia[]> = {};
+    for (const m of movs) {
+      sigsMap[m.id] = await fetchAssinaturasGuia(m.id);
+    }
+    setAssinaturasPorMov(sigsMap);
+  };
 
   useEffect(() => {
     if (formTipo === "ENVIAR_LAB") setFormDestino("Laboratório - Manutenção");
@@ -183,12 +179,14 @@ const Movimentacoes: React.FC = () => {
   };
 
   // ----- Export -----
-  const handleExport = async () => {
-    const { data: all } = await fetchMovimentacoesComBusca(1, 5000, searchQuery || undefined);
-    const d = selectedIds.size > 0 ? all.filter(m => selectedIds.has(m.id)) : all;
-    exportToExcel(["ID", "Chamado", "Equipamento", "Tipo", "Origem", "Destino", "Solicitante", "Status", "Data"],
-      d.map(m => [m.id, m.chamado || "", m.item_nome, m.tipo, m.origem, m.destino, m.solicitante_nome, m.status_guia || "", m.data_movimentacao]),
-      `movimentacoes_${new Date().toISOString().slice(0, 10)}`, "Movimentações");
+  const handleExport = () => {
+    if (!itemSelecionado || historicoMovs.length === 0) return;
+    exportToExcel(
+      ["ID", "Chamado", "Tipo", "Origem", "Destino", "Solicitante", "Status", "Data"],
+      historicoMovs.map(m => [m.id, m.chamado || "", m.tipo, m.origem, m.destino, m.solicitante_nome, m.status_guia || "", m.data_movimentacao]),
+      `historico_${itemSelecionado.nome.replace(/\s/g, "_")}_${new Date().toISOString().slice(0, 10)}`,
+      "Histórico"
+    );
   };
 
   const totalPaginas = Math.ceil(totalMovs / itensPorPagina) || 1;
@@ -252,88 +250,74 @@ const Movimentacoes: React.FC = () => {
       {abaAtiva === "consultar" && (
         <div className="space-y-6">
           <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-6 shadow-sm">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 border-b border-outline-variant/10 pb-3">
-              <div>
-                <h2 className="text-sm font-bold text-primary flex items-center gap-2"><Search size={18}/>Consulta de Guias</h2>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <input type="text" placeholder="Chamado, equipamento..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="bg-surface-container-low px-3 py-1.5 rounded-full border border-outline-variant/10 text-xs w-56" />
-                <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline text-primary font-bold text-[10px] rounded-lg"><Download size={12}/>Excel{selectedIds.size > 0 ? ` (${selectedIds.size})` : ""}</button>
-              </div>
+            <div className="flex items-center justify-between mb-5 border-b border-outline-variant/10 pb-3">
+              <h2 className="text-sm font-bold text-primary flex items-center gap-2"><Search size={18}/>Consultar Histórico do Equipamento</h2>
+              {itemSelecionado && (
+                <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline text-primary font-bold text-[10px] rounded-lg"><Download size={12}/>Exportar Excel</button>
+              )}
             </div>
 
-            <div className="grid grid-cols-1 2xl:grid-cols-[480px_1fr] gap-6">
-              <div className="space-y-3">
-                {movs.length === 0 ? (
-                  <div className="text-center text-outline py-12"><FileText size={36} className="mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Nenhum registro.</p></div>
-                ) : movs.map(m => (
-                  <button key={m.id} onClick={() => { setSelectedMov(m); fetchAssinaturasGuia(m.id).then(setAssinaturas); }} className={`w-full text-left p-4 border rounded-xl transition-all ${selectedMov?.id === m.id ? "bg-primary-fixed/50 border-primary/30" : "bg-surface border-outline-variant/20 hover:bg-surface-container-low"}`}>
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <input type="checkbox" checked={selectedIds.has(m.id)} onChange={() => toggleSelect(m.id)} onClick={e => e.stopPropagation()} className="w-3.5 h-3.5 rounded accent-primary shrink-0" />
-                      <span className="text-[10px] font-bold text-outline">{new Date(m.data_movimentacao).toLocaleDateString("pt-BR")}</span>
-                      <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">{TIPO_MOV_LABEL[m.tipo] || m.tipo}</span>
-                      <span className="text-[10px] text-outline">{m.status_guia || "ABERTA"}</span>
-                    </div>
-                    <p className="text-xs font-bold truncate">{m.item_nome} {m.item_patrimonio ? `(Pat: ${m.item_patrimonio})` : ""}</p>
-                    <p className="text-[10px] text-outline mt-1">Chamado: {m.chamado || "—"}</p>
-                  </button>
-                ))}
-                <Paginacao paginaAtual={paginaAtual} totalPaginas={totalPaginas} totalItens={totalMovs} itensPorPagina={itensPorPagina} onPaginaChange={setPaginaAtual} onItensPorPaginaChange={setItensPorPagina} rotuloItens="guias" />
-              </div>
+            <div className="mb-6">
+              <BuscaEquipamento itens={itens} selectedItemId={itemSelecionado?.id || ""} onSelect={(id) => { const item = itens.find(i => i.id === id); if (item) carregarHistorico(item); }} placeholder="Buscar equipamento por nome ou patrimônio..." />
+            </div>
 
-              <div className="bg-surface border border-outline-variant/20 rounded-xl p-5 min-h-[420px]">
-                {!selectedMov ? (
-                  <div className="h-full flex flex-col items-center justify-center text-outline"><FileText size={36} className="mb-2 opacity-50"/><p className="text-xs font-bold">Selecione uma guia.</p></div>
+            {itemSelecionado ? (
+              <div className="space-y-4">
+                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl">
+                  <p className="text-xs font-bold text-on-surface">{itemSelecionado.nome}</p>
+                  <p className="text-[10px] text-outline mt-0.5">Pat: {itemSelecionado.numero_patrimonio || "N/A"} | S/N: {itemSelecionado.numero_serie || "N/A"} | Status: {itemSelecionado.status}</p>
+                </div>
+
+                {historicoMovs.length === 0 ? (
+                  <p className="text-xs text-outline text-center py-8">Nenhuma movimentação registrada para este equipamento.</p>
                 ) : (
-                  <div className="space-y-5">
-                    <div className="border-b border-outline-variant/20 pb-4">
-                      <p className="text-[10px] font-black text-outline uppercase">Guia #{selectedMov.chamado || selectedMov.id.substring(0, 8)}</p>
-                      <p className="text-xs font-bold mt-1">{selectedMov.item_nome}</p>
-                      <p className="text-xs text-outline mt-1">{selectedMov.origem} → {selectedMov.destino}</p>
-                      <p className="text-xs text-outline mt-1">Status: <span className="font-bold text-on-surface">{selectedMov.status_guia || "ABERTA"}</span></p>
-                    </div>
+                  <div className="space-y-3">
+                    {historicoMovs.map((mov) => {
+                      const sigs = assinaturasPorMov[mov.id] || [];
+                      return (
+                        <div key={mov.id} className="bg-surface border border-outline-variant/10 rounded-xl p-4">
+                          <div className="flex items-center gap-2 mb-2 flex-wrap">
+                            <span className="text-[10px] font-bold text-outline">{new Date(mov.data_movimentacao).toLocaleDateString("pt-BR")}</span>
+                            <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">{TIPO_MOV_LABEL[mov.tipo] || mov.tipo}</span>
+                            <span className="text-[10px] font-semibold text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">{mov.status_guia || "ABERTA"}</span>
+                            {mov.chamado && <span className="text-[10px] text-outline">Chamado: {mov.chamado}</span>}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-on-surface-variant mb-2">
+                            <ArrowLeftRight size={10} className="text-outline" />
+                            <span className="truncate">{mov.origem} → {mov.destino}</span>
+                          </div>
+                          {mov.observacao && <p className="text-[9px] text-outline mb-2">{mov.observacao}</p>}
 
-                    <div className="flex flex-wrap gap-2">
-                      {selectedMov.status_guia === "ENCERRADA" ? (
-                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-2 py-1 rounded">✓ Guia Encerrada</span>
-                      ) : selectedMov.status_guia === "AGUARDANDO_RETIRADA" ? (
-                        <span className="text-[10px] text-violet-600 font-bold bg-violet-50 px-2 py-1 rounded">Aguardando Retirada</span>
-                      ) : selectedMov.status_guia === "EM_ANDAMENTO" ? (
-                        <span className="text-[10px] text-amber-600 font-bold bg-amber-50 px-2 py-1 rounded">Em Andamento</span>
-                      ) : (
-                        <span className="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-1 rounded">Aberta</span>
-                      )}
-                      {selectedMov.chamado && <span className="text-[10px] text-outline">Chamado: {selectedMov.chamado}</span>}
-                    </div>
-
-                    {assinaturas.length > 0 && (
-                      <div className="border-t border-outline-variant/10 pt-4">
-                        <p className="text-[10px] font-black text-outline uppercase mb-3">Assinaturas</p>
-                        <div className="space-y-2">
-                          {assinaturas.map((a, i) => (
-                            <div key={a.id} className="flex items-start gap-3 p-2 bg-surface-container-lowest rounded-lg border border-outline-variant/10">
-                              <span className="text-[10px] font-black text-primary bg-primary/10 w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 flex-wrap">
-                                  <span className="text-[10px] font-bold text-on-surface">{ASSINATURA_LABEL[a.tipo_assinatura]}</span>
-                                  <span className="text-[9px] text-outline">{a.assinante_nome}</span>
-                                  {a.assinante_cpf && <span className="text-[9px] text-outline">CPF: {a.assinante_cpf}</span>}
-                                </div>
-                                <p className="text-[9px] text-outline">{new Date(a.data_assinatura).toLocaleString("pt-BR")}</p>
-                                {a.observacao && <p className="text-[9px] text-outline mt-0.5">{a.observacao}</p>}
-                                {a.assinatura_base64 && a.assinatura_base64.length > 20 && (
-                                  <img src={a.assinatura_base64} alt="Assinatura" className="mt-2 h-12 max-w-[160px] object-contain bg-white border border-outline-variant/20 rounded" />
-                                )}
+                          {sigs.length > 0 && (
+                            <div className="border-t border-outline-variant/10 pt-3 mt-2">
+                              <p className="text-[9px] font-black text-outline uppercase mb-2">Assinaturas</p>
+                              <div className="space-y-1.5">
+                                {sigs.map((a, i) => (
+                                  <div key={a.id} className="flex items-start gap-2 text-[9px]">
+                                    <span className="font-black text-primary">{i + 1}.</span>
+                                    <div>
+                                      <span className="font-bold text-on-surface">{ASSINATURA_LABEL[a.tipo_assinatura]}</span>
+                                      <span className="text-outline"> — {a.assinante_nome}</span>
+                                      <span className="text-outline ml-1">{new Date(a.data_assinatura).toLocaleString("pt-BR")}</span>
+                                      {a.observacao && <p className="text-outline mt-0.5">{a.observacao}</p>}
+                                      {a.assinatura_base64 && a.assinatura_base64.length > 20 && (
+                                        <img src={a.assinatura_base64} alt="Assinatura" className="mt-1 h-10 object-contain bg-white border border-outline-variant/20 rounded" />
+                                      )}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            </div>
+            ) : (
+              <div className="text-center text-outline py-12"><FileText size={36} className="mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Busque um equipamento para ver seu histórico de movimentações.</p></div>
+            )}
           </div>
         </div>
       )}
