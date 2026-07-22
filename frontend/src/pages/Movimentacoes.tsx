@@ -74,7 +74,7 @@ const Movimentacoes: React.FC = () => {
 
   const loadItens = async () => {
     const all = await fetchAllItens();
-    setItens(all.filter(i => i.status !== "BAIXADO"));
+    setItens(all.filter(i => i.status !== "BAIXADO" && i.status !== "EM_MANUTENCAO"));
   };
 
   useEffect(() => { loadMovimentacoes(); }, [paginaAtual, itensPorPagina, searchQuery]);
