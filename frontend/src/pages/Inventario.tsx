@@ -1398,6 +1398,7 @@ const Inventario: React.FC = () => {
                       onChange={(e) => setFormSerie(e.target.value)}
                       placeholder="Ex: SN-XYZ987654"
                       className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface font-mono"
+                      maxLength={50}
                     />
                   </div>
                 </div>
@@ -1414,6 +1415,7 @@ const Inventario: React.FC = () => {
                     value={formMarca}
                     onChange={(e) => setFormMarca(e.target.value)}
                     placeholder="Ex: Dell"
+                    maxLength={50}
                     className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                   />
                 </div>
@@ -1426,6 +1428,7 @@ const Inventario: React.FC = () => {
                     value={formModelo}
                     onChange={(e) => setFormModelo(e.target.value)}
                     placeholder="Ex: Latitude 5420"
+                    maxLength={50}
                     className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface"
                   />
                 </div>

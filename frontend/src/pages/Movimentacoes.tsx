@@ -217,7 +217,7 @@ const Movimentacoes: React.FC = () => {
               </div>
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-1.5">Nº do Chamado {formTipo === "ENVIAR_LAB" && "*"}</label>
-                <input type="text" value={formChamado} onChange={e => setFormChamado(e.target.value)} placeholder="Ex: CHM-2026-001234" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                <input type="text" value={formChamado} onChange={e => setFormChamado(e.target.value)} maxLength={6} placeholder="Ex: 001234" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-1.5">Equipamento</label>
@@ -226,7 +226,7 @@ const Movimentacoes: React.FC = () => {
               {formTipo !== "ENVIAR_LAB" && (
                 <div>
                   <label className="block text-[10px] font-black text-outline uppercase mb-1.5">Destino</label>
-                  <input type="text" value={formDestino} onChange={e => setFormDestino(e.target.value)} placeholder="Ex: Sala 302 - TI, Evento Hackathon, Nome do responsável..." className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                  <input type="text" value={formDestino} onChange={e => setFormDestino(e.target.value)} maxLength={100} placeholder="Ex: Sala 302 - TI, Evento Hackathon, Nome do responsável..." className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
                 </div>
               )}
               <div>
@@ -336,11 +336,11 @@ const Movimentacoes: React.FC = () => {
               )}
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-1.5">Nome do Assinante *</label>
-                <input type="text" value={signingNome} onChange={e => setSigningNome(e.target.value)} placeholder="Nome completo" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                <input type="text" value={signingNome} onChange={e => setSigningNome(e.target.value)} maxLength={100} placeholder="Nome completo" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-1.5">CPF</label>
-                <input type="text" value={signingCpf} onChange={e => setSigningCpf(e.target.value)} placeholder="Apenas números" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                <input type="text" value={signingCpf} onChange={e => setSigningCpf(e.target.value)} maxLength={14} placeholder="Apenas números" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
               </div>
               <div>
                 <label className="block text-[10px] font-black text-outline uppercase mb-2">Assinatura *</label>
