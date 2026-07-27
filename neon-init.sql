@@ -1,6 +1,6 @@
 -- ============================================================
--- SGI-ATI: Schema Completo do Banco de Dados
--- Consolidado de 10 migracoes Supabase
+-- SGI-ATI: Script completo para inicializacao do Neon
+-- Copie e cole este arquivo inteiro no SQL Editor do Neon
 -- ============================================================
 
 -- Extensoes
@@ -9,7 +9,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- ============================================================
 -- 1. USUARIOS
 -- ============================================================
-CREATE TABLE public.usuarios (
+CREATE TABLE IF NOT EXISTS public.usuarios (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nome TEXT NOT NULL,
   email TEXT NOT NULL UNIQUE,
@@ -23,14 +23,13 @@ CREATE TABLE public.usuarios (
   salt TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-CREATE INDEX idx_usuarios_cpf ON public.usuarios (cpf);
-CREATE INDEX idx_usuarios_ativo ON public.usuarios (ativo);
+CREATE INDEX IF NOT EXISTS idx_usuarios_cpf ON public.usuarios (cpf);
+CREATE INDEX IF NOT EXISTS idx_usuarios_ativo ON public.usuarios (ativo);
 
 -- ============================================================
 -- 2. LOCAIS
 -- ============================================================
-CREATE TABLE public.locais (
+CREATE TABLE IF NOT EXISTS public.locais (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   polo TEXT NOT NULL,
   predio TEXT NOT NULL,
@@ -40,13 +39,12 @@ CREATE TABLE public.locais (
   estacao TEXT NOT NULL,
   UNIQUE (polo, predio, andar, setor, sala, estacao)
 );
-
-CREATE INDEX idx_locais_polo ON public.locais (polo);
+CREATE INDEX IF NOT EXISTS idx_locais_polo ON public.locais (polo);
 
 -- ============================================================
 -- 3. ITENS
 -- ============================================================
-CREATE TABLE public.itens (
+CREATE TABLE IF NOT EXISTS public.itens (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nome TEXT NOT NULL,
   tipo TEXT NOT NULL CHECK (tipo IN ('PATRIMONIADO','SERIALIZADO','NAO_SERIALIZADO')),
@@ -70,15 +68,14 @@ CREATE TABLE public.itens (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-CREATE INDEX idx_itens_atribuido_a_id ON public.itens (atribuido_a_id);
-CREATE INDEX idx_itens_status ON public.itens (status);
-CREATE INDEX idx_itens_created_at ON public.itens (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_itens_atribuido_a_id ON public.itens (atribuido_a_id);
+CREATE INDEX IF NOT EXISTS idx_itens_status ON public.itens (status);
+CREATE INDEX IF NOT EXISTS idx_itens_created_at ON public.itens (created_at DESC);
 
 -- ============================================================
 -- 4. MOVIMENTACOES
 -- ============================================================
-CREATE TABLE public.movimentacoes (
+CREATE TABLE IF NOT EXISTS public.movimentacoes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   item_id UUID NOT NULL REFERENCES public.itens(id) ON DELETE RESTRICT,
   item_nome TEXT NOT NULL,
@@ -106,18 +103,17 @@ CREATE TABLE public.movimentacoes (
   laudo_tecnico TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-CREATE INDEX idx_movimentacoes_item_id ON public.movimentacoes (item_id);
-CREATE INDEX idx_movimentacoes_solicitante_id ON public.movimentacoes (solicitante_id);
-CREATE INDEX idx_movimentacoes_aprovador_id ON public.movimentacoes (aprovador_id);
-CREATE INDEX idx_movimentacoes_data ON public.movimentacoes (data_movimentacao DESC);
-CREATE INDEX idx_movimentacoes_tipo ON public.movimentacoes (tipo);
-CREATE INDEX idx_movimentacoes_status_aprovacao ON public.movimentacoes (status_aprovacao);
+CREATE INDEX IF NOT EXISTS idx_movimentacoes_item_id ON public.movimentacoes (item_id);
+CREATE INDEX IF NOT EXISTS idx_movimentacoes_solicitante_id ON public.movimentacoes (solicitante_id);
+CREATE INDEX IF NOT EXISTS idx_movimentacoes_aprovador_id ON public.movimentacoes (aprovador_id);
+CREATE INDEX IF NOT EXISTS idx_movimentacoes_data ON public.movimentacoes (data_movimentacao DESC);
+CREATE INDEX IF NOT EXISTS idx_movimentacoes_tipo ON public.movimentacoes (tipo);
+CREATE INDEX IF NOT EXISTS idx_movimentacoes_status_aprovacao ON public.movimentacoes (status_aprovacao);
 
 -- ============================================================
 -- 5. EVENTOS
 -- ============================================================
-CREATE TABLE public.eventos (
+CREATE TABLE IF NOT EXISTS public.eventos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nome TEXT NOT NULL,
   data_inicio TIMESTAMPTZ NOT NULL,
@@ -126,26 +122,24 @@ CREATE TABLE public.eventos (
   responsavel_id UUID NOT NULL REFERENCES public.usuarios(id),
   itens_alocados JSONB DEFAULT '[]'::jsonb
 );
-
-CREATE INDEX idx_eventos_responsavel_id ON public.eventos (responsavel_id);
-CREATE INDEX idx_eventos_data_inicio ON public.eventos (data_inicio DESC);
+CREATE INDEX IF NOT EXISTS idx_eventos_responsavel_id ON public.eventos (responsavel_id);
+CREATE INDEX IF NOT EXISTS idx_eventos_data_inicio ON public.eventos (data_inicio DESC);
 
 -- ============================================================
--- 6. EVENTO_ITENS (juncao)
+-- 6. EVENTO_ITENS
 -- ============================================================
-CREATE TABLE public.evento_itens (
+CREATE TABLE IF NOT EXISTS public.evento_itens (
   evento_id UUID NOT NULL REFERENCES public.eventos(id) ON DELETE CASCADE,
   item_id UUID NOT NULL REFERENCES public.itens(id) ON DELETE RESTRICT,
   alocado_em TIMESTAMPTZ DEFAULT NOW(),
   PRIMARY KEY (evento_id, item_id)
 );
-
-CREATE INDEX idx_evento_itens_item_id ON public.evento_itens (item_id);
+CREATE INDEX IF NOT EXISTS idx_evento_itens_item_id ON public.evento_itens (item_id);
 
 -- ============================================================
 -- 7. LAUDOS
 -- ============================================================
-CREATE TABLE public.laudos (
+CREATE TABLE IF NOT EXISTS public.laudos (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   item_id UUID NOT NULL REFERENCES public.itens(id) ON DELETE RESTRICT,
   item_nome TEXT NOT NULL,
@@ -159,15 +153,14 @@ CREATE TABLE public.laudos (
   created_at TIMESTAMPTZ DEFAULT NOW(),
   finalizado_em TIMESTAMPTZ
 );
-
-CREATE INDEX idx_laudos_item_id ON public.laudos (item_id);
-CREATE INDEX idx_laudos_tecnico_id ON public.laudos (tecnico_id);
-CREATE INDEX idx_laudos_created_at ON public.laudos (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_laudos_item_id ON public.laudos (item_id);
+CREATE INDEX IF NOT EXISTS idx_laudos_tecnico_id ON public.laudos (tecnico_id);
+CREATE INDEX IF NOT EXISTS idx_laudos_created_at ON public.laudos (created_at DESC);
 
 -- ============================================================
 -- 8. LOANS
 -- ============================================================
-CREATE TABLE public.loans (
+CREATE TABLE IF NOT EXISTS public.loans (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   item_id UUID NOT NULL REFERENCES public.itens(id) ON DELETE RESTRICT,
   item_nome TEXT NOT NULL,
@@ -177,15 +170,14 @@ CREATE TABLE public.loans (
   status TEXT NOT NULL DEFAULT 'ATIVO' CHECK (status IN ('ATIVO','DEVOLVIDO')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
-
-CREATE INDEX idx_loans_item_id ON public.loans (item_id);
-CREATE INDEX idx_loans_status ON public.loans (status);
-CREATE INDEX idx_loans_data_retorno ON public.loans (data_retorno_prevista DESC);
+CREATE INDEX IF NOT EXISTS idx_loans_item_id ON public.loans (item_id);
+CREATE INDEX IF NOT EXISTS idx_loans_status ON public.loans (status);
+CREATE INDEX IF NOT EXISTS idx_loans_data_retorno ON public.loans (data_retorno_prevista DESC);
 
 -- ============================================================
 -- 9. AUDIT_LOGS
 -- ============================================================
-CREATE TABLE public.audit_logs (
+CREATE TABLE IF NOT EXISTS public.audit_logs (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   admin_id UUID NOT NULL REFERENCES public.usuarios(id),
   admin_name TEXT NOT NULL,
@@ -195,15 +187,14 @@ CREATE TABLE public.audit_logs (
   details TEXT NOT NULL DEFAULT '',
   timestamp TIMESTAMPTZ DEFAULT NOW()
 );
-
-CREATE INDEX idx_audit_logs_admin_id ON public.audit_logs (admin_id);
-CREATE INDEX idx_audit_logs_target_user_id ON public.audit_logs (target_user_id);
-CREATE INDEX idx_audit_logs_timestamp ON public.audit_logs (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_admin_id ON public.audit_logs (admin_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_target_user_id ON public.audit_logs (target_user_id);
+CREATE INDEX IF NOT EXISTS idx_audit_logs_timestamp ON public.audit_logs (timestamp DESC);
 
 -- ============================================================
 -- 10. SOLICITACOES
 -- ============================================================
-CREATE TABLE public.solicitacoes (
+CREATE TABLE IF NOT EXISTS public.solicitacoes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   nome TEXT NOT NULL,
   email TEXT NOT NULL,
@@ -217,14 +208,13 @@ CREATE TABLE public.solicitacoes (
   polo_atribuido TEXT,
   motivo_rejeicao TEXT
 );
-
-CREATE INDEX idx_solicitacoes_aprovado_por_id ON public.solicitacoes (aprovado_por_id);
-CREATE INDEX idx_solicitacoes_status ON public.solicitacoes (status);
+CREATE INDEX IF NOT EXISTS idx_solicitacoes_aprovado_por_id ON public.solicitacoes (aprovado_por_id);
+CREATE INDEX IF NOT EXISTS idx_solicitacoes_status ON public.solicitacoes (status);
 
 -- ============================================================
 -- 11. ASSINATURAS_GUIA
 -- ============================================================
-CREATE TABLE public.assinaturas_guia (
+CREATE TABLE IF NOT EXISTS public.assinaturas_guia (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   movimentacao_id UUID NOT NULL REFERENCES public.movimentacoes(id) ON DELETE CASCADE,
   tipo_assinatura TEXT NOT NULL CHECK (tipo_assinatura IN ('EMISSAO','RECEBIMENTO','APROVACAO_SAIDA','RETIRADA')),
@@ -241,5 +231,67 @@ CREATE TABLE public.assinaturas_guia (
   observacao TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS idx_assinaturas_guia_mov_id ON public.assinaturas_guia (movimentacao_id);
 
-CREATE INDEX idx_assinaturas_guia_mov_id ON public.assinaturas_guia (movimentacao_id);
+-- ============================================================
+-- TRIGGERS
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS trigger_itens_updated_at ON public.itens;
+CREATE TRIGGER trigger_itens_updated_at
+  BEFORE UPDATE ON public.itens
+  FOR EACH ROW
+  EXECUTE FUNCTION public.update_updated_at();
+
+-- ============================================================
+-- FUNCTIONS
+-- ============================================================
+CREATE OR REPLACE FUNCTION public.get_user_email_by_cpf(p_cpf text)
+RETURNS text
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $$
+  SELECT email FROM public.usuarios WHERE cpf = p_cpf AND ativo = true LIMIT 1;
+$$;
+
+CREATE OR REPLACE FUNCTION public.get_user_perfil(p_user_id uuid)
+RETURNS text
+LANGUAGE sql
+STABLE
+SET search_path = ''
+AS $$
+  SELECT perfil FROM public.usuarios WHERE id = p_user_id AND ativo = true LIMIT 1;
+$$;
+
+-- ============================================================
+-- SEED: Usuarios e Locais (dados de demonstracao)
+-- ============================================================
+INSERT INTO public.usuarios (id, nome, email, cpf, perfil, ativo, polo, primeiro_acesso) VALUES
+  ('a0000000-0000-0000-0000-000000000001', 'adm00',  'admin@ati.com',    '00000000000', 'ADMIN',       true, 'GSM',          false),
+  ('a0000000-0000-0000-0000-000000000002', 'Pettrus','pettrus@ati.com',  '11111111111', 'ESTAGIARIO',  true, 'GSM',          true),
+  ('a0000000-0000-0000-0000-000000000003', 'Alcides','alcides@ati.com',  '22222222222', 'TECNICO',     true, 'GSM',          true),
+  ('a0000000-0000-0000-0000-000000000004', 'Joao',   'joao@ati.com',     '33333333333', 'SUPERVISOR',  true, 'GSM',          true),
+  ('a0000000-0000-0000-0000-000000000005', 'Gilberto','gilberto@ati.com','44444444444', 'TECNICO',     true, 'Laboratorio', true),
+  ('a0000000-0000-0000-0000-000000000006', 'Marsall', 'marsall@ati.com', '55555555555', 'SUPERVISOR',  true, 'GSM',          true),
+  ('a0000000-0000-0000-0000-000000000007', 'Luiz',    'luiz@ati.com',    '66666666666', 'ESTAGIARIO',  true, 'Laboratorio', true),
+  ('a0000000-0000-0000-0000-000000000008', 'Alex',    'alex@ati.com',    '77777777777', 'TECNICO',     true, 'GSM',          true)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.locais (id, polo, predio, andar, setor, sala, estacao) VALUES
+  ('b0000000-0000-0000-0000-000000000001', 'GSM',        'Bloco A',  '3 Andar', 'Tecnologia da Informacao', 'Sala 302',     'Estacao A-10'),
+  ('b0000000-0000-0000-0000-000000000002', 'Laboratorio','Bloco B',  '1 Andar', 'Infraestrutura',           'Laboratorio',  'Bancada B-1'),
+  ('b0000000-0000-0000-0000-000000000003', 'GSM',        'Anexo I',  'Terreo',  'Atendimento',              'Recepcao',     'Estacao R-1'),
+  ('b0000000-0000-0000-0000-000000000004', 'GSM',        'Bloco A',  '5 Andar', 'Financeiro',               'Sala 501',     'Estacao F-01'),
+  ('b0000000-0000-0000-0000-000000000005', 'GSM',        'Bloco A',  '2 Andar', 'Recursos Humanos',         'Sala 201',     'Estacao RH-1'),
+  ('b0000000-0000-0000-0000-000000000006', 'Laboratorio','Bloco B',  '2 Andar', 'Pesquisa',                 'Sala P-01',    'Bancada P-1'),
+  ('b0000000-0000-0000-0000-000000000007', 'Laboratorio','Bloco B',  'Terreo',  'Manutencao',               'Oficina',      'Bancada M-1'),
+  ('b0000000-0000-0000-0000-000000000008', 'GSM',        'Bloco A',  '7 Andar', 'Diretoria',                'Sala 701',     'Estacao D-01')
+ON CONFLICT (id) DO NOTHING;

@@ -116,6 +116,7 @@ export interface LaudoTecnico {
   pecas_utilizadas: string;
   status_servico: "EM_ANALISE" | "AGUARDANDO_PECA" | "EM_REPARO" | "FINALIZADO";
   created_at: string;
+  finalizado_em?: string;
 }
 
 export interface Local {

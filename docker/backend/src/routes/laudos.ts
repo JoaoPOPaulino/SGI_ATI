@@ -4,23 +4,63 @@ import { requireAuth, requireTecnicoOuSuperior } from "../middleware/auth.js";
 
 export const laudosRouter = Router();
 
-laudosRouter.get("/", requireAuth, async (_req: Request, res: Response) => {
-  const result = await query("SELECT * FROM public.laudos ORDER BY created_at DESC");
-  res.json(result.rows);
+laudosRouter.get("/", requireAuth, async (req: Request, res: Response) => {
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string) || 10));
+  const offset = (page - 1) * pageSize;
+  const search = req.query.search as string | undefined;
+  const countAll = req.query.countAll === "true";
+
+  let where = "";
+  const params: any[] = [];
+  let idx = 1;
+
+  if (search) {
+    where = `WHERE (item_nome ILIKE $${idx} OR tecnico_nome ILIKE $${idx} OR descricao_problema ILIKE $${idx})`;
+    params.push(`%${search}%`);
+    idx++;
+  }
+
+  const countResult = await query(`SELECT COUNT(*) FROM public.laudos ${where}`, params);
+  const total = parseInt(countResult.rows[0].count);
+
+  if (countAll) {
+    const all = await query(`SELECT * FROM public.laudos ${where} ORDER BY created_at DESC`, params);
+    res.json({ data: all.rows, count: total });
+    return;
+  }
+
+  const dataResult = await query(
+    `SELECT * FROM public.laudos ${where} ORDER BY created_at DESC LIMIT $${idx++} OFFSET $${idx}`,
+    [...params, pageSize, offset]
+  );
+
+  res.json({ data: dataResult.rows, count: total });
 });
 
 laudosRouter.post("/", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
   const { item_id, item_nome, tecnico_id, tecnico_nome, descricao_problema, diagnostico, acao_realizada, pecas_utilizadas, status_servico } = req.body;
+  const isFinalizado = status_servico === "FINALIZADO";
   const result = await query(
-    "INSERT INTO public.laudos (item_id, item_nome, tecnico_id, tecnico_nome, descricao_problema, diagnostico, acao_realizada, pecas_utilizadas, status_servico) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) RETURNING *",
+    `INSERT INTO public.laudos (item_id, item_nome, tecnico_id, tecnico_nome, descricao_problema, diagnostico, acao_realizada, pecas_utilizadas, status_servico${isFinalizado ? ", finalizado_em" : ""})
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9${isFinalizado ? ", NOW()" : ""}) RETURNING *`,
     [item_id, item_nome, tecnico_id, tecnico_nome, descricao_problema, diagnostico || "", acao_realizada || "", pecas_utilizadas || "", status_servico]
   );
   res.status(201).json(result.rows[0]);
 });
 
 laudosRouter.put("/:id", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
+  const current = await query("SELECT status_servico FROM public.laudos WHERE id = $1", [req.params.id]);
+  if (current.rows.length === 0) { res.status(404).json({ error: "Laudo não encontrado." }); return; }
+  const oldStatus = current.rows[0].status_servico;
+
   const fields = req.body; const setClauses: string[] = []; const values: any[] = []; let idx = 1;
   for (const [k, v] of Object.entries(fields)) { if (k === "id") continue; setClauses.push(`${k} = $${idx++}`); values.push(v); }
+
+  if (fields.status_servico === "FINALIZADO" && oldStatus !== "FINALIZADO") {
+    setClauses.push(`finalizado_em = NOW()`);
+  }
+
   values.push(req.params.id);
   const result = await query(`UPDATE public.laudos SET ${setClauses.join(", ")} WHERE id = $${idx} RETURNING *`, values);
   res.json(result.rows[0] || null);

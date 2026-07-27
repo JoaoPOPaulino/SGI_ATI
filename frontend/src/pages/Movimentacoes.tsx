@@ -78,7 +78,7 @@ const Movimentacoes: React.FC = () => {
   };
 
   useEffect(() => {
-    if (formTipo === "ENVIAR_LAB") setFormDestino("Laboratório - Manutenção");
+    if (formTipo === "ENVIAR_LAB") setFormDestino("Laboratório");
     else setFormDestino("");
   }, [formTipo]);
 
@@ -99,7 +99,7 @@ const Movimentacoes: React.FC = () => {
 
       const now = new Date().toISOString();
       const chamado = formChamado.trim() || undefined;
-      const destino = formTipo === "ENVIAR_LAB" ? "Laboratório - Manutenção" : (formDestino.trim() || item.localizacao_atual);
+      const destino = formTipo === "ENVIAR_LAB" ? "Laboratório" : (formDestino.trim() || item.localizacao_atual);
 
       const newMov: Movimentacao = {
         id: crypto.randomUUID(), item_id: item.id, item_nome: item.nome,

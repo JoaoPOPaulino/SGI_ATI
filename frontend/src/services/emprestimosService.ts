@@ -1,12 +1,19 @@
 import { api } from "./api";
 import type { Loan } from "./types";
 
-export async function fetchLoans(_limit = 100): Promise<Loan[]> {
+export async function fetchLoans(): Promise<Loan[]> {
   try {
-    return await api.get<Loan[]>("/emprestimos");
-  } catch {
-    return [];
-  }
+    const result = await api.get<{ data: Loan[] }>("/emprestimos?pageSize=10000");
+    return result.data;
+  } catch { return []; }
+}
+
+export async function fetchLoansPaginado(page: number, pageSize: number, search?: string): Promise<{ data: Loan[]; count: number }> {
+  try {
+    const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize) });
+    if (search) params.set("search", search);
+    return await api.get<{ data: Loan[]; count: number }>(`/emprestimos?${params}`);
+  } catch { return { data: [], count: 0 }; }
 }
 
 export async function createLoan(loan: Loan): Promise<Loan | null> {

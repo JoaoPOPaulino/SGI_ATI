@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import { 
   LaudoTecnico, Item, Movimentacao, CondicaoItem
 } from '../services/types';
 import { fetchAllItens, updateItem } from '../services/itensService';
 import { fetchAllMovimentacoes, createMovimentacao } from '../services/movimentacoesService';
-import { fetchLaudos, createLaudo, updateLaudo } from '../services/laudosService';
+import { fetchLaudosPaginado, createLaudo, updateLaudo } from '../services/laudosService';
 import { exportToExcel } from '../services/utilidades';
 import StatusBadge from '../components/DistintivoStatus';
 import { Wrench, Plus, Info, Printer, PenTool, Search, X, Pencil, Download } from 'lucide-react';
@@ -40,37 +40,43 @@ const Labin: React.FC = () => {
   const [activeLaudoPrint, setActiveLaudoPrint] = useState<LaudoTecnico | null>(null);
   const [editingLaudoId, setEditingLaudoId] = useState<string | null>(null);
 
+  const [totalLaudos, setTotalLaudos] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const loadData = async () => {
-    const [allLaudos, allItens] = await Promise.all([fetchLaudos(), fetchAllItens()]);
-    setLaudos(allLaudos);
+    setLoading(true);
+    const [laudosResult, allItens] = await Promise.all([
+      fetchLaudosPaginado(paginaAtual, itensPorPagina, searchQuery || undefined),
+      fetchAllItens(),
+    ]);
+    if (paginaAtual === 1 || laudosResult.data.length > 0) {
+      setLaudos(laudosResult.data);
+    } else {
+      setLaudos([]);
+    }
+    setTotalLaudos(laudosResult.count);
     setItensInManutencao(allItens.filter(i => i.status === 'EM_MANUTENCAO'));
+    setLoading(false);
   };
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, [paginaAtual, itensPorPagina]);
+
+  const debouncedSearch = (value: string) => {
+    setSearchQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setPaginaAtual(1);
+      loadData();
+    }, 400);
+  };
+
+  useEffect(() => { if (searchQuery === '') loadData(); }, [searchQuery]);
 
   const canCreateLaudo = (hasPermission('TECNICO') && user?.polo === 'Laboratório') || user?.perfil === 'ADMIN';
 
-  // Filtrar laudos
-  const filteredLaudos = useMemo(() => {
-    return laudos.filter(l => 
-      l.item_nome.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      l.tecnico_nome.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-  }, [laudos, searchQuery]);
-
-  // Cálculo de Paginação — Laudos
-  const totalPaginas = Math.ceil(filteredLaudos.length / itensPorPagina);
-  const laudosPaginados = filteredLaudos.slice(
-    (paginaAtual - 1) * itensPorPagina,
-    paginaAtual * itensPorPagina,
-  );
-
-  // Resetar para página 1 ao filtrar
-  useEffect(() => {
-    setPaginaAtual(1);
-  }, [filteredLaudos.length, searchQuery]);
+  // Resetar para página 1 ao mudar itens por página
+  useEffect(() => { setPaginaAtual(1); }, [itensPorPagina]);
 
   // Abrir formulário para editar laudo existente
   const openEditLaudo = (laudo: LaudoTecnico) => {
@@ -183,8 +189,8 @@ const Labin: React.FC = () => {
     }
   };
 
-  const handleExportLaudosExcel = () => {
-    const data = filteredLaudos;
+  const handleExportLaudosExcel = async () => {
+    const { data } = await fetchLaudosPaginado(1, 10000, searchQuery || undefined);
     const headers = ["ID", "Equipamento", "Técnico", "Status Serviço", "Descrição", "Diagnóstico", "Ação Realizada", "Peças", "Data"];
     const rows = data.map((item) => [
       item.id,
@@ -247,14 +253,14 @@ const Labin: React.FC = () => {
               type="text" 
               placeholder="Buscar por item, técnico ou diagnóstico..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => debouncedSearch(e.target.value)}
               className="bg-transparent border-none focus:ring-0 text-xs w-full text-on-surface"
             />
           </div>
         </div>
 
         {/* Tabela de Laudos */}
-        {filteredLaudos.length === 0 ? (
+        {laudos.length === 0 && !loading ? (
           <div className="p-12 text-center">
             <Info className="mx-auto text-outline/50 mb-3" size={32} />
             <h3 className="text-sm font-bold text-on-surface-variant">Nenhum laudo técnico encontrado</h3>
@@ -273,7 +279,7 @@ const Labin: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="text-xs">
-                {laudosPaginados.map((laudo) => (
+                {laudos.map((laudo) => (
                   <tr key={laudo.id} className="border-b border-surface-container-low hover:bg-surface-bright transition-colors group">
                     <td className="px-8 py-4 font-bold max-w-55 truncate">{laudo.item_nome}</td>
                     <td className="px-8 py-4 font-semibold text-on-surface-variant max-w-40 truncate">{laudo.tecnico_nome}</td>
@@ -309,11 +315,11 @@ const Labin: React.FC = () => {
             </table>
 
             {/* Paginação */}
-            {filteredLaudos.length > 0 && (
+            {totalLaudos > 0 && (
               <Paginacao
                 paginaAtual={paginaAtual}
-                totalPaginas={totalPaginas}
-                totalItens={filteredLaudos.length}
+                totalPaginas={Math.ceil(totalLaudos / itensPorPagina)}
+                totalItens={totalLaudos}
                 itensPorPagina={itensPorPagina}
                 onPaginaChange={setPaginaAtual}
                 onItensPorPaginaChange={setItensPorPagina}

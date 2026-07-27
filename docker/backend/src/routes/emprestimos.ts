@@ -5,8 +5,30 @@ import { requireAuth, requireTecnicoOuSuperior } from "../middleware/auth.js";
 export const emprestimosRouter = Router();
 
 emprestimosRouter.get("/", requireAuth, async (req: Request, res: Response) => {
-  const result = await query("SELECT * FROM public.loans ORDER BY data_retorno_prevista DESC LIMIT 200");
-  res.json(result.rows);
+  const page = Math.max(1, parseInt(req.query.page as string) || 1);
+  const pageSize = Math.min(100, Math.max(1, parseInt(req.query.pageSize as string) || 10));
+  const offset = (page - 1) * pageSize;
+  const search = req.query.search as string | undefined;
+
+  let where = "";
+  const params: any[] = [];
+  let idx = 1;
+
+  if (search) {
+    where = `WHERE (item_nome ILIKE $${idx} OR responsavel ILIKE $${idx})`;
+    params.push(`%${search}%`);
+    idx++;
+  }
+
+  const countResult = await query(`SELECT COUNT(*) FROM public.loans ${where}`, params);
+  const total = parseInt(countResult.rows[0].count);
+
+  const dataResult = await query(
+    `SELECT * FROM public.loans ${where} ORDER BY data_retorno_prevista DESC LIMIT $${idx++} OFFSET $${idx}`,
+    [...params, pageSize, offset]
+  );
+
+  res.json({ data: dataResult.rows, count: total });
 });
 
 emprestimosRouter.post("/", requireTecnicoOuSuperior, async (req: Request, res: Response) => {

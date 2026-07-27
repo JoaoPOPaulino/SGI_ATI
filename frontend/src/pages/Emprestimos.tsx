@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
   Item,
@@ -12,12 +12,12 @@ import {
   createMovimentacao,
 } from "../services/movimentacoesService";
 import {
-  fetchEventos,
+  fetchEventosPaginado,
   createEvento,
   updateEvento,
 } from "../services/eventosService";
 import {
-  fetchLoans,
+  fetchLoansPaginado,
   createLoan,
   updateLoan,
 } from "../services/emprestimosService";
@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 import ConfirmDialog from "../components/DialogoConfirmacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
+import Paginacao from "../components/Paginacao";
 import { useToast } from "../components/SistemaToast";
 import { loanSchema, eventoSchema } from "../services/schemas";
 
@@ -94,11 +95,17 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     onConfirm: () => { },
   });
 
+  const [paginaEventos, setPaginaEventos] = useState(1);
+  const [paginaEmprestimos, setPaginaEmprestimos] = useState(1);
+  const [totalEventos, setTotalEventos] = useState(0);
+  const [totalLoans, setTotalLoans] = useState(0);
+  const itensPorPaginaCards = 6;
+
   const loadData = async () => {
-    const [allItens, currentEventos, currentLoans] = await Promise.all([
+    const [allItens, eventosResult, loansResult] = await Promise.all([
       fetchAllItens(),
-      fetchEventos(),
-      fetchLoans(),
+      fetchEventosPaginado(paginaEventos, itensPorPaginaCards),
+      fetchLoansPaginado(paginaEmprestimos, itensPorPaginaCards),
     ]);
 
     const filteredItens = allItens.filter(
@@ -111,7 +118,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     setItens(filteredItens);
 
     const today = new Date();
-    const expiredEventos = currentEventos.filter(
+    const expiredEventos = eventosResult.data.filter(
       (evt) => new Date(evt.data_fim) < today && evt.itens_alocados.length > 0,
     );
 
@@ -142,13 +149,15 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       await updateEvento(evt.id, { itens_alocados: [] }).catch(() => {});
     }
 
-    setEventos(currentEventos);
-    setLoans(currentLoans);
+    setEventos(eventosResult.data);
+    setLoans(loansResult.data);
+    setTotalEventos(eventosResult.count);
+    setTotalLoans(loansResult.count);
   };
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [paginaEventos, paginaEmprestimos]);
 
   const canModify = hasPermission("TECNICO");
   const isEstagiario = !canModify;
@@ -465,10 +474,11 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
   const today = new Date();
   const isOverdue = (dateStr: string) => new Date(dateStr) < today;
 
-  const handleExportEmprestimosExcel = () => {
-    const data = loansAtivos;
+  const handleExportEmprestimosExcel = async () => {
+    const { data } = await fetchLoansPaginado(1, 10000);
+    const active = data.filter((l: Loan) => l.status === "ATIVO");
     const headers = ["ID", "Item", "Responsável", "Previsão Devolução", "Status"];
-    const rows = data.map((item) => [
+    const rows = active.map((item) => [
       item.id,
       item.item_nome,
       item.responsavel,
@@ -478,8 +488,8 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
     exportToExcel(headers, rows, `emprestimos_${new Date().toISOString().slice(0, 10)}`, "Empréstimos");
   };
 
-  const handleExportEventosExcel = () => {
-    const data = eventos;
+  const handleExportEventosExcel = async () => {
+    const { data } = await fetchEventosPaginado(1, 10000);
     const headers = ["ID", "Nome", "Data Início", "Data Fim", "Local", "Responsável", "Itens Alocados"];
     const rows = data.map((item) => [
       item.id,
@@ -618,7 +628,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
               </button>
               {loansAtivos.length > 0 && (
                 <span className="ml-auto text-[10px] font-black bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                  {loansAtivos.length}
+                  {totalLoans}
                 </span>
               )}
             </h2>
@@ -673,6 +683,19 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                     </div>
                   );
                 })}
+              </div>
+            )}
+            {totalLoans > itensPorPaginaCards && (
+              <div className="mt-4">
+                <Paginacao
+                  paginaAtual={paginaEmprestimos}
+                  totalPaginas={Math.ceil(totalLoans / itensPorPaginaCards)}
+                  totalItens={totalLoans}
+                  itensPorPagina={itensPorPaginaCards}
+                  onPaginaChange={setPaginaEmprestimos}
+                  onItensPorPaginaChange={() => {}}
+                  rotuloItens="empréstimos"
+                />
               </div>
             )}
           </div>
@@ -987,11 +1010,24 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                               ))}
                             </div>
                           )}
-                        </div>
-                      )}
+              </div>
+            )}
                     </div>
                   );
                 })}
+              </div>
+            )}
+            {totalEventos > itensPorPaginaCards && (
+              <div className="mt-4">
+                <Paginacao
+                  paginaAtual={paginaEventos}
+                  totalPaginas={Math.ceil(totalEventos / itensPorPaginaCards)}
+                  totalItens={totalEventos}
+                  itensPorPagina={itensPorPaginaCards}
+                  onPaginaChange={setPaginaEventos}
+                  onItensPorPaginaChange={() => {}}
+                  rotuloItens="eventos"
+                />
               </div>
             )}
           </div>
