@@ -1,0 +1,11 @@
+{
+  "name": "sgi-ati",
+  "private": true,
+  "scripts": {
+    "build": "cd docker/backend && npm install && npm run build",
+    "start": "cd docker/backend && node dist/index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
