@@ -2,7 +2,7 @@
   "name": "sgi-ati",
   "private": true,
   "scripts": {
-    "postinstall": "cd docker/backend && npm install && npm run build",
+    "prestart": "node -e \"process.exit(require('fs').existsSync('docker/backend/dist/index.js')?0:1)\" || (echo 'Compilando TypeScript...' && cd docker/backend && npm install && npm run build)",
     "build": "cd docker/backend && npm install && npm run build",
     "start": "cd docker/backend && node dist/index.js"
   },
