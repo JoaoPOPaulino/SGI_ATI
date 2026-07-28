@@ -3,8 +3,8 @@ services:
     name: sgi-ati-backend
     env: node
     rootDir: docker/backend
-    buildCommand: npm install && npm run build
-    startCommand: node dist/index.js
+    buildCommand: cd docker/backend && npm install && npm run build
+    startCommand: cd docker/backend && node dist/index.js
     envVars:
       - key: NODE_ENV
         value: production
