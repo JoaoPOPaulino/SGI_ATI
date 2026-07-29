@@ -136,7 +136,7 @@ const Movimentacoes: React.FC = () => {
         setSigningNome(""); setSigningCpf(""); setSigningAssinatura(""); setSigningObservacao("");
       }
 
-      await loadMovimentacoes();
+      await loadItens();
     } catch { setFormError("Erro ao emitir guia."); }
     finally { setIsSaving(false); }
   };
@@ -161,7 +161,7 @@ const Movimentacoes: React.FC = () => {
 
     toast("success", "Assinatura registrada!");
     setSigningMov(null);
-    await loadMovimentacoes();
+    await loadItens();
   };
 
   const abrirAssinatura = (mov: Movimentacao, tipo: TipoAssinaturaGuia) => {
