@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate, useLocation } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/ContextoAutenticacao';
 import type { PerfilUsuario } from '../services/types';
 import { ShieldAlert } from 'lucide-react';
@@ -12,14 +12,9 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredPerfil, requiredPolo }) => {
   const { user, hasPermission } = useAuth();
-  const location = useLocation();
 
   if (!user) {
     return <Navigate to="/login" replace />;
-  }
-
-  if (user.primeiro_acesso && location.pathname !== '/trocar-senha') {
-    return <Navigate to="/trocar-senha" replace />;
   }
 
   if (requiredPerfil && !hasPermission(requiredPerfil)) {

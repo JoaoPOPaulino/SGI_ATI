@@ -12,7 +12,6 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   if (user) {
-    if (user.primeiro_acesso) return <Navigate to="/trocar-senha" replace />;
     return <Navigate to="/" replace />;
   }
 
