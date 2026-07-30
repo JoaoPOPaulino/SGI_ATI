@@ -72,7 +72,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
   }, [onScan, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 bg-black/90">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-2 bg-black/90">
       <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl border border-gray-200 overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
           <h2 className="text-sm font-black flex items-center gap-2"><Camera size={18} /> Escanear QR Code</h2>
