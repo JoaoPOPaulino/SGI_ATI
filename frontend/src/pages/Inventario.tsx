@@ -1061,7 +1061,7 @@ const Inventario: React.FC = () => {
               {selectedIds.size > 0 && selectedIds.size < totalItens && itensPaginados.every(i => selectedIds.has(i.id)) && (
                 <tbody>
                   <tr>
-                    <td colSpan={8} className="px-6 py-2 bg-primary/5 border-b border-outline-variant/10">
+                    <td colSpan={99} className="px-6 py-2 bg-primary/5 border-b border-outline-variant/10">
                       <p className="text-xs text-primary font-semibold">
                         {selectedIds.size} itens desta página selecionados.{' '}
                         <button onClick={selectAllFiltered} className="underline font-bold hover:text-primary/70">
@@ -1075,7 +1075,7 @@ const Inventario: React.FC = () => {
               {selectedIds.size >= totalItens && (
                 <tbody>
                   <tr>
-                    <td colSpan={8} className="px-6 py-2 bg-primary/5 border-b border-outline-variant/10">
+                    <td colSpan={99} className="px-6 py-2 bg-primary/5 border-b border-outline-variant/10">
                       <p className="text-xs text-primary font-semibold">
                         Todos os {totalItens} itens selecionados.{' '}
                         <button onClick={() => setSelectedIds(new Set())} className="underline font-bold hover:text-primary/70">
