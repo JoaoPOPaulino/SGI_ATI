@@ -56,3 +56,19 @@ export async function deleteItemApi(id: string): Promise<{ success: boolean; err
     error: err.message,
   }));
 }
+
+export async function importItensApi(itens: any[]): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    return await api.post<{ success: boolean; count: number }>("/itens/import", itens);
+  } catch (err: any) {
+    return { success: false, count: 0, error: err.message };
+  }
+}
+
+export async function batchUpdateItensApi(ids: string[], updates: Record<string, unknown>): Promise<{ success: boolean; count: number; error?: string }> {
+  try {
+    return await api.put<{ success: boolean; count: number }>("/itens/batch", { ids, updates });
+  } catch (err: any) {
+    return { success: false, count: 0, error: err.message };
+  }
+}

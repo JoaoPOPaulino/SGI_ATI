@@ -17,6 +17,8 @@ import {
   createItem,
   updateItem,
   deleteItem as deleteItemService,
+  importItens,
+  batchUpdateItens,
 } from "../services/itensService";
 import {
   fetchMovimentacoesByItemId,
@@ -42,6 +44,10 @@ import {
   History,
   Download,
   X,
+  Upload,
+  FileSpreadsheet,
+  AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 
 const Inventario: React.FC = () => {
@@ -110,6 +116,31 @@ const Inventario: React.FC = () => {
   const [moveDestinoEstacao, setMoveDestinoEstacao] = useState("");
   const [moveObservacao, setMoveObservacao] = useState("");
   const [moveError, setMoveError] = useState("");
+
+  // Importar planilha
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importPreview, setImportPreview] = useState<any[]>([]);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importError, setImportError] = useState("");
+  const [importSuccess, setImportSuccess] = useState("");
+  const [importing, setImporting] = useState(false);
+
+  // Editar em lote
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [batchSaving, setBatchSaving] = useState(false);
+  const [batchNome, setBatchNome] = useState("");
+  const [batchMarca, setBatchMarca] = useState("");
+  const [batchModelo, setBatchModelo] = useState("");
+  const [batchCondicao, setBatchCondicao] = useState("");
+  const [batchStatus, setBatchStatus] = useState("");
+  const [batchPolo, setBatchPolo] = useState("");
+  const [batchPredio, setBatchPredio] = useState("");
+  const [batchAndar, setBatchAndar] = useState("");
+  const [batchSetor, setBatchSetor] = useState("");
+  const [batchSala, setBatchSala] = useState("");
+  const [batchCategoria, setBatchCategoria] = useState("");
+  const [batchTipo, setBatchTipo] = useState("");
+  const [batchLocalizacao, setBatchLocalizacao] = useState("");
 
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
@@ -608,6 +639,127 @@ const Inventario: React.FC = () => {
     );
   };
 
+  // ----- Importar planilha -----
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImportFile(file);
+    setImportError("");
+    setImportSuccess("");
+
+    try {
+      const XLSX = await import("xlsx");
+      const data = await file.arrayBuffer();
+      const workbook = XLSX.read(data, { type: "array" });
+      const sheetName = workbook.SheetNames[0];
+      const sheet = workbook.Sheets[sheetName];
+      const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      if (rows.length === 0) {
+        setImportError("Planilha vazia ou formato inválido.");
+        return;
+      }
+
+      const colMap: Record<string, string> = {
+        "nome": "nome", "equipamento": "nome", "item": "nome",
+        "patrimônio": "numero_patrimonio", "patrimonio": "numero_patrimonio", "pat": "numero_patrimonio",
+        "nº série": "numero_serie", "serie": "numero_serie", "s/n": "numero_serie",
+        "marca": "marca",
+        "modelo": "modelo",
+        "categoria": "categoria",
+        "tipo": "tipo",
+        "condição": "condicao", "condicao": "condicao",
+        "prédio": "predio", "predio": "predio",
+        "andar": "andar",
+        "setor": "setor",
+        "sala": "sala",
+        "quantidade": "quantidade", "qtd": "quantidade",
+        "polo": "polo",
+        "localização": "localizacao_atual", "localizacao": "localizacao_atual",
+      };
+
+      const mapped = rows.map((row: any) => {
+        const item: any = {};
+        for (const [header, value] of Object.entries(row)) {
+          const key = colMap[String(header).toLowerCase().trim()];
+          if (key && String(value).trim()) {
+            item[key] = String(value).trim();
+          }
+        }
+        return item;
+      });
+
+      setImportPreview(mapped);
+    } catch {
+      setImportError("Erro ao ler a planilha. Verifique o formato (.xlsx ou .csv).");
+    }
+  };
+
+  const handleImportConfirm = async () => {
+    if (importPreview.length === 0) return;
+    setImporting(true);
+    setImportError("");
+
+    const result = await importItens(importPreview);
+    if (result.success) {
+      setImportSuccess(`${result.count} itens importados com sucesso!`);
+      setImportPreview([]);
+      setImportFile(null);
+      await loadItens();
+    } else {
+      setImportError(result.error || "Erro ao importar itens.");
+    }
+    setImporting(false);
+  };
+
+  // ----- Editar em lote -----
+  const handleBatchEdit = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setBatchSaving(true);
+
+    const updates: Record<string, unknown> = {};
+    if (batchNome.trim()) updates.nome = batchNome.trim();
+    if (batchMarca.trim()) updates.marca = batchMarca.trim();
+    if (batchModelo.trim()) updates.modelo = batchModelo.trim();
+    if (batchCondicao) updates.condicao = batchCondicao;
+    if (batchStatus) updates.status = batchStatus;
+    if (batchPolo) updates.polo = batchPolo;
+    if (batchPredio.trim()) updates.predio = batchPredio.trim();
+    if (batchAndar.trim()) updates.andar = batchAndar.trim();
+    if (batchSetor.trim()) updates.setor = batchSetor.trim();
+    if (batchSala.trim()) updates.sala = batchSala.trim();
+    if (batchCategoria) updates.categoria = batchCategoria;
+    if (batchTipo) updates.tipo = batchTipo;
+    if (batchLocalizacao.trim()) updates.localizacao_atual = batchLocalizacao.trim();
+
+    if (Object.keys(updates).length === 0) {
+      toast("error", "Preencha pelo menos um campo para aplicar.");
+      setBatchSaving(false);
+      return;
+    }
+
+    const result = await batchUpdateItens(ids, updates);
+    if (result.success) {
+      toast("success", `${result.count} itens atualizados!`);
+      setShowBatchModal(false);
+      setSelectedIds(new Set());
+      resetBatchForm();
+      await loadItens();
+    } else {
+      toast("error", result.error || "Erro ao atualizar itens.");
+    }
+    setBatchSaving(false);
+  };
+
+  const resetBatchForm = () => {
+    setBatchNome(""); setBatchMarca(""); setBatchModelo("");
+    setBatchCondicao(""); setBatchStatus(""); setBatchPolo("");
+    setBatchPredio(""); setBatchAndar(""); setBatchSetor("");
+    setBatchSala(""); setBatchCategoria(""); setBatchTipo("");
+    setBatchLocalizacao("");
+  };
+
   return (
     <div className="space-y-8 animate-fade-in text-on-surface font-body">
       {/* Page Header */}
@@ -623,13 +775,31 @@ const Inventario: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           {canModify && (
-            <button
-              onClick={() => openModal()}
-              className="flex items-center gap-2 px-5 py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md active:scale-95"
-            >
-              <Plus size={16} />
-              Cadastrar Novo Item
-            </button>
+            <>
+              <button
+                onClick={() => setShowImportModal(true)}
+                className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold rounded-xl text-xs shadow-sm transition-all"
+              >
+                <Upload size={14} />
+                Importar Planilha
+              </button>
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={() => setShowBatchModal(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold rounded-xl text-xs shadow-sm transition-all"
+                >
+                  <Edit2 size={14} />
+                  Editar em Lote ({selectedIds.size})
+                </button>
+              )}
+              <button
+                onClick={() => openModal()}
+                className="flex items-center gap-2 px-5 py-2.5 custom-gradient-btn text-white font-bold rounded-xl text-xs shadow-md active:scale-95"
+              >
+                <Plus size={16} />
+                Cadastrar Novo Item
+              </button>
+            </>
           )}
           <button
             onClick={handleExportInventarioCsv}
@@ -935,8 +1105,184 @@ const Inventario: React.FC = () => {
                           >
                             <Trash2 size={14} />
                           </button>
+      )}
+      {/* Modal Importar Planilha */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface-container-lowest w-full max-w-4xl max-h-[90vh] rounded-2xl p-6 shadow-2xl border border-outline-variant/10 animate-slide-up overflow-y-auto flex flex-col">
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-black text-primary flex items-center gap-2"><FileSpreadsheet size={20} />Importar Itens de Planilha</h2>
+                <p className="text-xs text-outline mt-1">Carregue um arquivo .xlsx ou .csv com os dados dos itens.</p>
+              </div>
+              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); }} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"><X size={18} /></button>
+            </div>
+
+            <div className="space-y-4 flex-1">
+              {!importFile && (
+                <label className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-outline-variant/40 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors bg-surface">
+                  <Upload size={32} className="text-outline mb-3" />
+                  <span className="text-sm font-bold text-primary">Clique para selecionar o arquivo</span>
+                  <span className="text-xs text-outline mt-1">Formatos aceitos: .xlsx, .csv</span>
+                  <input type="file" accept=".xlsx,.csv,.xls" onChange={handleFileUpload} className="hidden" />
+                </label>
+              )}
+
+              {importFile && importPreview.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-on-surface"><FileSpreadsheet size={14} className="inline mr-1" />{importFile.name} — {importPreview.length} linhas detectadas</span>
+                    <button onClick={() => { setImportFile(null); setImportPreview([]); }} className="text-xs text-outline hover:text-primary font-bold">Trocar arquivo</button>
+                  </div>
+                  <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl text-xs text-on-surface">
+                    <strong>Mapeamento de colunas:</strong> Nome, Patrimônio, Série, Marca, Modelo, Categoria, Tipo, Condição, Prédio, Andar, Setor, Sala, Polo, Localização, Quantidade
+                  </div>
+                  <div className="overflow-x-auto max-h-64 border border-outline-variant/10 rounded-xl">
+                    <table className="w-full text-left text-[10px]">
+                      <thead className="bg-surface-container-low sticky top-0">
+                        <tr>
+                          {importPreview[0] && Object.keys(importPreview[0]).map(k => (
+                            <th key={k} className="px-3 py-2 font-black text-outline uppercase tracking-wider whitespace-nowrap">{k.replace("_", " ")}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {importPreview.slice(0, 50).map((row, i) => (
+                          <tr key={i} className={i % 2 === 0 ? "bg-surface" : ""}>
+                            {Object.values(row).map((val: any, j: number) => (
+                              <td key={j} className="px-3 py-1.5 text-on-surface-variant truncate max-w-32">{String(val)}</td>
+                            ))}
+                          </tr>
+                        ))}
+                        {importPreview.length > 50 && (
+                          <tr><td colSpan={Object.keys(importPreview[0] || {}).length || 1} className="px-3 py-2 text-center text-outline font-bold">...e mais {importPreview.length - 50} linhas</td></tr>
                         )}
-                      </div>
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+
+              {importError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2"><AlertCircle size={14} />{importError}</div>}
+              {importSuccess && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 flex items-center gap-2"><CheckCircle2 size={14} />{importSuccess}</div>}
+            </div>
+
+            <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-outline-variant/10">
+              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); }} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
+              {importPreview.length > 0 && (
+                <button onClick={handleImportConfirm} disabled={importing} className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50">
+                  {importing ? "Importando..." : `Importar ${importPreview.length} itens`}
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Editar em Lote */}
+      {showBatchModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface-container-lowest w-full max-w-lg max-h-[90vh] rounded-2xl p-6 shadow-2xl border border-outline-variant/10 animate-slide-up overflow-y-auto">
+            <div className="flex items-start justify-between mb-5">
+              <div>
+                <h2 className="text-lg font-black text-primary flex items-center gap-2"><Edit2 size={20} />Editar em Lote</h2>
+                <p className="text-xs text-outline mt-1">{selectedIds.size} itens selecionados — preencha apenas os campos que deseja alterar.</p>
+              </div>
+              <button onClick={() => { setShowBatchModal(false); resetBatchForm(); }} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"><X size={18} /></button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Nome</label>
+                  <input type="text" value={batchNome} onChange={e => setBatchNome(e.target.value)} placeholder="Todos os itens selecionados" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Marca</label>
+                  <input type="text" value={batchMarca} onChange={e => setBatchMarca(e.target.value)} placeholder="Todos os itens selecionados" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Modelo</label>
+                  <input type="text" value={batchModelo} onChange={e => setBatchModelo(e.target.value)} placeholder="Todos os itens selecionados" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Categoria</label>
+                  <select value={batchCategoria} onChange={e => setBatchCategoria(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs">
+                    <option value="">Não alterar</option>
+                    <option>COMPUTADOR</option><option>NOTEBOOK</option><option>MONITOR</option><option>IMPRESSORA</option><option>FERRAMENTA</option><option>ACESSORIO</option><option>OUTROS</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Tipo</label>
+                  <select value={batchTipo} onChange={e => setBatchTipo(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs">
+                    <option value="">Não alterar</option>
+                    <option>PATRIMONIADO</option><option>SERIALIZADO</option><option>NAO_SERIALIZADO</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Condição</label>
+                  <select value={batchCondicao} onChange={e => setBatchCondicao(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs">
+                    <option value="">Não alterar</option>
+                    <option>NOVO</option><option>USADO</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Status</label>
+                  <select value={batchStatus} onChange={e => setBatchStatus(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs">
+                    <option value="">Não alterar</option>
+                    <option>ATIVO</option><option>EM_ESTOQUE</option><option>EM_MANUTENCAO</option><option>BAIXADO</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Polo</label>
+                  <select value={batchPolo} onChange={e => setBatchPolo(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs">
+                    <option value="">Não alterar</option>
+                    <option>GSM</option><option>Laboratório</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Prédio</label>
+                  <input type="text" value={batchPredio} onChange={e => setBatchPredio(e.target.value)} placeholder="Ex: Bloco A" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Andar</label>
+                  <input type="text" value={batchAndar} onChange={e => setBatchAndar(e.target.value)} placeholder="Ex: 3 Andar" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Setor</label>
+                  <input type="text" value={batchSetor} onChange={e => setBatchSetor(e.target.value)} placeholder="Ex: TI" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase mb-1">Sala</label>
+                  <input type="text" value={batchSala} onChange={e => setBatchSala(e.target.value)} placeholder="Ex: 302" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-outline uppercase mb-1">Localização Atual</label>
+                <input type="text" value={batchLocalizacao} onChange={e => setBatchLocalizacao(e.target.value)} placeholder="Ex: Almoxarifado Central" className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs" />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-outline-variant/10">
+              <button onClick={() => { setShowBatchModal(false); resetBatchForm(); }} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
+              <button onClick={handleBatchEdit} disabled={batchSaving} className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50">
+                {batchSaving ? "Aplicando..." : `Aplicar em ${selectedIds.size} itens`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
                     </td>
                   </tr>
                 ))}

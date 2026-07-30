@@ -179,6 +179,90 @@ itensRouter.put("/:id", requireTecnicoOuSuperior, async (req: Request, res: Resp
   }
 });
 
+// POST /api/itens/import (batch insert)
+itensRouter.post("/import", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
+  try {
+    const itens: any[] = req.body;
+    if (!Array.isArray(itens) || itens.length === 0) {
+      res.status(400).json({ error: "Envie um array de itens." });
+      return;
+    }
+
+    const values: any[] = [];
+    const placeholders: string[] = [];
+    let idx = 1;
+
+    for (const item of itens) {
+      const nome = item.nome || "Sem nome";
+      const tipo = item.tipo || "PATRIMONIADO";
+      const categoria = item.categoria || "OUTROS";
+      const condicao = item.condicao || "USADO";
+      const localizacao = item.localizacao_atual || "Almoxarifado Central";
+
+      placeholders.push(`($${idx},$${idx+1},$${idx+2},$${idx+3},'ATIVO',$${idx+4},$${idx+5},$${idx+6},$${idx+7},$${idx+8},$${idx+9},$${idx+10},$${idx+11},$${idx+12},$${idx+13},$${idx+14},$${idx+15},$${idx+16},$${idx+17})`);
+      values.push(
+        nome, tipo, categoria, condicao,
+        item.numero_patrimonio || null, item.numero_serie || null,
+        localizacao, item.polo || null, item.predio || null,
+        item.andar || null, item.setor || null, item.sala || null,
+        item.estacao || null, item.marca || null, item.modelo || null,
+        item.quantidade || 1, item.atribuido_a_id || null, item.atribuido_a_nome || null
+      );
+      idx += 18;
+    }
+
+    const result = await query(
+      `INSERT INTO public.itens (nome, tipo, categoria, condicao, status, numero_patrimonio, numero_serie, localizacao_atual, polo, predio, andar, setor, sala, estacao, marca, modelo, quantidade, atribuido_a_id, atribuido_a_nome)
+       VALUES ${placeholders.join(", ")} RETURNING id, nome`,
+      values
+    );
+
+    res.status(201).json({ success: true, count: result.rows.length });
+  } catch (err: any) {
+    console.error("Erro ao importar itens:", err.message);
+    res.status(500).json({ error: "Erro ao importar itens." });
+  }
+});
+
+// PUT /api/itens/batch (batch update)
+itensRouter.put("/batch", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
+  try {
+    const { ids, updates } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0 || !updates || Object.keys(updates).length === 0) {
+      res.status(400).json({ error: "Envie ids (array) e updates (objeto com campos)." });
+      return;
+    }
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    for (const [key, value] of Object.entries(updates)) {
+      if (key === "id" || key === "ids") continue;
+      setClauses.push(`${key} = $${idx++}`);
+      values.push(value);
+    }
+
+    if (setClauses.length === 0) {
+      res.status(400).json({ error: "Nenhum campo válido para atualizar." });
+      return;
+    }
+
+    const idPlaceholders = ids.map((_: any, i: number) => `$${idx + i}`).join(", ");
+    values.push(...ids);
+
+    const result = await query(
+      `UPDATE public.itens SET ${setClauses.join(", ")} WHERE id IN (${idPlaceholders}) RETURNING id`,
+      values
+    );
+
+    res.json({ success: true, count: result.rows.length });
+  } catch (err: any) {
+    console.error("Erro ao atualizar em lote:", err.message);
+    res.status(500).json({ error: "Erro ao atualizar itens." });
+  }
+});
+
 // DELETE /api/itens/:id (admin or cascade)
 itensRouter.delete("/:id", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
   try {
