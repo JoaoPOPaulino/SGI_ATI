@@ -1235,12 +1235,10 @@ const Inventario: React.FC = () => {
       )}
       {/* Modal QR Scanner */}
       {showQRScanner && (
-        <Suspense fallback={null}>
-          <QRScanner
-            onScan={(text) => setFormSerie(text)}
-            onClose={() => setShowQRScanner(null)}
-          />
-        </Suspense>
+        <QRScanner
+          onScan={(text) => setFormSerie(text)}
+          onClose={() => setShowQRScanner(null)}
+        />
       )}
       {/* Modal Importar Planilha */}
       {showImportModal && (
