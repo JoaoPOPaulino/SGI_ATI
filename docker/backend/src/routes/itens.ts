@@ -143,42 +143,6 @@ itensRouter.post("/", requireTecnicoOuSuperior, async (req: Request, res: Respon
   }
 });
 
-// PUT /api/itens/:id
-itensRouter.put("/:id", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
-  try {
-    const fields = req.body;
-    if (Object.keys(fields).length === 0) {
-      res.status(400).json({ error: "Nenhum campo para atualizar." });
-      return;
-    }
-
-    const setClauses: string[] = [];
-    const values: any[] = [];
-    let idx = 1;
-
-    for (const [key, value] of Object.entries(fields)) {
-      if (key === "id") continue;
-      setClauses.push(`${key} = $${idx++}`);
-      values.push(value);
-    }
-
-    values.push(req.params.id);
-    const result = await query(
-      `UPDATE public.itens SET ${setClauses.join(", ")} WHERE id = $${idx} RETURNING *`,
-      values
-    );
-
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: "Item não encontrado." });
-      return;
-    }
-    res.json(result.rows[0]);
-  } catch (err: any) {
-    console.error("Erro ao atualizar item:", err.message);
-    res.status(500).json({ error: "Erro ao atualizar item." });
-  }
-});
-
 // POST /api/itens/import (batch insert)
 itensRouter.post("/import", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
   try {
@@ -260,6 +224,42 @@ itensRouter.put("/batch", requireTecnicoOuSuperior, async (req: Request, res: Re
   } catch (err: any) {
     console.error("Erro ao atualizar em lote:", err.message);
     res.status(500).json({ error: "Erro ao atualizar itens." });
+  }
+});
+
+// PUT /api/itens/:id
+itensRouter.put("/:id", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
+  try {
+    const fields = req.body;
+    if (Object.keys(fields).length === 0) {
+      res.status(400).json({ error: "Nenhum campo para atualizar." });
+      return;
+    }
+
+    const setClauses: string[] = [];
+    const values: any[] = [];
+    let idx = 1;
+
+    for (const [key, value] of Object.entries(fields)) {
+      if (key === "id") continue;
+      setClauses.push(`${key} = $${idx++}`);
+      values.push(value);
+    }
+
+    values.push(req.params.id);
+    const result = await query(
+      `UPDATE public.itens SET ${setClauses.join(", ")} WHERE id = $${idx} RETURNING *`,
+      values
+    );
+
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: "Item não encontrado." });
+      return;
+    }
+    res.json(result.rows[0]);
+  } catch (err: any) {
+    console.error("Erro ao atualizar item:", err.message);
+    res.status(500).json({ error: "Erro ao atualizar item." });
   }
 });
 
