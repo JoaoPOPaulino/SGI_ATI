@@ -146,7 +146,7 @@ const Inventario: React.FC = () => {
   const [locaisList, setLocaisList] = useState<Local[]>([]);
 
   const [paginaAtual, setPaginaAtual] = useState(1);
-  const [itensPorPagina, setItensPorPagina] = useState(10);
+  const [itensPorPagina, setItensPorPagina] = useState(100);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   const toggleSelect = (id: string) => {
@@ -159,11 +159,24 @@ const Inventario: React.FC = () => {
   };
 
   const toggleSelectAll = () => {
-    if (selectedIds.size === itensPaginados.length) {
+    if (selectedIds.size === itensPaginados.length && selectedIds.size > 0) {
       setSelectedIds(new Set());
     } else {
       setSelectedIds(new Set(itensPaginados.map((i) => i.id)));
     }
+  };
+
+  const selectAllFiltered = async () => {
+    const allItens = await fetchAllItens({
+      search,
+      patrimonio: filterPatrimonio,
+      serial: filterSerial,
+      categoria: filterCategoria,
+      status: filterStatus,
+      condicao: filterCondicao,
+      polo: filterPolo,
+    });
+    setSelectedIds(new Set(allItens.map(i => i.id)));
   };
 
   const [loadError, setLoadError] = useState(false);
@@ -1045,6 +1058,34 @@ const Inventario: React.FC = () => {
                   </th>
                 </tr>
               </thead>
+              {selectedIds.size > 0 && selectedIds.size < totalItens && itensPaginados.every(i => selectedIds.has(i.id)) && (
+                <tbody>
+                  <tr>
+                    <td colSpan={8} className="px-6 py-2 bg-primary/5 border-b border-outline-variant/10">
+                      <p className="text-xs text-primary font-semibold">
+                        {selectedIds.size} itens desta página selecionados.{' '}
+                        <button onClick={selectAllFiltered} className="underline font-bold hover:text-primary/70">
+                          Selecionar todos os {totalItens} itens
+                        </button>
+                      </p>
+                    </td>
+                  </tr>
+                </tbody>
+              )}
+              {selectedIds.size >= totalItens && (
+                <tbody>
+                  <tr>
+                    <td colSpan={8} className="px-6 py-2 bg-primary/5 border-b border-outline-variant/10">
+                      <p className="text-xs text-primary font-semibold">
+                        Todos os {totalItens} itens selecionados.{' '}
+                        <button onClick={() => setSelectedIds(new Set())} className="underline font-bold hover:text-primary/70">
+                          Limpar seleção
+                        </button>
+                      </p>
+                    </td>
+                  </tr>
+                </tbody>
+              )}
               <tbody className="text-xs">
                 {itensPaginados.map((item, index) => (
                   <tr
@@ -1313,6 +1354,7 @@ const Inventario: React.FC = () => {
           itensPorPagina={itensPorPagina}
           onPaginaChange={setPaginaAtual}
           onItensPorPaginaChange={setItensPorPagina}
+          opcoesItensPorPagina={[5, 10, 20, 50, 100]}
         />
       )}
 
