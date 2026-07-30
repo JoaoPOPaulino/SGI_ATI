@@ -1,5 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
-const QRScanner = lazy(() => import("../components/QRScanner"));
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
   Item,
@@ -149,6 +148,15 @@ const Inventario: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showQRScanner, setShowQRScanner] = useState<"serie" | "patrimonio" | null>(null);
+  const [QRScannerComp, setQRScannerComp] = useState<any>(null);
+
+  const openQRScanner = async () => {
+    if (!QRScannerComp) {
+      const mod = await import("../components/QRScanner");
+      setQRScannerComp(() => mod.default);
+    }
+    setShowQRScanner("serie");
+  };
 
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
@@ -1234,8 +1242,8 @@ const Inventario: React.FC = () => {
         </div>
       )}
       {/* Modal QR Scanner */}
-      {showQRScanner && (
-        <QRScanner
+      {showQRScanner && QRScannerComp && (
+        <QRScannerComp
           onScan={(text) => setFormSerie(text)}
           onClose={() => setShowQRScanner(null)}
         />
@@ -1875,7 +1883,7 @@ const Inventario: React.FC = () => {
                       />
                         <button
                           type="button"
-                          onClick={() => setShowQRScanner("serie")}
+                          onClick={openQRScanner}
                           className="p-2 bg-surface border border-outline rounded-xl hover:bg-primary/10 text-primary transition-colors"
                           title="Escanear QR Code da Série"
                         >
