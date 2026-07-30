@@ -28,8 +28,17 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
           if (scannedRef.current) return;
           scannedRef.current = true;
           reader.stop().catch(() => {});
-          onScan(decodedText);
-          onClose();
+          setLoading(true);
+          setError("");
+          try {
+            onScan(decodedText);
+          } catch (e: any) {
+            setError("Erro ao processar: " + (e?.message || "desconhecido"));
+            setLoading(false);
+            scannedRef.current = false;
+            return;
+          }
+          setTimeout(() => onClose(), 300);
         },
         () => {}
       );

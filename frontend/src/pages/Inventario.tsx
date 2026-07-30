@@ -1237,16 +1237,9 @@ const Inventario: React.FC = () => {
       {showQRScanner && (
         <Suspense fallback={null}>
           <QRScanner
-          onScan={(text) => {
-            if (showQRScanner === "patrimonio") {
-              const digits = text.replace(/\D/g, "").slice(0, 6);
-              if (digits.length > 0) setFormPatrimonio(`PAT-${digits}`);
-            } else {
-              setFormSerie(text);
-            }
-          }}
-          onClose={() => setShowQRScanner(null)}
-        />
+            onScan={(text) => setFormSerie(text)}
+            onClose={() => setShowQRScanner(null)}
+          />
         </Suspense>
       )}
       {/* Modal Importar Planilha */}
