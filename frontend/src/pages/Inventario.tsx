@@ -1847,32 +1847,22 @@ const Inventario: React.FC = () => {
                       <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
                         Nº de Patrimônio *
                       </label>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="text"
-                          value={formPatrimonio}
-                          onChange={(e) => {
-                            const inputVal = e.target.value;
-                            const digits = inputVal.replace(/\D/g, "").slice(0, 6);
-                            if (digits.length > 0) {
-                              setFormPatrimonio(`PAT-${digits}`);
-                            } else {
-                              setFormPatrimonio("");
-                            }
-                          }}
-                          placeholder="000000"
-                          maxLength={10}
-                          className="flex-1 px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface font-mono"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowQRScanner("patrimonio")}
-                          className="p-2 bg-surface border border-outline rounded-xl hover:bg-primary/10 text-primary transition-colors"
-                          title="Escanear QR Code do Patrimônio"
-                        >
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-                        </button>
-                      </div>
+                      <input
+                        type="text"
+                        value={formPatrimonio}
+                        onChange={(e) => {
+                          const inputVal = e.target.value;
+                          const digits = inputVal.replace(/\D/g, "").slice(0, 6);
+                          if (digits.length > 0) {
+                            setFormPatrimonio(`PAT-${digits}`);
+                          } else {
+                            setFormPatrimonio("");
+                          }
+                        }}
+                        placeholder="000000"
+                        maxLength={10}
+                        className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface font-mono"
+                      />
                     </div>
                   ) : (
                     <div />
