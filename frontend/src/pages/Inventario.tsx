@@ -1223,6 +1223,15 @@ const Inventario: React.FC = () => {
                           >
                             <Trash2 size={14} />
                           </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
       {/* Modal QR Scanner */}
       {showQRScanner && (
@@ -1237,15 +1246,6 @@ const Inventario: React.FC = () => {
           }}
           onClose={() => setShowQRScanner(null)}
         />
-      )}
-    </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
       )}
       {/* Modal Importar Planilha */}
       {showImportModal && (
