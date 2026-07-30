@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>Teste Import</title></head>
+<body>
+<h2>Teste de Importacao - SGI ATI</h2>
+<input type="file" id="file" accept=".csv,.xlsx">
+<pre id="result"></pre>
+
+<script type="module">
+  import * as XLSX from '/node_modules/xlsx/xlsx.mjs';
+
+  document.getElementById('file').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const data = await file.arrayBuffer();
+    const workbook = XLSX.read(data, { type: 'array' });
+    const rows = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]], { defval: '' });
+
+    // Strip BOM
+    const firstRow = rows[0] || {};
+    for (const key of Object.keys(firstRow)) {
+      if (key.charCodeAt(0) === 65279) {
+        firstRow[key.slice(1)] = firstRow[key];
+        delete firstRow[key];
+      }
+    }
+
+    const colMap = {
+      'nome':'nome','equipamento':'nome','item':'nome',
+      'patrimonio':'numero_patrimonio','pat':'numero_patrimonio',
+      'serie':'numero_serie','numero serie':'numero_serie',
+      'marca':'marca','modelo':'modelo','categoria':'categoria',
+      'tipo':'tipo','condicao':'condicao','predio':'predio',
+      'andar':'andar','setor':'setor','sala':'sala'
+    };
+
+    const mapped = rows.map(r => {
+      const item = {};
+      for (const [h, v] of Object.entries(r)) {
+        const k = colMap[String(h).toLowerCase().trim()];
+        if (k && String(v).trim()) item[k] = String(v).trim();
+      }
+      return item;
+    });
+
+    document.getElementById('result').textContent =
+      rows.length + ' linhas | ' + mapped.filter(m => m.nome).length + ' com nome\n' +
+      'Primeiro: ' + JSON.stringify(mapped[0], null, 2) + '\n\n' +
+      'Importando no backend...\n';
+
+    const loginRes = await fetch('http://localhost:3001/api/auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({cpf:'00000000000',senha:'000@ati'})
+    });
+    const login = await loginRes.json();
+    const importRes = await fetch('http://localhost:3001/api/itens/import', {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+login.token},
+      body:JSON.stringify(mapped.slice(0,5))
+    });
+    const result = await importRes.json();
+    document.getElementById('result').textContent +=
+      'Import: ' + result.success + ' | ' + result.count + ' itens';
+  });
+</script>
+</body>
+</html>

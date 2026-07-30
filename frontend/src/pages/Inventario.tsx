@@ -31,6 +31,7 @@ import StatusBadge from "../components/DistintivoStatus";
 import Paginacao from "../components/Paginacao";
 import { useToast } from "../components/SistemaToast";
 import { exportToExcel } from "../services/utilidades";
+import * as XLSX from "xlsx";
 import { itemSchema, type ItemFormData } from "../services/schemas";
 import {
   Search,
@@ -688,7 +689,6 @@ const Inventario: React.FC = () => {
     setImportSuccess("");
 
     try {
-      const XLSX = await import("xlsx");
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
@@ -1236,12 +1236,15 @@ const Inventario: React.FC = () => {
 
             <div className="space-y-4 flex-1">
               {!importFile && (
-                <label className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-outline-variant/40 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors bg-surface">
+                <div
+                  className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-outline-variant/40 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors bg-surface"
+                  onClick={() => document.getElementById('import-file-input')?.click()}
+                >
                   <Upload size={32} className="text-outline mb-3" />
                   <span className="text-sm font-bold text-primary">Clique para selecionar o arquivo</span>
                   <span className="text-xs text-outline mt-1">Formatos aceitos: .xlsx, .csv</span>
-                  <input type="file" accept=".xlsx,.csv,.xls" onChange={handleFileUpload} className="hidden" />
-                </label>
+                  <input id="import-file-input" type="file" accept=".xlsx,.xls,.csv,text/csv" onChange={handleFileUpload} style={{ display: 'none' }} />
+                </div>
               )}
 
               {importFile && importPreview.length > 0 && (
