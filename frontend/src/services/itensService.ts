@@ -8,6 +8,7 @@ import {
   deleteItemApi,
   importItensApi,
   batchUpdateItensApi,
+  batchDeleteItensApi,
   type FetchItensResult,
 } from "./apiItens";
 import type { Item } from "./types";
@@ -73,4 +74,8 @@ export async function importItens(itens: any[]): Promise<{ success: boolean; cou
 
 export async function batchUpdateItens(ids: string[], updates: Record<string, unknown>): Promise<{ success: boolean; count: number; error?: string }> {
   return batchUpdateItensApi(ids, updates);
+}
+
+export async function batchDeleteItens(ids: string[]): Promise<{ success: boolean; count: number; error?: string }> {
+  return batchDeleteItensApi(ids);
 }

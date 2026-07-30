@@ -227,6 +227,30 @@ itensRouter.put("/batch", requireTecnicoOuSuperior, async (req: Request, res: Re
   }
 });
 
+// POST /api/itens/batch-delete
+itensRouter.post("/batch-delete", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids) || ids.length === 0) {
+      res.status(400).json({ error: "Envie um array de ids." });
+      return;
+    }
+
+    const idPlaceholders = ids.map((_: any, i: number) => `$${i + 1}`).join(", ");
+
+    await query(`DELETE FROM public.movimentacoes WHERE item_id IN (${idPlaceholders})`, ids);
+    await query(`DELETE FROM public.laudos WHERE item_id IN (${idPlaceholders})`, ids);
+    await query(`DELETE FROM public.loans WHERE item_id IN (${idPlaceholders})`, ids);
+    await query(`DELETE FROM public.evento_itens WHERE item_id IN (${idPlaceholders})`, ids);
+    const result = await query(`DELETE FROM public.itens WHERE id IN (${idPlaceholders}) RETURNING id`, ids);
+
+    res.json({ success: true, count: result.rows.length });
+  } catch (err: any) {
+    console.error("Erro ao deletar em lote:", err.message);
+    res.status(500).json({ error: "Erro ao deletar itens." });
+  }
+});
+
 // PUT /api/itens/:id
 itensRouter.put("/:id", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
   try {

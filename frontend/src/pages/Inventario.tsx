@@ -19,6 +19,7 @@ import {
   deleteItem as deleteItemService,
   importItens,
   batchUpdateItens,
+  batchDeleteItens,
 } from "../services/itensService";
 import {
   fetchMovimentacoesByItemId,
@@ -141,6 +142,10 @@ const Inventario: React.FC = () => {
   const [batchCategoria, setBatchCategoria] = useState("");
   const [batchTipo, setBatchTipo] = useState("");
   const [batchLocalizacao, setBatchLocalizacao] = useState("");
+
+  // Confirmacao exclusao em lote
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   // Locais Hierárquicos Carregados
   const [locaisList, setLocaisList] = useState<Local[]>([]);
@@ -778,6 +783,23 @@ const Inventario: React.FC = () => {
     setBatchSaving(false);
   };
 
+  const handleBatchDelete = async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    setDeleting(true);
+
+    const result = await batchDeleteItens(ids);
+    if (result.success) {
+      toast("success", `${result.count} itens excluídos!`);
+      setShowDeleteConfirm(false);
+      setSelectedIds(new Set());
+      await loadItens();
+    } else {
+      toast("error", result.error || "Erro ao excluir itens.");
+    }
+    setDeleting(false);
+  };
+
   const resetBatchForm = () => {
     setBatchNome(""); setBatchMarca(""); setBatchModelo("");
     setBatchCondicao(""); setBatchStatus(""); setBatchPolo("");
@@ -816,6 +838,15 @@ const Inventario: React.FC = () => {
                 >
                   <Edit2 size={14} />
                   Editar em Lote ({selectedIds.size})
+                </button>
+              )}
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline hover:bg-red-50 text-red-600 font-bold rounded-xl text-xs shadow-sm transition-all"
+                >
+                  <Trash2 size={14} />
+                  Excluir ({selectedIds.size})
                 </button>
               )}
               <button
@@ -1972,6 +2003,29 @@ const Inventario: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* Modal Confirmar Exclusao em Lote */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
+          <div className="bg-surface-container-lowest w-full max-w-md rounded-2xl p-6 shadow-2xl border border-outline-variant/10 animate-slide-up">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-full"><Trash2 size={20} className="text-red-600" /></div>
+              <div>
+                <h2 className="text-sm font-black text-red-600">Excluir Itens</h2>
+                <p className="text-xs text-outline">Esta ação é irreversível.</p>
+              </div>
+            </div>
+            <p className="text-xs text-on-surface-variant mb-5">
+              Tem certeza que deseja excluir <strong className="text-on-surface">{selectedIds.size}</strong> itens selecionados? Todos os dados relacionados (movimentações, laudos, empréstimos) também serão removidos.
+            </p>
+            <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/10">
+              <button onClick={() => setShowDeleteConfirm(false)} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
+              <button onClick={handleBatchDelete} disabled={deleting} className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50">
+                {deleting ? "Excluindo..." : `Excluir ${selectedIds.size} itens`}
+              </button>
+            </div>
           </div>
         </div>
       )}
