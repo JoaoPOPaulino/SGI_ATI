@@ -20,18 +20,15 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
 
     const timer = setTimeout(async () => {
       try {
+        const el = document.getElementById("qr-reader");
+        if (!el) { setError("Elemento nao encontrado"); setLoading(false); return; }
+
         const reader = new Html5Qrcode("qr-reader", { verbose: false });
         readerRef.current = reader;
 
-        const config = {
-          fps: 10,
-          qrbox: { width: 250, height: 250 },
-          aspectRatio: 1,
-        };
-
         await reader.start(
           { facingMode: "environment" },
-          config,
+          { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1 },
           (decodedText: string) => {
             if (scannedRef.current) return;
             scannedRef.current = true;
@@ -41,71 +38,41 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
           },
           () => {}
         );
-
         setLoading(false);
       } catch (err: any) {
         setLoading(false);
         const msg = err?.message || String(err);
-        if (msg.includes("NotAllowed") || msg.includes("Permission")) {
-          setError("Permissão da câmera negada. Permita o acesso no navegador.");
-        } else if (msg.includes("NotFound") || msg.includes("device")) {
-          setError("Nenhuma câmera encontrada neste dispositivo.");
-        } else if (msg.includes("NotReadable") || msg.includes("in use")) {
-          setError("Câmera em uso por outro aplicativo. Feche e tente novamente.");
-        } else {
-          setError("Erro ao iniciar câmera: " + msg);
-        }
+        if (msg.includes("NotAllowed") || msg.includes("Permission")) setError("Permissao da camera negada.");
+        else if (msg.includes("NotFound")) setError("Nenhuma camera encontrada.");
+        else setError("Erro: " + msg.substring(0, 80));
       }
-    }, 300);
+    }, 500);
 
-    return () => {
-      clearTimeout(timer);
-      readerRef.current?.stop().catch(() => {});
-    };
+    return () => { clearTimeout(timer); readerRef.current?.stop().catch(() => {}); };
   }, [onScan, onClose]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 animate-fade-in">
-      <div className="bg-surface-container-lowest w-full max-w-md rounded-2xl p-6 shadow-2xl border border-outline-variant/10 animate-slide-up">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80">
+      <div className="bg-white w-full max-w-md rounded-2xl p-6 shadow-2xl border border-gray-200">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-black text-primary flex items-center gap-2">
-            <Camera size={18} /> Escanear QR Code
-          </h2>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"
-          >
-            <X size={18} />
-          </button>
+          <h2 className="text-sm font-black flex items-center gap-2"><Camera size={18} /> Escanear QR Code</h2>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-full"><X size={18} /></button>
         </div>
-
         {loading && !error && (
-          <div className="flex flex-col items-center justify-center py-12 text-outline">
+          <div className="flex flex-col items-center justify-center py-12 text-gray-400">
             <Loader2 size={32} className="animate-spin mb-3" />
-            <p className="text-xs font-semibold">Iniciando câmera...</p>
+            <p className="text-xs font-semibold">Iniciando camera...</p>
           </div>
         )}
-
         {error && (
           <div className="flex flex-col items-center gap-3 py-8 px-4">
             <AlertCircle size={32} className="text-red-400" />
             <p className="text-xs text-red-600 text-center font-semibold">{error}</p>
-            <button
-              onClick={onClose}
-              className="px-4 py-2 bg-surface border border-outline rounded-xl text-xs font-bold text-outline hover:text-on-surface mt-2"
-            >
-              Fechar
-            </button>
+            <button onClick={onClose} className="px-4 py-2 bg-gray-100 rounded-xl text-xs font-bold">Fechar</button>
           </div>
         )}
-
         <div id="qr-reader" className="w-full rounded-xl overflow-hidden" />
-
-        {!loading && !error && (
-          <p className="text-[10px] text-outline text-center mt-3">
-            Aponte a câmera para o QR code do equipamento
-          </p>
-        )}
+        {!loading && !error && <p className="text-[10px] text-gray-400 text-center mt-3">Aponte a camera para o QR code</p>}
       </div>
     </div>
   );

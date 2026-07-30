@@ -1890,12 +1890,12 @@ const Inventario: React.FC = () => {
                         className="flex-1 px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface font-mono"
                         maxLength={50}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowQRScanner("serie")}
-                        className="p-2 bg-surface border border-outline rounded-xl hover:bg-primary/10 text-primary transition-colors"
-                        title="Escanear QR Code da Série"
-                      >
+                        <button
+                          type="button"
+                          onClick={() => setShowQRScanner("serie")}
+                          className="p-2 bg-surface border border-outline rounded-xl hover:bg-primary/10 text-primary transition-colors"
+                          title="Escanear QR Code da Série"
+                        >
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                       </button>
                     </div>
