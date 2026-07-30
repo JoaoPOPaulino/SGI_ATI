@@ -60,7 +60,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, onClose }) => {
 
     return () => {
       clearTimeout(timer);
-      reader.stop().catch(() => {});
+      readerRef.current?.stop().catch(() => {});
     };
   }, [onScan, onClose]);
 
