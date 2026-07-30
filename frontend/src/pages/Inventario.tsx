@@ -1244,7 +1244,7 @@ const Inventario: React.FC = () => {
       {/* Modal QR Scanner */}
       {showQRScanner && QRScannerComp && (
         <QRScannerComp
-          onScan={(text) => setFormSerie(text)}
+          onScan={(text: string) => setFormSerie(text)}
           onClose={() => setShowQRScanner(null)}
         />
       )}
