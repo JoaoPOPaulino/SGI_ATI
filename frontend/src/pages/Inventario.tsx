@@ -49,6 +49,7 @@ import {
   FileSpreadsheet,
   AlertCircle,
   CheckCircle2,
+  Copy,
 } from "lucide-react";
 
 const Inventario: React.FC = () => {
@@ -265,8 +266,29 @@ const Inventario: React.FC = () => {
   ]);
 
   // Abertura do Modal de Cadastro/Edição
-  const openModal = (item: Item | null = null) => {
+  const duplicateItem = (item: Item) => {
     if (isEstagiario) return;
+    void ensureLocaisLoaded();
+    setFormError("");
+    setEditingItem(null);
+    setFormNome(item.nome + " (cópia)");
+    setFormTipo(item.tipo);
+    setFormCategoria(item.categoria);
+    setFormCondicao(item.condicao);
+    setFormStatus("ATIVO");
+    setFormPatrimonio("");
+    setFormSerie("");
+    setFormMarca(item.marca || "");
+    setFormModelo(item.modelo || "");
+    setFormQuantidade(item.quantidade || 1);
+    setFormPredio(item.predio || "");
+    setFormAndar(item.andar || "");
+    setFormSetor(item.setor || "");
+    setFormSala(item.sala || "");
+    setIsModalOpen(true);
+  };
+
+  const openModal = (item: Item | null = null) => {    if (isEstagiario) return;
     void ensureLocaisLoaded();
     if (item && item.status === "BAIXADO") {
       toast("warning", "Nenhuma modificação é permitida num registro BAIXADO.");
@@ -1181,6 +1203,15 @@ const Inventario: React.FC = () => {
                             >
                               <Edit2 size={14} />
                             </button>
+                        )}
+                        {canModify && (
+                          <button
+                            onClick={() => duplicateItem(item)}
+                            className="p-1.5 hover:bg-primary/5 text-primary rounded-lg transition-all"
+                            title="Duplicar Item"
+                          >
+                            <Copy size={14} />
+                          </button>
                         )}
                         {hasPermission("ADMIN") && (
                           <button
