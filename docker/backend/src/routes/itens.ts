@@ -1,6 +1,6 @@
 import { Router, Request, Response } from "express";
 import { query } from "../config/database.js";
-import { requireAuth, requireTecnicoOuSuperior } from "../middleware/auth.js";
+import { requireAuth, requireTecnicoOuSuperior, requireAdmin } from "../middleware/auth.js";
 
 export const itensRouter = Router();
 
@@ -228,7 +228,7 @@ itensRouter.put("/batch", requireTecnicoOuSuperior, async (req: Request, res: Re
 });
 
 // POST /api/itens/batch-delete
-itensRouter.post("/batch-delete", requireTecnicoOuSuperior, async (req: Request, res: Response) => {
+itensRouter.post("/batch-delete", requireAdmin, async (req: Request, res: Response) => {
   try {
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {

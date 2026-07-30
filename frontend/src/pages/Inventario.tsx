@@ -840,7 +840,7 @@ const Inventario: React.FC = () => {
                   Editar em Lote ({selectedIds.size})
                 </button>
               )}
-              {selectedIds.size > 0 && (
+              {selectedIds.size > 0 && user?.perfil === 'ADMIN' && (
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline hover:bg-red-50 text-red-600 font-bold rounded-xl text-xs shadow-sm transition-all"
