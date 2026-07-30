@@ -656,14 +656,27 @@ const Inventario: React.FC = () => {
       const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
       if (rows.length === 0) {
-        setImportError("Planilha vazia ou formato inválido.");
+        setImportError("Planilha vazia ou formato invalido.");
         return;
+      }
+
+      // Strip BOM from first key
+      if (rows.length > 0) {
+        const firstRow = rows[0];
+        for (const key of Object.keys(firstRow)) {
+          if (key.charCodeAt(0) === 65279) {
+            const cleanKey = key.slice(1);
+            firstRow[cleanKey] = firstRow[key];
+            delete firstRow[key];
+          }
+        }
       }
 
       const colMap: Record<string, string> = {
         "nome": "nome", "equipamento": "nome", "item": "nome",
         "patrimônio": "numero_patrimonio", "patrimonio": "numero_patrimonio", "pat": "numero_patrimonio",
-        "nº série": "numero_serie", "serie": "numero_serie", "s/n": "numero_serie",
+        "nº série": "numero_serie", "n° série": "numero_serie", "serie": "numero_serie", "s/n": "numero_serie",
+        "numero serie": "numero_serie", "numero de serie": "numero_serie", "n serie": "numero_serie",
         "marca": "marca",
         "modelo": "modelo",
         "categoria": "categoria",
