@@ -1,4 +1,5 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+﻿import React, { useState, useEffect, useMemo, lazy, Suspense } from "react";
+const QRScanner = lazy(() => import("../components/QRScanner"));
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
   Item,
@@ -29,7 +30,6 @@ import { fetchLocais } from "../services/locaisService";
 import { fetchLaudos } from "../services/laudosService";
 import StatusBadge from "../components/DistintivoStatus";
 import Paginacao from "../components/Paginacao";
-import QRScanner from "../components/QRScanner";
 import { useToast } from "../components/SistemaToast";
 import { exportToExcel } from "../services/utilidades";
 import { itemSchema, type ItemFormData } from "../services/schemas";
@@ -1235,7 +1235,8 @@ const Inventario: React.FC = () => {
       )}
       {/* Modal QR Scanner */}
       {showQRScanner && (
-        <QRScanner
+        <Suspense fallback={null}>
+          <QRScanner
           onScan={(text) => {
             if (showQRScanner === "patrimonio") {
               const digits = text.replace(/\D/g, "").slice(0, 6);
@@ -1246,6 +1247,7 @@ const Inventario: React.FC = () => {
           }}
           onClose={() => setShowQRScanner(null)}
         />
+        </Suspense>
       )}
       {/* Modal Importar Planilha */}
       {showImportModal && (
