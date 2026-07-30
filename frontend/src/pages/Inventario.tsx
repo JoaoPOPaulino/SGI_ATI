@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo, useRef } from "react";
+﻿import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
   Item,
@@ -31,7 +31,6 @@ import StatusBadge from "../components/DistintivoStatus";
 import Paginacao from "../components/Paginacao";
 import { useToast } from "../components/SistemaToast";
 import { exportToExcel } from "../services/utilidades";
-import * as XLSX from "xlsx";
 import { itemSchema, type ItemFormData } from "../services/schemas";
 import {
   Search,
@@ -127,7 +126,6 @@ const Inventario: React.FC = () => {
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
   const [importing, setImporting] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Editar em lote
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -684,13 +682,13 @@ const Inventario: React.FC = () => {
   // ----- Importar planilha -----
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    console.log("handleFileUpload chamado, file:", file?.name);
     if (!file) return;
     setImportFile(file);
     setImportError("");
     setImportSuccess("");
 
     try {
+      const XLSX = await import("xlsx");
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
       const sheetName = workbook.SheetNames[0];
@@ -849,7 +847,7 @@ const Inventario: React.FC = () => {
           {canModify && (
             <>
               <button
-                onClick={() => { alert('abrindo import'); setShowImportModal(true); }}
+                onClick={() => setShowImportModal(true)}
                 className="flex items-center gap-2 px-5 py-2.5 bg-surface border border-outline hover:bg-surface-container-high text-primary font-bold rounded-xl text-xs shadow-sm transition-all"
               >
                 <Upload size={14} />
@@ -1247,17 +1245,13 @@ const Inventario: React.FC = () => {
 
             <div className="space-y-4 flex-1">
               {!importFile && (
-                <button
-                  type="button"
-                  className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-outline-variant/40 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors bg-surface w-full"
-                  onClick={() => fileInputRef.current?.click()}
-                >
+                <label className="flex flex-col items-center justify-center p-12 border-2 border-dashed border-outline-variant/40 rounded-2xl cursor-pointer hover:border-primary/50 transition-colors bg-surface">
                   <Upload size={32} className="text-outline mb-3" />
                   <span className="text-sm font-bold text-primary">Clique para selecionar o arquivo</span>
                   <span className="text-xs text-outline mt-1">Formatos aceitos: .xlsx, .csv</span>
-                </button>
+                  <input type="file" accept=".xlsx,.csv,.xls" onChange={handleFileUpload} className="hidden" />
+                </label>
               )}
-              <input ref={fileInputRef} type="file" accept=".xlsx,.csv,.xls" onChange={handleFileUpload} className="hidden" />
 
               {importFile && importPreview.length > 0 && (
                 <>
@@ -1413,7 +1407,6 @@ const Inventario: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
 
       {totalItens > 0 && (
         <Paginacao
