@@ -3,6 +3,7 @@ import cors from "cors";
 import helmet from "helmet";
 import dotenv from "dotenv";
 import { authRouter } from "./routes/auth.js";
+// Version: 2026-07-30 import-batch-qr
 import { itensRouter } from "./routes/itens.js";
 import { movimentacoesRouter } from "./routes/movimentacoes.js";
 import { usuariosRouter } from "./routes/usuarios.js";

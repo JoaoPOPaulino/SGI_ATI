@@ -1,10 +1,11 @@
 services:
   - type: web
-    name: sgi-ati-backend
+    name: sgi-ati
     env: node
     rootDir: docker/backend
-    buildCommand: cd docker/backend && npm install && npm run build
+    buildCommand: cd docker/backend && npm install --include=dev && npm run build
     startCommand: cd docker/backend && node dist/index.js
+    plan: free
     envVars:
       - key: NODE_ENV
         value: production
@@ -15,14 +16,4 @@ services:
       - key: JWT_EXPIRES_IN
         value: 24h
       - key: DATABASE_URL
-        sync: false
-      - key: GMAIL_USER
-        sync: false
-      - key: GMAIL_APP_PASSWORD
-        sync: false
-      - key: RESEND_API_KEY
-        sync: false
-      - key: RESEND_FROM
-        value: noreply@sgi-ati.vercel.app
-      - key: RESEND_TO
         sync: false
