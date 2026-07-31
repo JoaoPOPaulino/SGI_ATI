@@ -20,6 +20,10 @@ usuariosRouter.get("/", requireAuth, async (req: Request, res: Response) => {
 // PATCH /api/usuarios/:id/senha
 usuariosRouter.patch("/:id/senha", requireAuth, async (req: Request, res: Response) => {
   try {
+    if (req.user!.id !== req.params.id && req.user!.perfil !== "ADMIN") {
+      res.status(403).json({ error: "Você só pode alterar sua própria senha." });
+      return;
+    }
     const { senha } = req.body;
     if (!senha || senha.length < 6) {
       res.status(400).json({ error: "Senha deve ter no mínimo 6 caracteres." });
