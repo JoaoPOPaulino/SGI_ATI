@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import {
   Item,
@@ -963,6 +963,8 @@ const Inventario: React.FC = () => {
               <option value="COMPUTADOR" />
               <option value="MONITOR" />
               <option value="IMPRESSORA" />
+              <option value="TELEFONE" />
+              <option value="NOBREAK" />
               <option value="FERRAMENTA" />
               <option value="ACESSORIO" />
               <option value="OUTROS" />
@@ -1075,6 +1077,12 @@ const Inventario: React.FC = () => {
                     scope="col"
                     className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest"
                   >
+                    Responsável
+                  </th>
+                  <th
+                    scope="col"
+                    className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest"
+                  >
                     Localização
                   </th>
                   <th
@@ -1148,6 +1156,9 @@ const Inventario: React.FC = () => {
                       <span className="text-xs font-semibold text-secondary bg-secondary-container/20 px-3 py-1 rounded-full">
                         {item.categoria}
                       </span>
+                    </td>
+                    <td className="px-6 py-4 text-outline font-semibold max-w-50 truncate uppercase">
+                      {item.atribuido_a_nome || "-"}
                     </td>
                     <td className="px-6 py-4 text-outline font-semibold max-w-50 truncate">
                       <div className="flex items-center gap-1">
@@ -1328,7 +1339,7 @@ const Inventario: React.FC = () => {
                   <label className="block text-[10px] font-black text-outline uppercase mb-1">Categoria</label>
                   <select value={batchCategoria} onChange={e => setBatchCategoria(e.target.value)} className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs">
                     <option value="">Não alterar</option>
-                    <option>COMPUTADOR</option><option>NOTEBOOK</option><option>MONITOR</option><option>IMPRESSORA</option><option>FERRAMENTA</option><option>ACESSORIO</option><option>OUTROS</option>
+                    <option>COMPUTADOR</option><option>NOTEBOOK</option><option>MONITOR</option><option>IMPRESSORA</option><option>TELEFONE</option><option>NOBREAK</option><option>FERRAMENTA</option><option>ACESSORIO</option><option>OUTROS</option>
                   </select>
                 </div>
               </div>
@@ -1808,6 +1819,8 @@ const Inventario: React.FC = () => {
                     <option value="COMPUTADOR">Computador</option>
                     <option value="MONITOR">Monitor</option>
                     <option value="IMPRESSORA">Impressora</option>
+                    <option value="TELEFONE">Telefone</option>
+                    <option value="NOBREAK">Nobreak</option>
                     <option value="FERRAMENTA">Ferramenta</option>
                     <option value="ACESSORIO">Acessório</option>
                     <option value="OUTROS">Outros</option>

@@ -332,7 +332,7 @@ export function parseSpreadsheetItems(
         }
 
         // Garantir que a categoria seja suportada pelo banco de dados
-        const supportedCategories = ['COMPUTADOR', 'NOTEBOOK', 'MONITOR', 'IMPRESSORA', 'FERRAMENTA', 'ACESSORIO', 'OUTROS'];
+        const supportedCategories = ['COMPUTADOR', 'NOTEBOOK', 'MONITOR', 'IMPRESSORA', 'FERRAMENTA', 'ACESSORIO', 'OUTROS', 'TELEFONE', 'NOBREAK'];
         if (item.categoria && !supportedCategories.includes(item.categoria)) {
           item.categoria = 'OUTROS';
         }
