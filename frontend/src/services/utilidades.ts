@@ -99,30 +99,43 @@ export function exportToExcel(
 
 // ----- Importação de planilhas -----
 
-const IMPORT_FIELD_ALIASES: Record<string, string> = {
-  'nome': 'nome', 'equipamento': 'nome', 'item': 'nome', 'descricao': 'nome',
-  'patrimonio': 'numero_patrimonio', 'pat': 'numero_patrimonio',
-  'numero patrimonio': 'numero_patrimonio', 'no patrimonio': 'numero_patrimonio',
-  'n patrimonio': 'numero_patrimonio', 'patrimonio no': 'numero_patrimonio',
-  'serie': 'numero_serie', 's/n': 'numero_serie', 'sn': 'numero_serie',
-  'numero serie': 'numero_serie', 'numero de serie': 'numero_serie',
-  'n serie': 'numero_serie', 'no serie': 'numero_serie',
-  'marca': 'marca',
-  'modelo': 'modelo',
-  'categoria': 'categoria',
-  'tipo': 'tipo',
-  'condicao': 'condicao',
-  'predio': 'predio',
-  'andar': 'andar',
-  'setor': 'setor',
-  'sala': 'sala',
-  'quantidade': 'quantidade', 'qtd': 'quantidade', 'qtde': 'quantidade',
-  'polo': 'polo',
-  'localizacao': 'localizacao_atual', 'localizacao atual': 'localizacao_atual', 'localizacao_atual': 'localizacao_atual',
-  'servidor': 'atribuido_a_nome', 'responsavel': 'atribuido_a_nome',
-  'atribuido a': 'atribuido_a_nome', 'usuario': 'atribuido_a_nome',
-  'estacao': 'estacao',
-};
+const IMPORT_FIELD_ALIASES: Array<{ match: RegExp; key: string; explicitCategory?: string; explicitGroup?: string }> = [
+  { match: /^(?:patrimonio|pat|numero patrimonio|no patrimonio|n patrimonio|patrimonio no)$/i, key: 'numero_patrimonio' },
+  { match: /^(?:serie|s\/n|sn|numero serie|numero de serie|n serie|no serie)$/i, key: 'numero_serie' },
+  { match: /^(?:nome|equipamento|item|descricao)$/i, key: 'nome' },
+  { match: /^(?:marca)$/i, key: 'marca' },
+  { match: /^(?:modelo)$/i, key: 'modelo' },
+  { match: /^(?:categoria)$/i, key: 'categoria' },
+  { match: /^(?:tipo)$/i, key: 'tipo' },
+  { match: /^(?:condicao)$/i, key: 'condicao' },
+  { match: /^(?:predio)$/i, key: 'predio' },
+  { match: /^(?:andar)$/i, key: 'andar' },
+  { match: /^(?:setor)$/i, key: 'setor' },
+  { match: /^(?:sala)$/i, key: 'sala' },
+  { match: /^(?:quantidade|qtd|qtde)$/i, key: 'quantidade' },
+  { match: /^(?:polo)$/i, key: 'polo' },
+  { match: /^(?:localizacao|localizacao atual)$/i, key: 'localizacao_atual' },
+  { match: /^(?:servidor|responsavel|atribuido a|usuario)$/i, key: 'atribuido_a_nome' },
+  { match: /^(?:estacao)$/i, key: 'estacao' },
+  
+  // Custom for specific multi-item spreadsheets
+  { match: /^marca cpu$/i, key: 'marca', explicitCategory: 'COMPUTADOR', explicitGroup: 'CPU' },
+  { match: /^pat cpu$/i, key: 'numero_patrimonio', explicitCategory: 'COMPUTADOR', explicitGroup: 'CPU' },
+  { match: /^desc model processador$/i, key: 'modelo', explicitCategory: 'COMPUTADOR', explicitGroup: 'CPU' },
+  
+  { match: /^marca mon 1$/i, key: 'marca', explicitCategory: 'MONITOR', explicitGroup: 'MON1' },
+  { match: /^monitor 1$/i, key: 'numero_patrimonio', explicitCategory: 'MONITOR', explicitGroup: 'MON1' },
+  
+  { match: /^marca mon 2$/i, key: 'marca', explicitCategory: 'MONITOR', explicitGroup: 'MON2' },
+  { match: /^monitor 2$/i, key: 'numero_patrimonio', explicitCategory: 'MONITOR', explicitGroup: 'MON2' },
+  
+  { match: /^marca nobreak$/i, key: 'marca', explicitCategory: 'NOBREAK', explicitGroup: 'NOBREAK' },
+  { match: /^nobreak$/i, key: 'numero_patrimonio', explicitCategory: 'NOBREAK', explicitGroup: 'NOBREAK' },
+  
+  { match: /^modelo marca voip$/i, key: 'marca', explicitCategory: 'TELEFONE', explicitGroup: 'VOIP' },
+  { match: /^patrimonio voip$/i, key: 'numero_patrimonio', explicitCategory: 'TELEFONE', explicitGroup: 'VOIP' },
+  { match: /^ramal voip$/i, key: 'nome', explicitCategory: 'TELEFONE', explicitGroup: 'VOIP' },
+];
 
 const CATEGORIA_KEYWORDS: [RegExp, string][] = [
   [/monitor/i, 'MONITOR'],
@@ -131,6 +144,8 @@ const CATEGORIA_KEYWORDS: [RegExp, string][] = [
   [/computador|desktop|\bcpu\b/i, 'COMPUTADOR'],
   [/ferramenta/i, 'FERRAMENTA'],
   [/acess[oó]rio/i, 'ACESSORIO'],
+  [/nobreak/i, 'NOBREAK'],
+  [/telefone|voip/i, 'TELEFONE'],
 ];
 
 function normalizeHeaderText(value: unknown): string {
@@ -143,13 +158,20 @@ function normalizeHeaderText(value: unknown): string {
     .trim();
 }
 
-// Uma planilha pode listar mais de um equipamento por linha (ex: "MONITOR 1", "MONITOR 2"
-// lado a lado). Cabeçalhos repetidos (Setor, Marca... aparecendo 2x+ na mesma linha)
-// indicam esses blocos; um cabeçalho que aparece só uma vez vale para a linha inteira.
+function matchAlias(normalizedText: string) {
+  for (const alias of IMPORT_FIELD_ALIASES) {
+    if (alias.match.test(normalizedText)) {
+      return alias;
+    }
+  }
+  return null;
+}
+
 interface ColumnMapping {
   colIdx: number;
   destKey: string;
   block: number;
+  explicitCategory?: string;
 }
 
 function findHeaderRowIndex(rows: unknown[][]): number {
@@ -158,7 +180,7 @@ function findHeaderRowIndex(rows: unknown[][]): number {
   const scanLimit = Math.min(rows.length, 10);
   for (let i = 0; i < scanLimit; i++) {
     const score = (rows[i] || []).filter(
-      cell => IMPORT_FIELD_ALIASES[normalizeHeaderText(cell)] !== undefined,
+      cell => matchAlias(normalizeHeaderText(cell)) !== null,
     ).length;
     if (score > bestScore) {
       bestScore = score;
@@ -168,18 +190,33 @@ function findHeaderRowIndex(rows: unknown[][]): number {
   return bestScore > 0 ? bestIdx : 0;
 }
 
-function buildColumnGroups(headerRow: unknown[]): { columns: ColumnMapping[]; blockCount: number } {
-  const occurrences: Record<string, number> = {};
+function buildColumnGroups(headerRow: unknown[]): { columns: ColumnMapping[]; blocks: number[] } {
   const columns: ColumnMapping[] = [];
+  const groupIndices: Record<string, number> = {};
+  let genericBlockCounter = 0;
+  
   headerRow.forEach((cell, colIdx) => {
-    const destKey = IMPORT_FIELD_ALIASES[normalizeHeaderText(cell)];
-    if (!destKey) return;
-    const block = occurrences[destKey] || 0;
-    occurrences[destKey] = block + 1;
-    columns.push({ colIdx, destKey, block });
+    const alias = matchAlias(normalizeHeaderText(cell));
+    if (!alias) return;
+    
+    let block;
+    if (alias.explicitGroup) {
+      if (groupIndices[alias.explicitGroup] === undefined) {
+        groupIndices[alias.explicitGroup] = Object.keys(groupIndices).length + 100;
+      }
+      block = groupIndices[alias.explicitGroup];
+    } else {
+      if (columns.some(c => c.destKey === alias.key && c.block === genericBlockCounter)) {
+        genericBlockCounter++;
+      }
+      block = genericBlockCounter;
+    }
+    
+    columns.push({ colIdx, destKey: alias.key, block, explicitCategory: alias.explicitCategory });
   });
-  const blockCount = columns.reduce((max, c) => Math.max(max, c.block + 1), 1);
-  return { columns, blockCount };
+  
+  const uniqueBlocks = Array.from(new Set(columns.map(c => c.block)));
+  return { columns, blocks: uniqueBlocks };
 }
 
 function splitPatrimonioOuSerie(rawValue: unknown): { numero_patrimonio?: string; numero_serie?: string } {
@@ -217,7 +254,7 @@ export function parseSpreadsheetItems(
 
     const headerIdx = findHeaderRowIndex(rows);
     const headerRow = rows[headerIdx] || [];
-    const { columns, blockCount } = buildColumnGroups(headerRow);
+    const { columns, blocks } = buildColumnGroups(headerRow);
     if (columns.length === 0) {
       warnings.push(`Aba "${sheetName}": nenhuma coluna reconhecida, aba ignorada.`);
       continue;
@@ -234,17 +271,24 @@ export function parseSpreadsheetItems(
 
     for (let r = headerIdx + 1; r < rows.length; r++) {
       const row = rows[r] || [];
-      for (let block = 0; block < blockCount; block++) {
+      for (const block of blocks) {
         const raw: Record<string, unknown> = {};
+        let explicitCategory = null;
         let hasBlockData = false;
+        
         for (const col of columns) {
           const value = (row as unknown[])[col.colIdx];
           if (value === undefined || value === '') continue;
-          if (col.block === block || sharedKeys.has(col.destKey)) {
+          
+          if (col.block === block) {
             raw[col.destKey] = value;
-            if (col.block === block) hasBlockData = true;
+            hasBlockData = true;
+            if (col.explicitCategory) explicitCategory = col.explicitCategory;
+          } else if (sharedKeys.has(col.destKey)) {
+            raw[col.destKey] = value;
           }
         }
+        
         if (!hasBlockData) continue;
 
         if (raw.numero_patrimonio !== undefined) {
@@ -258,18 +302,27 @@ export function parseSpreadsheetItems(
           const str = String(value).trim();
           if (str) item[key] = str;
         }
+        
+        if (!item.numero_patrimonio && !item.numero_serie && !item.nome && !item.marca && !item.modelo) {
+          continue;
+        }
         if (Object.keys(item).length === 0) continue;
 
-        if (!item.categoria && sheetCategoria) item.categoria = sheetCategoria;
+        if (explicitCategory) item.categoria = explicitCategory;
+        else if (!item.categoria && sheetCategoria) item.categoria = sheetCategoria;
+        
         if (!item.tipo) {
           if (item.numero_serie && !item.numero_patrimonio) item.tipo = 'SERIALIZADO';
           else if (item.numero_patrimonio) item.tipo = 'PATRIMONIADO';
           else item.tipo = 'NAO_SERIALIZADO';
         }
+        
         if (!item.nome) {
           const nome = [item.marca, item.modelo].filter(Boolean).join(' ').trim();
           if (nome) item.nome = nome;
+          else if (explicitCategory) item.nome = explicitCategory;
         }
+        
         if (!item.localizacao_atual) {
           const loc = buildLocationString(item.predio, item.andar, item.setor, item.sala, item.estacao);
           if (loc) item.localizacao_atual = loc;
