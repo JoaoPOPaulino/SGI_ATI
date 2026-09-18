@@ -331,6 +331,12 @@ export function parseSpreadsheetItems(
           if (loc) item.localizacao_atual = loc;
         }
 
+        // Garantir que a categoria seja suportada pelo banco de dados
+        const supportedCategories = ['COMPUTADOR', 'NOTEBOOK', 'MONITOR', 'IMPRESSORA', 'FERRAMENTA', 'ACESSORIO', 'OUTROS'];
+        if (item.categoria && !supportedCategories.includes(item.categoria)) {
+          item.categoria = 'OUTROS';
+        }
+
         rawItems.push(item);
       }
     }
