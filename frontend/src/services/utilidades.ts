@@ -265,8 +265,11 @@ export function parseSpreadsheetItems(
     for (const col of columns) {
       occurrenceCount[col.destKey] = (occurrenceCount[col.destKey] || 0) + 1;
     }
+    const unshareableKeys = ['numero_patrimonio', 'numero_serie', 'nome', 'marca', 'modelo', 'tipo', 'condicao', 'categoria'];
     const sharedKeys = new Set(
-      Object.entries(occurrenceCount).filter(([, count]) => count === 1).map(([key]) => key),
+      Object.entries(occurrenceCount)
+        .filter(([key, count]) => count === 1 && !unshareableKeys.includes(key))
+        .map(([key]) => key),
     );
 
     for (let r = headerIdx + 1; r < rows.length; r++) {
