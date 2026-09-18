@@ -102,7 +102,7 @@ export function exportToExcel(
 const IMPORT_FIELD_ALIASES: Array<{ match: RegExp; key: string; explicitCategory?: string; explicitGroup?: string }> = [
   { match: /^(?:patrimonio|pat|numero patrimonio|no patrimonio|n patrimonio|patrimonio no)$/i, key: 'numero_patrimonio' },
   { match: /^(?:serie|s\/n|sn|numero serie|numero de serie|n serie|no serie)$/i, key: 'numero_serie' },
-  { match: /^(?:nome|equipamento|item|descricao)$/i, key: 'nome' },
+  { match: /^(?:nome|equipamento|descricao)$/i, key: 'nome' },
   { match: /^(?:marca)$/i, key: 'marca' },
   { match: /^(?:modelo)$/i, key: 'modelo' },
   { match: /^(?:categoria)$/i, key: 'categoria' },
