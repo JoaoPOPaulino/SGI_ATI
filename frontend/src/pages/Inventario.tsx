@@ -30,7 +30,7 @@ import { fetchLaudos } from "../services/laudosService";
 import StatusBadge from "../components/DistintivoStatus";
 import Paginacao from "../components/Paginacao";
 import { useToast } from "../components/SistemaToast";
-import { exportToExcel } from "../services/utilidades";
+import { exportToExcel, parseSpreadsheetItems } from "../services/utilidades";
 import { itemSchema, type ItemFormData } from "../services/schemas";
 import {
   Search,
@@ -125,7 +125,15 @@ const Inventario: React.FC = () => {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importError, setImportError] = useState("");
   const [importSuccess, setImportSuccess] = useState("");
+  const [importWarnings, setImportWarnings] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
+  const importPreviewColumns = useMemo(() => {
+    const cols = new Set<string>();
+    for (const row of importPreview) {
+      for (const key of Object.keys(row)) cols.add(key);
+    }
+    return Array.from(cols);
+  }, [importPreview]);
 
   // Editar em lote
   const [showBatchModal, setShowBatchModal] = useState(false);
@@ -696,63 +704,22 @@ const Inventario: React.FC = () => {
     setImportFile(file);
     setImportError("");
     setImportSuccess("");
+    setImportWarnings([]);
 
     try {
       const XLSX = await import("xlsx");
       const data = await file.arrayBuffer();
       const workbook = XLSX.read(data, { type: "array" });
-      const sheetName = workbook.SheetNames[0];
-      const sheet = workbook.Sheets[sheetName];
-      const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
 
-      if (rows.length === 0) {
-        setImportError("Planilha vazia ou formato invalido.");
+      const { items, warnings } = parseSpreadsheetItems(workbook);
+
+      if (items.length === 0) {
+        setImportError("Planilha vazia, formato inválido ou nenhuma coluna reconhecida.");
         return;
       }
 
-      // Strip BOM from first key
-      if (rows.length > 0) {
-        const firstRow = rows[0];
-        for (const key of Object.keys(firstRow)) {
-          if (key.charCodeAt(0) === 65279) {
-            const cleanKey = key.slice(1);
-            firstRow[cleanKey] = firstRow[key];
-            delete firstRow[key];
-          }
-        }
-      }
-
-      const colMap: Record<string, string> = {
-        "nome": "nome", "equipamento": "nome", "item": "nome",
-        "patrimônio": "numero_patrimonio", "patrimonio": "numero_patrimonio", "pat": "numero_patrimonio",
-        "nº série": "numero_serie", "n° série": "numero_serie", "serie": "numero_serie", "s/n": "numero_serie",
-        "numero serie": "numero_serie", "numero de serie": "numero_serie", "n serie": "numero_serie",
-        "marca": "marca",
-        "modelo": "modelo",
-        "categoria": "categoria",
-        "tipo": "tipo",
-        "condição": "condicao", "condicao": "condicao",
-        "prédio": "predio", "predio": "predio",
-        "andar": "andar",
-        "setor": "setor",
-        "sala": "sala",
-        "quantidade": "quantidade", "qtd": "quantidade",
-        "polo": "polo",
-        "localização": "localizacao_atual", "localizacao": "localizacao_atual",
-      };
-
-      const mapped = rows.map((row: any) => {
-        const item: any = {};
-        for (const [header, value] of Object.entries(row)) {
-          const key = colMap[String(header).toLowerCase().trim()];
-          if (key && String(value).trim()) {
-            item[key] = String(value).trim();
-          }
-        }
-        return item;
-      });
-
-      setImportPreview(mapped);
+      setImportWarnings(warnings);
+      setImportPreview(items);
     } catch {
       setImportError("Erro ao ler a planilha. Verifique o formato (.xlsx ou .csv).");
     }
@@ -1257,7 +1224,7 @@ const Inventario: React.FC = () => {
                 <h2 className="text-lg font-black text-primary flex items-center gap-2"><FileSpreadsheet size={20} />Importar Itens de Planilha</h2>
                 <p className="text-xs text-outline mt-1">Carregue um arquivo .xlsx ou .csv com os dados dos itens.</p>
               </div>
-              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); }} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"><X size={18} /></button>
+              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); setImportWarnings([]); }} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"><X size={18} /></button>
             </div>
 
             <div className="space-y-4 flex-1">
@@ -1274,16 +1241,16 @@ const Inventario: React.FC = () => {
                 <>
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-on-surface"><FileSpreadsheet size={14} className="inline mr-1" />{importFile.name} — {importPreview.length} linhas detectadas</span>
-                    <button onClick={() => { setImportFile(null); setImportPreview([]); }} className="text-xs text-outline hover:text-primary font-bold">Trocar arquivo</button>
+                    <button onClick={() => { setImportFile(null); setImportPreview([]); setImportWarnings([]); }} className="text-xs text-outline hover:text-primary font-bold">Trocar arquivo</button>
                   </div>
                   <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl text-xs text-on-surface">
-                    <strong>Mapeamento de colunas:</strong> Nome, Patrimônio, Série, Marca, Modelo, Categoria, Tipo, Condição, Prédio, Andar, Setor, Sala, Polo, Localização, Quantidade
+                    <strong>Mapeamento de colunas:</strong> Nome, Patrimônio, Série, Marca, Modelo, Categoria, Tipo, Condição, Prédio, Andar, Setor, Sala, Polo, Localização, Quantidade, Responsável
                   </div>
                   <div className="overflow-x-auto max-h-64 border border-outline-variant/10 rounded-xl">
                     <table className="w-full text-left text-[10px]">
                       <thead className="bg-surface-container-low sticky top-0">
                         <tr>
-                          {importPreview[0] && Object.keys(importPreview[0]).map(k => (
+                          {importPreviewColumns.map(k => (
                             <th key={k} className="px-3 py-2 font-black text-outline uppercase tracking-wider whitespace-nowrap">{k.replace("_", " ")}</th>
                           ))}
                         </tr>
@@ -1291,13 +1258,13 @@ const Inventario: React.FC = () => {
                       <tbody>
                         {importPreview.slice(0, 50).map((row, i) => (
                           <tr key={i} className={i % 2 === 0 ? "bg-surface" : ""}>
-                            {Object.values(row).map((val: any, j: number) => (
-                              <td key={j} className="px-3 py-1.5 text-on-surface-variant truncate max-w-32">{String(val)}</td>
+                            {importPreviewColumns.map(k => (
+                              <td key={k} className="px-3 py-1.5 text-on-surface-variant truncate max-w-32">{row[k] ?? ""}</td>
                             ))}
                           </tr>
                         ))}
                         {importPreview.length > 50 && (
-                          <tr><td colSpan={Object.keys(importPreview[0] || {}).length || 1} className="px-3 py-2 text-center text-outline font-bold">...e mais {importPreview.length - 50} linhas</td></tr>
+                          <tr><td colSpan={importPreviewColumns.length || 1} className="px-3 py-2 text-center text-outline font-bold">...e mais {importPreview.length - 50} linhas</td></tr>
                         )}
                       </tbody>
                     </table>
@@ -1305,12 +1272,20 @@ const Inventario: React.FC = () => {
                 </>
               )}
 
+              {importWarnings.length > 0 && (
+                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1">
+                  {importWarnings.map((w, i) => (
+                    <div key={i} className="flex items-start gap-2"><AlertCircle size={14} className="mt-0.5 shrink-0" />{w}</div>
+                  ))}
+                </div>
+              )}
+
               {importError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2"><AlertCircle size={14} />{importError}</div>}
               {importSuccess && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 flex items-center gap-2"><CheckCircle2 size={14} />{importSuccess}</div>}
             </div>
 
             <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-outline-variant/10">
-              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); }} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
+              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); setImportWarnings([]); }} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
               {importPreview.length > 0 && (
                 <button onClick={handleImportConfirm} disabled={importing} className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50">
                   {importing ? "Importando..." : `Importar ${importPreview.length} itens`}
