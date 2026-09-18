@@ -88,6 +88,7 @@ const Inventario: React.FC = () => {
   const [formMarca, setFormMarca] = useState("");
   const [formModelo, setFormModelo] = useState("");
   const [formQuantidade, setFormQuantidade] = useState<number>(1);
+  const [formResponsavel, setFormResponsavel] = useState("");
 
   // Localização Hierárquica no Formulário (Issue #8, #12)
   const [formPredio, setFormPredio] = useState("");
@@ -299,6 +300,7 @@ const Inventario: React.FC = () => {
     setFormMarca(item.marca || "");
     setFormModelo(item.modelo || "");
     setFormQuantidade(item.quantidade || 1);
+    setFormResponsavel(item.atribuido_a_nome || "");
     setFormPredio(item.predio || "");
     setFormAndar(item.andar || "");
     setFormSetor(item.setor || "");
@@ -329,6 +331,7 @@ const Inventario: React.FC = () => {
       setFormMarca(item.marca || "");
       setFormModelo(item.modelo || "");
       setFormQuantidade(item.quantidade || 1);
+      setFormResponsavel(item.atribuido_a_nome || "");
 
       setFormPredio(item.predio || "");
       setFormAndar(item.andar || "");
@@ -346,6 +349,7 @@ const Inventario: React.FC = () => {
       setFormMarca("");
       setFormModelo("");
       setFormQuantidade(1);
+      setFormResponsavel("");
 
       setFormPredio("ATI");
       setFormAndar("Térreo");
@@ -1077,12 +1081,6 @@ const Inventario: React.FC = () => {
                     scope="col"
                     className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest"
                   >
-                    Responsável
-                  </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-4 text-[10px] font-black text-on-surface-variant uppercase tracking-widest"
-                  >
                     Localização
                   </th>
                   <th
@@ -1156,9 +1154,6 @@ const Inventario: React.FC = () => {
                       <span className="text-xs font-semibold text-secondary bg-secondary-container/20 px-3 py-1 rounded-full">
                         {item.categoria}
                       </span>
-                    </td>
-                    <td className="px-6 py-4 text-outline font-semibold max-w-50 truncate uppercase">
-                      {item.atribuido_a_nome || "-"}
                     </td>
                     <td className="px-6 py-4 text-outline font-semibold max-w-50 truncate">
                       <div className="flex items-center gap-1">
@@ -1485,6 +1480,14 @@ const Inventario: React.FC = () => {
                     </span>
                     <span className="font-bold text-on-surface">
                       {selectedDetailsItem.categoria}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-outline uppercase font-bold block mb-1">
+                      Responsável (Servidor)
+                    </span>
+                    <span className="font-bold text-on-surface uppercase">
+                      {selectedDetailsItem.atribuido_a_nome || "N/A"}
                     </span>
                   </div>
                   <div>
@@ -1929,6 +1932,18 @@ const Inventario: React.FC = () => {
                         ? "opacity-50 cursor-not-allowed"
                         : ""
                     }`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5">
+                    Responsável (Servidor)
+                  </label>
+                  <input
+                    type="text"
+                    value={formResponsavel}
+                    onChange={(e) => setFormResponsavel(e.target.value)}
+                    placeholder="Ex: LEONIDAS"
+                    className="w-full px-3 py-2.5 bg-surface border border-outline rounded-xl text-xs text-on-surface uppercase"
                   />
                 </div>
               </div>
