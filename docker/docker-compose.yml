@@ -30,6 +30,7 @@ services:
       RESEND_FROM: ${RESEND_FROM:-noreply@sgi-ati.vercel.app}
       RESEND_TO: ${RESEND_TO:-}
       PORT: 3001
+      CORS_ORIGIN: http://localhost:5173
       NODE_ENV: ${NODE_ENV:-development}
     ports:
       - "3001:3001"
