@@ -107,7 +107,7 @@ authRouter.post("/invite", requireAdmin, async (req: Request, res: Response) => 
       success: true,
       user: novo,
       emailEnviado,
-      aviso: emailEnviado ? undefined : "Usuário criado, mas o e-mail não foi enviado. Confira as configurações do Resend. A senha inicial são os três primeiros dígitos do CPF seguidos de @ati.",
+      aviso: emailEnviado ? undefined : "Usuário criado, mas o e-mail não foi enviado. Confira as configurações do Gmail. A senha inicial são os três primeiros dígitos do CPF seguidos de @ati.",
       message: `Usuário ${nome} criado com sucesso.`,
     });
   } catch (err: any) {

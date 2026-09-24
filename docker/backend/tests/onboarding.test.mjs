@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import pg from 'pg';
+import nodemailer from 'nodemailer';
 import { enviarEmail } from '../src/services/email.ts';
 import { senhaValida } from '../src/services/password.ts';
 import { enviarConvite } from '../src/services/convite.ts';
@@ -25,21 +26,21 @@ test('primeiro acesso bloqueia dados, permite perfil e própria senha, libera ap
  }finally{pg.Pool.prototype.query=old}
 });
 test('convite inclui senha, link e HTML escapado sem enviar e-mail real',async()=>{
- const old=globalThis.fetch;let mail;
- process.env.RESEND_API_KEY='re_mock';process.env.RESEND_FROM='SGI-ATI <onboarding@resend.dev>';process.env.RESEND_REPLY_TO='sgi.ati.to@gmail.com';process.env.FRONTEND_URL='https://example.com';
- globalThis.fetch=async (url, options)=>{assert.equal(url,"https://api.resend.com/emails");assert.equal(options.headers.Authorization,"Bearer re_mock");mail=JSON.parse(options.body);return new Response(JSON.stringify({id:"mock-id"}),{status:200})};
- try{await enviarConvite('<João>','test@example.com','123@ati');assert.match(mail.html,/123@ati/);assert.match(mail.html,/https:\/\/example.com\/login/);assert.match(mail.html,/&lt;João&gt;/);assert.match(mail.from,/onboarding@resend.dev/);assert.equal(mail.reply_to,"sgi.ati.to@gmail.com");assert.deepEqual(mail.to,["test@example.com"])}finally{globalThis.fetch=old}
+ const old=nodemailer.createTransport;let mail;
+ process.env.GMAIL_USER='sgi.ati.to@gmail.com';process.env.GMAIL_APP_PASSWORD='abcd efgh ijkl mnop';process.env.FRONTEND_URL='https://example.com';
+ nodemailer.createTransport=(options)=>{assert.equal(options.host,'smtp.gmail.com');assert.equal(options.secure,true);assert.equal(options.auth.pass,'abcdefghijklmnop');return {sendMail:async value=>{mail=value;return {accepted:['test@example.com'],rejected:[]}}}};
+ try{await enviarConvite('<João>','test@example.com','123@ati');assert.match(mail.html,/123@ati/);assert.match(mail.html,/https:\/\/example.com\/login/);assert.match(mail.html,/&lt;João&gt;/);assert.equal(mail.from.address,"sgi.ati.to@gmail.com");assert.equal(mail.replyTo,"sgi.ati.to@gmail.com");assert.equal(mail.to,"test@example.com")}finally{nodemailer.createTransport=old}
 });
-test('cadastro persiste usuário e informa falha Resend sem falso sucesso de envio',async()=>{
- const oldQuery=pg.Pool.prototype.query, oldMail=globalThis.fetch;
+test('cadastro persiste usuário e informa falha Gmail sem falso sucesso de envio',async()=>{
+ const oldQuery=pg.Pool.prototype.query, oldMail=nodemailer.createTransport;
  let inserted;
  pg.Pool.prototype.query=async(sql,params)=>{if(sql.includes('INSERT')){inserted=params;return {rows:[user]}}return {rows:[]}};
- globalThis.fetch=async()=>new Response("{}",{status:403});
+ nodemailer.createTransport=()=>({sendMail:async()=>{throw new Error("SMTP indisponível")}});
  try{
   const handler=authRouter.stack.find(x=>x.route?.path==='/invite').route.stack.at(-1).handle;
   const res=response();await handler({body:user},res);
   assert.equal(res.body.success,true);assert.equal(res.body.emailEnviado,false);assert.match(res.body.aviso,/não foi enviado/);assert.ok(inserted[5].startsWith('$2'));
- }finally{pg.Pool.prototype.query=oldQuery;globalThis.fetch=oldMail}
+ }finally{pg.Pool.prototype.query=oldQuery;nodemailer.createTransport=oldMail}
 });
 test('API rejeita senha fraca sem atualizar o banco',async()=>{
  const handler=usuariosRouter.stack.find(x=>x.route?.path==='/:id/senha').route.stack.at(-1).handle;
@@ -47,33 +48,14 @@ test('API rejeita senha fraca sem atualizar o banco',async()=>{
  assert.equal(res.statusCode,400);
 });
 
-test('Resend rejeita configuração ausente, erro HTTP e resposta sem ID', async()=>{
- const old=globalThis.fetch, key=process.env.RESEND_API_KEY;
- const payload={to:'test@example.com',subject:'Teste',html:'Teste'};
- try {
-  delete process.env.RESEND_API_KEY;
-  await assert.rejects(enviarEmail(payload), /Configure/);
-  process.env.RESEND_API_KEY='re_mock';
-  globalThis.fetch=async()=>new Response('{}',{status:429});
-  await assert.rejects(enviarEmail(payload), /HTTP 429/);
-  globalThis.fetch=async()=>new Response('{}',{status:200});
-  await assert.rejects(enviarEmail(payload), /não confirmou/);
- } finally {globalThis.fetch=old;if(key===undefined) delete process.env.RESEND_API_KEY;else process.env.RESEND_API_KEY=key;}
-});
 
-
-test('template Resend recebe variáveis e nunca é enviado junto com HTML', async()=>{
- const oldFetch=globalThis.fetch, oldId=process.env.RESEND_TEMPLATE_ID;
- let sent;
- process.env.RESEND_TEMPLATE_ID='convite-sgi';
- globalThis.fetch=async (_url,options)=>{sent=JSON.parse(options.body);return new Response(JSON.stringify({id:'mock'}),{status:200})};
+test('Gmail rejeita credencial ausente e destinatário recusado',async()=>{
+ const old=nodemailer.createTransport, pass=process.env.GMAIL_APP_PASSWORD;
  try {
-  await enviarConvite('João Pedro','test@example.com','123@ati');
-  assert.deepEqual(sent.template,{id:'convite-sgi',variables:{NOME:'João Pedro',SENHA_TEMPORARIA:'123@ati',URL_LOGIN:'https://example.com/login'}});
-  assert.equal('html' in sent,false);
-  assert.equal(sent.subject,'Seu acesso ao SGI-ATI — defina sua senha');
- } finally {
-  globalThis.fetch=oldFetch;
-  if(oldId===undefined) delete process.env.RESEND_TEMPLATE_ID;else process.env.RESEND_TEMPLATE_ID=oldId;
- }
+  delete process.env.GMAIL_APP_PASSWORD;
+  await assert.rejects(enviarEmail({to:'test@example.com',subject:'Teste',html:'Teste'}),/Configure/);
+  process.env.GMAIL_APP_PASSWORD='mock';
+  nodemailer.createTransport=()=>({sendMail:async()=>({accepted:[],rejected:['test@example.com']})});
+  await assert.rejects(enviarEmail({to:'test@example.com',subject:'Teste',html:'Teste'}),/não aceitou/);
+ }finally{nodemailer.createTransport=old;if(pass===undefined)delete process.env.GMAIL_APP_PASSWORD;else process.env.GMAIL_APP_PASSWORD=pass;}
 });

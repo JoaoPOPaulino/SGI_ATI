@@ -28,11 +28,6 @@ services:
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-SGI-ATI}
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
-      RESEND_TEMPLATE_ID: ${RESEND_TEMPLATE_ID:-}
-      RESEND_API_KEY: ${RESEND_API_KEY:-}
-      RESEND_FROM: ${RESEND_FROM:-SGI-ATI <onboarding@resend.dev>}
-      RESEND_REPLY_TO: ${RESEND_REPLY_TO:-sgi.ati.to@gmail.com}
-      RESEND_TO: ${RESEND_TO:-}
       PORT: 3001
       CORS_ORIGIN: http://localhost:5173
       NODE_ENV: ${NODE_ENV:-development}
