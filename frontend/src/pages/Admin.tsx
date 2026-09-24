@@ -254,7 +254,9 @@ const Admin: React.FC = () => {
       setPolo("");
 
       setSuccessMsg(
-        `Usuário "${nomeUsuario}" cadastrado com sucesso! Um e-mail de convite foi enviado.`,
+        response.emailEnviado
+          ? `Usuário "${nomeUsuario}" cadastrado. Convite aceito pelo servidor de e-mail.`
+          : response.aviso || "Usuário criado, mas o e-mail não foi enviado.",
       );
 
       await loadUsuarios();

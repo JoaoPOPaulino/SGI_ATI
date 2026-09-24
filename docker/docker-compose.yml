@@ -24,10 +24,14 @@ services:
       DATABASE_URL: postgresql://sgi_user:${DB_PASSWORD:-sgi_atl_2026}@postgres:5432/sgi_ati
       JWT_SECRET: ${JWT_SECRET:-sgi_jwt_secret_dev}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-24h}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:5173}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-SGI-ATI}
       GMAIL_USER: ${GMAIL_USER:-}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
+      RESEND_TEMPLATE_ID: ${RESEND_TEMPLATE_ID:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
-      RESEND_FROM: ${RESEND_FROM:-noreply@sgi-ati.vercel.app}
+      RESEND_FROM: ${RESEND_FROM:-SGI-ATI <onboarding@resend.dev>}
+      RESEND_REPLY_TO: ${RESEND_REPLY_TO:-sgi.ati.to@gmail.com}
       RESEND_TO: ${RESEND_TO:-}
       PORT: 3001
       CORS_ORIGIN: http://localhost:5173

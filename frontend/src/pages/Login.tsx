@@ -12,7 +12,7 @@ const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   if (user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={user.primeiro_acesso ? "/trocar-senha" : "/"} replace />;
   }
 
   const formatCpf = (value: string) => {

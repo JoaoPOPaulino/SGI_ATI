@@ -8,7 +8,7 @@ import { api } from "../services/api";
 
 const TrocarSenha: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
 
   const [novaSenha, setNovaSenha] = useState("");
   const [confirmarSenha, setConfirmarSenha] = useState("");
@@ -20,7 +20,10 @@ const TrocarSenha: React.FC = () => {
 
   const validarSenha = () => {
     if (!novaSenha || !confirmarSenha) { setError("Preencha todos os campos."); return false; }
-    if (novaSenha.length < 6) { setError("A nova senha deve ter no mínimo 6 caracteres."); return false; }
+    if (novaSenha.length < 6 || !/[A-Z]/.test(novaSenha) || !/[a-z]/.test(novaSenha) || !/[0-9]/.test(novaSenha) || !/[^A-Za-z0-9\s]/.test(novaSenha)) {
+      setError("Use no mínimo 6 caracteres, uma letra maiúscula, uma minúscula, um número e um caractere especial (espaço não conta)."); return false;
+    }
+    if (new TextEncoder().encode(novaSenha).length > 72) { setError("A senha deve ter no máximo 72 bytes."); return false; }
     if (novaSenha !== confirmarSenha) { setError("As senhas não conferem."); return false; }
     return true;
   };
@@ -35,10 +38,11 @@ const TrocarSenha: React.FC = () => {
     try {
       await api.patch(`/usuarios/${user?.id}/senha`, { senha: novaSenha });
 
+      await refreshUser();
       setSuccess("Senha alterada com sucesso! Redirecionando...");
       setTimeout(() => navigate("/", { replace: true }), 1500);
-    } catch (err: any) {
-      setError(err.message || "Erro ao alterar senha.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message || "Erro ao alterar senha." : "Erro ao alterar senha.");
     } finally {
       setLoading(false);
     }
@@ -53,7 +57,7 @@ const TrocarSenha: React.FC = () => {
           </div>
         </div>
         <h1 className="text-2xl font-extrabold text-on-surface text-center mb-2">Definir nova senha</h1>
-        <p className="text-sm text-on-surface-variant text-center mb-6">Para continuar, crie uma senha de acesso para sua conta.</p>
+        <p className="text-sm text-on-surface-variant text-center mb-6">Use no mínimo 6 caracteres, incluindo uma letra maiúscula, uma minúscula, um número e um caractere especial.</p>
 
         {error && (
           <div className="flex items-start gap-2.5 p-4 bg-red-50 border border-red-100 rounded-2xl text-sm text-red-700 font-semibold mb-5">

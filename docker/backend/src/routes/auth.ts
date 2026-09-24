@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import { query } from "../config/database.js";
 import { signToken, requireAuth, requireAdmin, AuthPayload } from "../middleware/auth.js";
 
+import { enviarConvite } from "../services/convite.js";
+
 export const authRouter = Router();
 
 // POST /api/auth/login
@@ -93,11 +95,19 @@ authRouter.post("/invite", requireAdmin, async (req: Request, res: Response) => 
     );
 
     const novo = insert.rows[0];
+    let emailEnviado = false;
+    try {
+      await enviarConvite(novo.nome, novo.email, senhaPadrao);
+      emailEnviado = true;
+    } catch {
+      console.error("Falha no envio do convite; usuário criado:", novo.id);
+    }
 
     res.json({
       success: true,
       user: novo,
-      senhaPadrao,
+      emailEnviado,
+      aviso: emailEnviado ? undefined : "Usuário criado, mas o e-mail não foi enviado. Confira as configurações do Resend. A senha inicial são os três primeiros dígitos do CPF seguidos de @ati.",
       message: `Usuário ${nome} criado com sucesso.`,
     });
   } catch (err: any) {

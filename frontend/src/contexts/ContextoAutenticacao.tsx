@@ -14,6 +14,7 @@ interface AuthContextType {
     requirePasswordChange?: boolean;
   }>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
   changeProfile: (perfil: PerfilUsuario) => void;
   updatePhoto: (fotoBase64: string) => void;
   hasPermission: (requiredPerfil: PerfilUsuario) => boolean;
@@ -24,7 +25,7 @@ interface AuthContextType {
     cpf: string;
     perfil: string;
     polo?: string;
-  }) => Promise<{ success: boolean; error?: string; user?: any }>;
+  }) => Promise<{ success: boolean; error?: string; user?: any; emailEnviado?: boolean; aviso?: string }>;
   deleteUser: (userId: string) => Promise<boolean>;
 }
 
@@ -85,6 +86,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return result;
   };
 
+  const refreshUser = async () => {
+    const profile = await getMe();
+    if (!profile) throw new Error("Faça login novamente para continuar.");
+    setUser(profile);
+  };
+
   const logout = async () => {
     logoutApi();
     setUser(null);
@@ -140,6 +147,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         user,
         login,
         logout,
+        refreshUser,
         changeProfile,
         updatePhoto,
         hasPermission,

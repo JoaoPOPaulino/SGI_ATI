@@ -89,12 +89,14 @@ export async function inviteUserApi(payload: {
   cpf: string;
   perfil: string;
   polo?: string;
-}): Promise<{ success: boolean; error?: string; user?: any }> {
+}): Promise<{ success: boolean; error?: string; user?: any; emailEnviado?: boolean; aviso?: string }> {
   try {
     const data = await api.post<{
       success: boolean;
       error?: string;
       user?: any;
+      emailEnviado?: boolean;
+      aviso?: string;
     }>("/auth/invite", {
       nome: payload.nome,
       email: payload.email.trim().toLowerCase(),

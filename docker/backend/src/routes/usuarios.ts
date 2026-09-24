@@ -3,6 +3,8 @@ import bcrypt from "bcrypt";
 import { query } from "../config/database.js";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 
+import { senhaValida, PASSWORD_MESSAGE } from "../services/password.js";
+
 export const usuariosRouter = Router();
 
 // GET /api/usuarios
@@ -25,8 +27,8 @@ usuariosRouter.patch("/:id/senha", requireAuth, async (req: Request, res: Respon
       return;
     }
     const { senha } = req.body;
-    if (!senha || senha.length < 6) {
-      res.status(400).json({ error: "Senha deve ter no mínimo 6 caracteres." });
+    if (!senhaValida(senha)) {
+      res.status(400).json({ error: PASSWORD_MESSAGE + " Máximo de 72 bytes." });
       return;
     }
     const hash = await bcrypt.hash(senha, 10);
