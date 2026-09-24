@@ -1,4 +1,4 @@
-Nome,Patrimonio,Numero Serie,Marca,Modelo,Categoria,Tipo,Condicao,Predio,Andar,Setor,Sala
+    Nome,Patrimonio,Numero Serie,Marca,Modelo,Categoria,Tipo,Condicao,Predio,Andar,Setor,Sala
 Monitor Dell 24 - 001,PAT-000001,SN-DELL-0001,Dell,P2422H,MONITOR,PATRIMONIADO,NOVO,Bloco A,3 Andar,TI,302
 Monitor Dell 24 - 002,PAT-000002,SN-DELL-0002,Dell,P2422H,MONITOR,PATRIMONIADO,NOVO,Bloco A,3 Andar,TI,302
 Monitor Dell 24 - 003,PAT-000003,SN-DELL-0003,Dell,P2422H,MONITOR,PATRIMONIADO,NOVO,Bloco A,3 Andar,TI,302

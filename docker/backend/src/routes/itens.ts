@@ -184,7 +184,7 @@ itensRouter.post("/import", requireTecnicoOuSuperior, async (req: Request, res: 
     res.status(201).json({ success: true, count: result.rows.length });
   } catch (err: any) {
     console.error("Erro ao importar itens:", err.message);
-    res.status(500).json({ error: "Erro ao importar itens." });
+    res.status(500).json({ error: `Erro ao importar itens: ${err.message}` });
   }
 });
 

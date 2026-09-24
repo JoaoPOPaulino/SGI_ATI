@@ -1,0 +1,429 @@
+From f142e4e4fc3de989d4331008cdac2ffafcad38e5 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Fri, 18 Sep 2026 13:40:01 +0000
+Subject: [PATCH] =?UTF-8?q?fix:=20reconhecer=20corretamente=20colunas=20e?=
+ =?UTF-8?q?=20layouts=20multi-item=20na=20importa=C3=A7=C3=A3o=20de=20plan?=
+ =?UTF-8?q?ilhas?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+O importador de itens (Inventario.tsx) assumia que a linha 1 era o
+cabeçalho e usava uma lista fixa e restrita de sinônimos de coluna, então
+planilhas com cabeçalho fora da primeira linha, variantes de nome de
+coluna (ex: "número patrimônio") ou acentuação diferente da mapeada
+eram ignoradas silenciosamente — o item era criado só com os valores
+default do backend, daí a sensação de que "só a quantidade" era
+importada.
+
+Também não havia suporte a planilhas onde cada linha traz mais de um
+equipamento lado a lado (colunas repetidas, como um levantamento com
+"Monitor 1/2/3" na mesma linha) nem a múltiplas abas no mesmo arquivo.
+
+Adiciona parseSpreadsheetItems em utilidades.ts: detecta a linha de
+cabeçalho por conteúdo (não por posição fixa), normaliza acentos/caixa
+para casar mais variantes de nome de coluna, lê todas as abas, separa
+grupos de colunas repetidas em itens individuais, infere tipo/categoria/
+localização quando possível e remove duplicatas (mesmo patrimônio ou
+série) entre linhas/abas. A pré-visualização do modal de importação
+agora mostra avisos (abas ignoradas, duplicatas removidas) e usa a
+união de colunas encontradas nas linhas, já que cada item pode ter um
+conjunto diferente de campos preenchidos.
+
+Co-Authored-By: Claude Sonnet 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01FTLbzB9rsri9vVrvMC1zPn
+---
+ frontend/src/pages/Inventario.tsx   |  89 +++++-------
+ frontend/src/services/utilidades.ts | 208 ++++++++++++++++++++++++++++
+ 2 files changed, 240 insertions(+), 57 deletions(-)
+
+diff --git a/frontend/src/pages/Inventario.tsx b/frontend/src/pages/Inventario.tsx
+index 647dc8e..796008a 100644
+--- a/frontend/src/pages/Inventario.tsx
++++ b/frontend/src/pages/Inventario.tsx
+@@ -30,7 +30,7 @@ import { fetchLaudos } from "../services/laudosService";
+ import StatusBadge from "../components/DistintivoStatus";
+ import Paginacao from "../components/Paginacao";
+ import { useToast } from "../components/SistemaToast";
+-import { exportToExcel } from "../services/utilidades";
++import { exportToExcel, parseSpreadsheetItems } from "../services/utilidades";
+ import { itemSchema, type ItemFormData } from "../services/schemas";
+ import {
+   Search,
+@@ -125,7 +125,15 @@ const Inventario: React.FC = () => {
+   const [importFile, setImportFile] = useState<File | null>(null);
+   const [importError, setImportError] = useState("");
+   const [importSuccess, setImportSuccess] = useState("");
++  const [importWarnings, setImportWarnings] = useState<string[]>([]);
+   const [importing, setImporting] = useState(false);
++  const importPreviewColumns = useMemo(() => {
++    const cols = new Set<string>();
++    for (const row of importPreview) {
++      for (const key of Object.keys(row)) cols.add(key);
++    }
++    return Array.from(cols);
++  }, [importPreview]);
+ 
+   // Editar em lote
+   const [showBatchModal, setShowBatchModal] = useState(false);
+@@ -696,63 +704,22 @@ const Inventario: React.FC = () => {
+     setImportFile(file);
+     setImportError("");
+     setImportSuccess("");
++    setImportWarnings([]);
+ 
+     try {
+       const XLSX = await import("xlsx");
+       const data = await file.arrayBuffer();
+       const workbook = XLSX.read(data, { type: "array" });
+-      const sheetName = workbook.SheetNames[0];
+-      const sheet = workbook.Sheets[sheetName];
+-      const rows: any[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+ 
+-      if (rows.length === 0) {
+-        setImportError("Planilha vazia ou formato invalido.");
+-        return;
+-      }
++      const { items, warnings } = parseSpreadsheetItems(workbook);
+ 
+-      // Strip BOM from first key
+-      if (rows.length > 0) {
+-        const firstRow = rows[0];
+-        for (const key of Object.keys(firstRow)) {
+-          if (key.charCodeAt(0) === 65279) {
+-            const cleanKey = key.slice(1);
+-            firstRow[cleanKey] = firstRow[key];
+-            delete firstRow[key];
+-          }
+-        }
++      if (items.length === 0) {
++        setImportError("Planilha vazia, formato inválido ou nenhuma coluna reconhecida.");
++        return;
+       }
+ 
+-      const colMap: Record<string, string> = {
+-        "nome": "nome", "equipamento": "nome", "item": "nome",
+-        "patrimônio": "numero_patrimonio", "patrimonio": "numero_patrimonio", "pat": "numero_patrimonio",
+-        "nº série": "numero_serie", "n° série": "numero_serie", "serie": "numero_serie", "s/n": "numero_serie",
+-        "numero serie": "numero_serie", "numero de serie": "numero_serie", "n serie": "numero_serie",
+-        "marca": "marca",
+-        "modelo": "modelo",
+-        "categoria": "categoria",
+-        "tipo": "tipo",
+-        "condição": "condicao", "condicao": "condicao",
+-        "prédio": "predio", "predio": "predio",
+-        "andar": "andar",
+-        "setor": "setor",
+-        "sala": "sala",
+-        "quantidade": "quantidade", "qtd": "quantidade",
+-        "polo": "polo",
+-        "localização": "localizacao_atual", "localizacao": "localizacao_atual",
+-      };
+-
+-      const mapped = rows.map((row: any) => {
+-        const item: any = {};
+-        for (const [header, value] of Object.entries(row)) {
+-          const key = colMap[String(header).toLowerCase().trim()];
+-          if (key && String(value).trim()) {
+-            item[key] = String(value).trim();
+-          }
+-        }
+-        return item;
+-      });
+-
+-      setImportPreview(mapped);
++      setImportWarnings(warnings);
++      setImportPreview(items);
+     } catch {
+       setImportError("Erro ao ler a planilha. Verifique o formato (.xlsx ou .csv).");
+     }
+@@ -1257,7 +1224,7 @@ const Inventario: React.FC = () => {
+                 <h2 className="text-lg font-black text-primary flex items-center gap-2"><FileSpreadsheet size={20} />Importar Itens de Planilha</h2>
+                 <p className="text-xs text-outline mt-1">Carregue um arquivo .xlsx ou .csv com os dados dos itens.</p>
+               </div>
+-              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); }} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"><X size={18} /></button>
++              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); setImportWarnings([]); }} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"><X size={18} /></button>
+             </div>
+ 
+             <div className="space-y-4 flex-1">
+@@ -1274,16 +1241,16 @@ const Inventario: React.FC = () => {
+                 <>
+                   <div className="flex items-center justify-between">
+                     <span className="text-xs font-bold text-on-surface"><FileSpreadsheet size={14} className="inline mr-1" />{importFile.name} — {importPreview.length} linhas detectadas</span>
+-                    <button onClick={() => { setImportFile(null); setImportPreview([]); }} className="text-xs text-outline hover:text-primary font-bold">Trocar arquivo</button>
++                    <button onClick={() => { setImportFile(null); setImportPreview([]); setImportWarnings([]); }} className="text-xs text-outline hover:text-primary font-bold">Trocar arquivo</button>
+                   </div>
+                   <div className="p-3 bg-primary/5 border border-primary/10 rounded-xl text-xs text-on-surface">
+-                    <strong>Mapeamento de colunas:</strong> Nome, Patrimônio, Série, Marca, Modelo, Categoria, Tipo, Condição, Prédio, Andar, Setor, Sala, Polo, Localização, Quantidade
++                    <strong>Mapeamento de colunas:</strong> Nome, Patrimônio, Série, Marca, Modelo, Categoria, Tipo, Condição, Prédio, Andar, Setor, Sala, Polo, Localização, Quantidade, Responsável
+                   </div>
+                   <div className="overflow-x-auto max-h-64 border border-outline-variant/10 rounded-xl">
+                     <table className="w-full text-left text-[10px]">
+                       <thead className="bg-surface-container-low sticky top-0">
+                         <tr>
+-                          {importPreview[0] && Object.keys(importPreview[0]).map(k => (
++                          {importPreviewColumns.map(k => (
+                             <th key={k} className="px-3 py-2 font-black text-outline uppercase tracking-wider whitespace-nowrap">{k.replace("_", " ")}</th>
+                           ))}
+                         </tr>
+@@ -1291,13 +1258,13 @@ const Inventario: React.FC = () => {
+                       <tbody>
+                         {importPreview.slice(0, 50).map((row, i) => (
+                           <tr key={i} className={i % 2 === 0 ? "bg-surface" : ""}>
+-                            {Object.values(row).map((val: any, j: number) => (
+-                              <td key={j} className="px-3 py-1.5 text-on-surface-variant truncate max-w-32">{String(val)}</td>
++                            {importPreviewColumns.map(k => (
++                              <td key={k} className="px-3 py-1.5 text-on-surface-variant truncate max-w-32">{row[k] ?? ""}</td>
+                             ))}
+                           </tr>
+                         ))}
+                         {importPreview.length > 50 && (
+-                          <tr><td colSpan={Object.keys(importPreview[0] || {}).length || 1} className="px-3 py-2 text-center text-outline font-bold">...e mais {importPreview.length - 50} linhas</td></tr>
++                          <tr><td colSpan={importPreviewColumns.length || 1} className="px-3 py-2 text-center text-outline font-bold">...e mais {importPreview.length - 50} linhas</td></tr>
+                         )}
+                       </tbody>
+                     </table>
+@@ -1305,12 +1272,20 @@ const Inventario: React.FC = () => {
+                 </>
+               )}
+ 
++              {importWarnings.length > 0 && (
++                <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 space-y-1">
++                  {importWarnings.map((w, i) => (
++                    <div key={i} className="flex items-start gap-2"><AlertCircle size={14} className="mt-0.5 shrink-0" />{w}</div>
++                  ))}
++                </div>
++              )}
++
+               {importError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2"><AlertCircle size={14} />{importError}</div>}
+               {importSuccess && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700 flex items-center gap-2"><CheckCircle2 size={14} />{importSuccess}</div>}
+             </div>
+ 
+             <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-outline-variant/10">
+-              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); }} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
++              <button onClick={() => { setShowImportModal(false); setImportPreview([]); setImportFile(null); setImportError(""); setImportSuccess(""); setImportWarnings([]); }} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
+               {importPreview.length > 0 && (
+                 <button onClick={handleImportConfirm} disabled={importing} className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50">
+                   {importing ? "Importando..." : `Importar ${importPreview.length} itens`}
+diff --git a/frontend/src/services/utilidades.ts b/frontend/src/services/utilidades.ts
+index cea566c..fa9dde8 100644
+--- a/frontend/src/services/utilidades.ts
++++ b/frontend/src/services/utilidades.ts
+@@ -97,6 +97,214 @@ export function exportToExcel(
+   XLSX.writeFile(wb, `${filename}.xlsx`);
+ }
+ 
++// ----- Importação de planilhas -----
++
++const IMPORT_FIELD_ALIASES: Record<string, string> = {
++  'nome': 'nome', 'equipamento': 'nome', 'item': 'nome', 'descricao': 'nome',
++  'patrimonio': 'numero_patrimonio', 'pat': 'numero_patrimonio',
++  'numero patrimonio': 'numero_patrimonio', 'no patrimonio': 'numero_patrimonio',
++  'n patrimonio': 'numero_patrimonio', 'patrimonio no': 'numero_patrimonio',
++  'serie': 'numero_serie', 's/n': 'numero_serie', 'sn': 'numero_serie',
++  'numero serie': 'numero_serie', 'numero de serie': 'numero_serie',
++  'n serie': 'numero_serie', 'no serie': 'numero_serie',
++  'marca': 'marca',
++  'modelo': 'modelo',
++  'categoria': 'categoria',
++  'tipo': 'tipo',
++  'condicao': 'condicao',
++  'predio': 'predio',
++  'andar': 'andar',
++  'setor': 'setor',
++  'sala': 'sala',
++  'quantidade': 'quantidade', 'qtd': 'quantidade', 'qtde': 'quantidade',
++  'polo': 'polo',
++  'localizacao': 'localizacao_atual', 'localizacao atual': 'localizacao_atual', 'localizacao_atual': 'localizacao_atual',
++  'servidor': 'atribuido_a_nome', 'responsavel': 'atribuido_a_nome',
++  'atribuido a': 'atribuido_a_nome', 'usuario': 'atribuido_a_nome',
++  'estacao': 'estacao',
++};
++
++const CATEGORIA_KEYWORDS: [RegExp, string][] = [
++  [/monitor/i, 'MONITOR'],
++  [/notebook/i, 'NOTEBOOK'],
++  [/impressora/i, 'IMPRESSORA'],
++  [/computador|desktop|\bcpu\b/i, 'COMPUTADOR'],
++  [/ferramenta/i, 'FERRAMENTA'],
++  [/acess[oó]rio/i, 'ACESSORIO'],
++];
++
++function normalizeHeaderText(value: unknown): string {
++  return String(value ?? '')
++    .normalize('NFD')
++    .replace(/[̀-ͯ]/g, '')
++    .toLowerCase()
++    .replace(/[°ºª?:.]/g, '')
++    .replace(/\s+/g, ' ')
++    .trim();
++}
++
++// Uma planilha pode listar mais de um equipamento por linha (ex: "MONITOR 1", "MONITOR 2"
++// lado a lado). Cabeçalhos repetidos (Setor, Marca... aparecendo 2x+ na mesma linha)
++// indicam esses blocos; um cabeçalho que aparece só uma vez vale para a linha inteira.
++interface ColumnMapping {
++  colIdx: number;
++  destKey: string;
++  block: number;
++}
++
++function findHeaderRowIndex(rows: unknown[][]): number {
++  let bestIdx = 0;
++  let bestScore = -1;
++  const scanLimit = Math.min(rows.length, 10);
++  for (let i = 0; i < scanLimit; i++) {
++    const score = (rows[i] || []).filter(
++      cell => IMPORT_FIELD_ALIASES[normalizeHeaderText(cell)] !== undefined,
++    ).length;
++    if (score > bestScore) {
++      bestScore = score;
++      bestIdx = i;
++    }
++  }
++  return bestScore > 0 ? bestIdx : 0;
++}
++
++function buildColumnGroups(headerRow: unknown[]): { columns: ColumnMapping[]; blockCount: number } {
++  const occurrences: Record<string, number> = {};
++  const columns: ColumnMapping[] = [];
++  headerRow.forEach((cell, colIdx) => {
++    const destKey = IMPORT_FIELD_ALIASES[normalizeHeaderText(cell)];
++    if (!destKey) return;
++    const block = occurrences[destKey] || 0;
++    occurrences[destKey] = block + 1;
++    columns.push({ colIdx, destKey, block });
++  });
++  const blockCount = columns.reduce((max, c) => Math.max(max, c.block + 1), 1);
++  return { columns, blockCount };
++}
++
++function splitPatrimonioOuSerie(rawValue: unknown): { numero_patrimonio?: string; numero_serie?: string } {
++  const value = String(rawValue).trim();
++  const match = value.match(/^n\/?s[:.]?\s*/i);
++  if (match) {
++    const serie = value.slice(match[0].length).trim();
++    return serie ? { numero_serie: serie } : {};
++  }
++  return value ? { numero_patrimonio: value } : {};
++}
++
++function inferCategoria(...texts: (string | undefined)[]): string | undefined {
++  const combined = texts.filter(Boolean).join(' ');
++  for (const [regex, categoria] of CATEGORIA_KEYWORDS) {
++    if (regex.test(combined)) return categoria;
++  }
++  return undefined;
++}
++
++export function parseSpreadsheetItems(
++  workbook: XLSX.WorkBook,
++): { items: Record<string, string>[]; warnings: string[] } {
++  const rawItems: Record<string, string>[] = [];
++  const warnings: string[] = [];
++
++  for (const sheetName of workbook.SheetNames) {
++    const sheet = workbook.Sheets[sheetName];
++    const rows = XLSX.utils.sheet_to_json(sheet, {
++      header: 1,
++      defval: '',
++      blankrows: false,
++    }) as unknown[][];
++    if (rows.length === 0) continue;
++
++    const headerIdx = findHeaderRowIndex(rows);
++    const headerRow = rows[headerIdx] || [];
++    const { columns, blockCount } = buildColumnGroups(headerRow);
++    if (columns.length === 0) {
++      warnings.push(`Aba "${sheetName}": nenhuma coluna reconhecida, aba ignorada.`);
++      continue;
++    }
++
++    const sheetCategoria = inferCategoria(sheetName);
++    const occurrenceCount: Record<string, number> = {};
++    for (const col of columns) {
++      occurrenceCount[col.destKey] = (occurrenceCount[col.destKey] || 0) + 1;
++    }
++    const sharedKeys = new Set(
++      Object.entries(occurrenceCount).filter(([, count]) => count === 1).map(([key]) => key),
++    );
++
++    for (let r = headerIdx + 1; r < rows.length; r++) {
++      const row = rows[r] || [];
++      for (let block = 0; block < blockCount; block++) {
++        const raw: Record<string, unknown> = {};
++        let hasBlockData = false;
++        for (const col of columns) {
++          const value = (row as unknown[])[col.colIdx];
++          if (value === undefined || value === '') continue;
++          if (col.block === block || sharedKeys.has(col.destKey)) {
++            raw[col.destKey] = value;
++            if (col.block === block) hasBlockData = true;
++          }
++        }
++        if (!hasBlockData) continue;
++
++        if (raw.numero_patrimonio !== undefined) {
++          const split = splitPatrimonioOuSerie(raw.numero_patrimonio);
++          delete raw.numero_patrimonio;
++          Object.assign(raw, split);
++        }
++
++        const item: Record<string, string> = {};
++        for (const [key, value] of Object.entries(raw)) {
++          const str = String(value).trim();
++          if (str) item[key] = str;
++        }
++        if (Object.keys(item).length === 0) continue;
++
++        if (!item.categoria && sheetCategoria) item.categoria = sheetCategoria;
++        if (!item.tipo) {
++          if (item.numero_serie && !item.numero_patrimonio) item.tipo = 'SERIALIZADO';
++          else if (item.numero_patrimonio) item.tipo = 'PATRIMONIADO';
++          else item.tipo = 'NAO_SERIALIZADO';
++        }
++        if (!item.nome) {
++          const nome = [item.marca, item.modelo].filter(Boolean).join(' ').trim();
++          if (nome) item.nome = nome;
++        }
++        if (!item.localizacao_atual) {
++          const loc = buildLocationString(item.predio, item.andar, item.setor, item.sala, item.estacao);
++          if (loc) item.localizacao_atual = loc;
++        }
++
++        rawItems.push(item);
++      }
++    }
++  }
++
++  const seen = new Set<string>();
++  const items: Record<string, string>[] = [];
++  let duplicatesSkipped = 0;
++  for (const item of rawItems) {
++    const key = item.numero_patrimonio
++      ? `p:${item.numero_patrimonio.toLowerCase()}`
++      : item.numero_serie
++        ? `s:${item.numero_serie.toLowerCase()}`
++        : null;
++    if (key) {
++      if (seen.has(key)) {
++        duplicatesSkipped++;
++        continue;
++      }
++      seen.add(key);
++    }
++    items.push(item);
++  }
++  if (duplicatesSkipped > 0) {
++    warnings.push(`${duplicatesSkipped} linha(s) duplicada(s) (mesmo patrimônio/série repetido) foram ignoradas.`);
++  }
++
++  return { items, warnings };
++}
++
+ export function createMovimentacaoRecord(
+   overrides: Partial<Movimentacao> & {
+     item_id: string;
+-- 
+2.43.0
+
