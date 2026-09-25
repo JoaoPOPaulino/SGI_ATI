@@ -68,10 +68,12 @@ authRouter.post("/login", async (req: Request, res: Response) => {
 // POST /api/auth/invite (admin only)
 authRouter.post("/invite", requireAdmin, async (req: Request, res: Response) => {
   try {
+    console.info("[convite] cadastro_recebido");
     const { nome, email, cpf, perfil, polo } = req.body;
     const cleanCpf = String(cpf || "").replace(/\D/g, "");
 
     if (!nome || !email || cleanCpf.length !== 11 || !perfil) {
+      console.warn("[convite] dados_incompletos; envio não iniciado");
       res.status(400).json({ success: false, error: "Dados incompletos." });
       return;
     }
@@ -81,6 +83,7 @@ authRouter.post("/invite", requireAdmin, async (req: Request, res: Response) => 
       [cleanCpf, email.toLowerCase()]
     );
     if (existente.rows.length > 0) {
+      console.warn("[convite] cadastro_duplicado; envio não iniciado");
       res.status(409).json({ success: false, error: "CPF ou email já cadastrado." });
       return;
     }
@@ -95,10 +98,12 @@ authRouter.post("/invite", requireAdmin, async (req: Request, res: Response) => 
     );
 
     const novo = insert.rows[0];
+    console.info("[convite] usuario_criado; iniciando e-mail", { usuarioId: novo.id });
     let emailEnviado = false;
     try {
       await enviarConvite(novo.nome, novo.email, senhaPadrao);
       emailEnviado = true;
+      console.info("[convite] email_aceito_pelo_servidor", { usuarioId: novo.id });
     } catch {
       console.error("Falha no envio do convite; usuário criado:", novo.id);
     }

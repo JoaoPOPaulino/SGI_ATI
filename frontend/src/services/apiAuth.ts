@@ -90,6 +90,7 @@ export async function inviteUserApi(payload: {
   perfil: string;
   polo?: string;
 }): Promise<{ success: boolean; error?: string; user?: any; emailEnviado?: boolean; aviso?: string }> {
+  console.info("[convite] Enviando solicitação de cadastro.");
   try {
     const data = await api.post<{
       success: boolean;
@@ -104,8 +105,16 @@ export async function inviteUserApi(payload: {
       perfil: payload.perfil,
       polo: payload.polo || null,
     });
+    if (data.emailEnviado === true) {
+      console.info("[convite] Conta criada; e-mail aceito pelo servidor. Isso não confirma entrega na caixa de entrada.");
+    } else if (data.success) {
+      console.warn("[convite] Conta criada; envio de e-mail não confirmado. Consulte os logs [email] no backend.");
+    } else {
+      console.warn("[convite] Cadastro não concluído.");
+    }
     return data;
   } catch (err: any) {
+    console.error("[convite] Falha na solicitação de cadastro; confira a resposta na aba Rede.");
     return { success: false, error: err.message };
   }
 }
