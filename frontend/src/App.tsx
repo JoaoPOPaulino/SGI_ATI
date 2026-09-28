@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/ContextoAutenticacao';
 import { ToastProvider } from './components/SistemaToast';
@@ -6,17 +6,17 @@ import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/RotaProtegida';
 import Layout from './components/Layout';
 
-import Login from './pages/Login';
-import Dashboard from './pages/Painel';
-import Inventario from './pages/Inventario';
-import Movimentacoes from './pages/Movimentacoes';
-import Manutencao from './pages/Manutencao';
-import Labin from './pages/Labin';
-import Perfil from './pages/Perfil';
-import Admin from './pages/Admin';
-import Emprestimos from './pages/Emprestimos';
-import ChangePassword from './pages/TrocarSenha';
-import NotFound from './pages/NaoEncontrado';
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Painel'));
+const Inventario = lazy(() => import('./pages/Inventario'));
+const Movimentacoes = lazy(() => import('./pages/Movimentacoes'));
+const Manutencao = lazy(() => import('./pages/Manutencao'));
+const Labin = lazy(() => import('./pages/Labin'));
+const Perfil = lazy(() => import('./pages/Perfil'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Emprestimos = lazy(() => import('./pages/Emprestimos'));
+const ChangePassword = lazy(() => import('./pages/TrocarSenha'));
+const NotFound = lazy(() => import('./pages/NaoEncontrado'));
 
 const App: React.FC = () => {
   return (
@@ -24,6 +24,7 @@ const App: React.FC = () => {
       <ToastProvider>
         <AuthProvider>
           <BrowserRouter>
+            <Suspense fallback={<div role="status" className="p-6 text-center">Carregando página...</div>}>
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/trocar-senha" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
@@ -46,6 +47,7 @@ const App: React.FC = () => {
 
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </BrowserRouter>
         </AuthProvider>
       </ToastProvider>

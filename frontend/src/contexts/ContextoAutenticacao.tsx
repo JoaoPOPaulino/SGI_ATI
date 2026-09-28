@@ -37,18 +37,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<Usuario | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  const [sessionError, setSessionError] = useState(false);
+  const [sessionAttempt, setSessionAttempt] = useState(0);
+
   useEffect(() => {
     let mounted = true;
 
     const initSession = async () => {
       try {
         setIsLoading(true);
+        setSessionError(false);
         const profile = await getMe();
-        if (mounted && profile) {
-          setUser(profile);
-        }
+        if (mounted) setUser(profile);
       } catch {
-        if (mounted) setUser(null);
+        if (mounted) setSessionError(true);
       } finally {
         if (mounted) setIsLoading(false);
       }
@@ -56,14 +58,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     initSession();
 
-    window.addEventListener("auth:unauthorized", () => {
-      setUser(null);
-    });
+    const onUnauthorized = () => { setUser(null); setSessionError(false); };
+    window.addEventListener("auth:unauthorized", onUnauthorized);
 
     return () => {
       mounted = false;
+      window.removeEventListener("auth:unauthorized", onUnauthorized);
     };
-  }, []);
+  }, [sessionAttempt]);
 
   const login = async (
     cpf: string,
@@ -140,6 +142,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const result = await deleteUserApi(userId);
     return result.success;
   };
+
+  if (isLoading) {
+    return <div role="status" className="min-h-screen flex flex-col items-center justify-center gap-3 p-6 text-center">
+      <p>Restaurando sua sessão...</p>
+      <p>Se o servidor estiver iniciando, isso pode levar alguns instantes.</p>
+    </div>;
+  }
+
+  if (sessionError) {
+    return <div role="alert" className="min-h-screen flex flex-col items-center justify-center gap-4 p-6 text-center">
+      <p>Não foi possível conectar ao servidor. Sua sessão foi mantida.</p>
+      <button className="px-4 py-2 rounded bg-primary text-white" onClick={() => { setIsLoading(true); setSessionAttempt(value => value + 1); }}>Tentar novamente</button>
+    </div>;
+  }
 
   return (
     <AuthContext.Provider

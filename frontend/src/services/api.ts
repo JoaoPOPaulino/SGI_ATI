@@ -1,9 +1,19 @@
 const API_URL = import.meta.env.DEV ? "http://localhost:3001/api" : "https://sgi-ati.onrender.com/api";
 
-let authToken: string | null = null;
+const TOKEN_KEY = "sgi.auth.token";
+function readStoredToken(): string | null {
+  try { return sessionStorage.getItem(TOKEN_KEY); } catch { return null; }
+}
+let authToken: string | null = readStoredToken();
 
 export function setToken(token: string | null) {
   authToken = token;
+  try {
+    if (token) sessionStorage.setItem(TOKEN_KEY, token);
+    else sessionStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // Navegadores com armazenamento bloqueado continuam funcionando em memória.
+  }
 }
 
 export function getToken(): string | null {
@@ -26,12 +36,13 @@ async function request<T>(
 
   const res = await fetch(`${API_URL}${path}`, {
     method,
+    ...(path === "/auth/me" ? { signal: AbortSignal.timeout(75000) } : {}),
     headers,
     body: body ? JSON.stringify(body) : undefined,
   });
 
   if (res.status === 401 && authToken) {
-    authToken = null;
+    setToken(null);
     window.dispatchEvent(new CustomEvent("auth:unauthorized"));
   }
 

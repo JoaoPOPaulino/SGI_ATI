@@ -1,4 +1,4 @@
-import { api, setToken } from "./api";
+import { api, setToken, getToken } from "./api";
 import type { Usuario } from "./types";
 
 interface LoginResponse {
@@ -63,6 +63,7 @@ export async function loginApi({ cpf, senha }: LoginParams): Promise<{
 }
 
 export async function getMe(): Promise<Usuario | null> {
+  if (!getToken()) return null;
   try {
     const data = await api.get<{ success: boolean; user: any }>("/auth/me");
     if (!data.success || !data.user) return null;
@@ -78,8 +79,9 @@ export async function getMe(): Promise<Usuario | null> {
       foto: data.user.foto || undefined,
       primeiro_acesso: data.user.primeiro_acesso,
     };
-  } catch {
-    return null;
+  } catch (error: unknown) {
+    if (!getToken()) return null;
+    throw error;
   }
 }
 
