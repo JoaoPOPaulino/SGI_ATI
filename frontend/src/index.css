@@ -209,35 +209,6 @@
     font-size: 10pt;
   }
 
-  /* Oculta tudo que estiver na página web de fundo */
-  body * {
-    visibility: hidden !important;
-  }
-
-  /* Torna visível estritamente o documento oficial de impressão */
-  .documento-oficial-print,
-  .documento-oficial-print * {
-    visibility: visible !important;
-  }
-
-  /* Posiciona o documento oficial no topo exato da página */
-  .documento-oficial-print {
-    position: absolute !important;
-    left: 0 !important;
-    top: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-    border: none !important;
-    background: #ffffff !important;
-    color: #000000 !important;
-    display: block !important;
-    overflow: visible !important;
-    z-index: 999999 !important;
-  }
-
   /* Oculta botões, barras de navegação e cabeçalhos web */
   header,
   nav,
@@ -246,7 +217,25 @@
   .print\:hidden,
   .no-print {
     display: none !important;
-    visibility: hidden !important;
+  }
+
+  /* Documento oficial exibido na folha A4 com nitidez */
+  .documento-oficial-print {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    overflow: visible !important;
+  }
+
+  .documento-oficial-print * {
+    color: #000000 !important;
   }
 
   /* Forçar quebras de página limpas e evitar corte de tabelas/quadros */

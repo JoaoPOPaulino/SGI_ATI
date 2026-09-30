@@ -42,8 +42,8 @@ export const ModalGuiaImpressao: React.FC<ModalGuiaImpressaoProps> = ({
   const sigRetirada = getSig("RETIRADA");
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fade-in print:p-0 print:bg-white print:static">
-      <div className="bg-white text-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8 my-auto overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:h-auto print:overflow-visible print:shadow-none print:border-none print:rounded-none documento-oficial-print">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fade-in print:static print:p-0 print:m-0 print:bg-white print:overflow-visible print:block print:w-full">
+      <div className="bg-white text-slate-900 w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 p-6 sm:p-8 my-auto overflow-hidden flex flex-col max-h-[92vh] print:max-h-none print:h-auto print:overflow-visible print:shadow-none print:border-none print:rounded-none print:p-0 print:m-0 print:block documento-oficial-print">
         
         {/* Barra de Ações Superior (Oculta na Impressão) */}
         <div className="flex items-center justify-between pb-4 mb-4 border-b border-slate-200 print:hidden">
