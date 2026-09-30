@@ -45,20 +45,27 @@ const Manutencao: React.FC = () => {
     const guias = allMovs.filter(m => m.tipo === 'ENVIAR_LAB');
 
     setMaintenanceItens(allItens.filter(i => {
-      if (i.status !== 'EM_MANUTENCAO') return false;
       const guia = guias.find(m => m.item_id === i.id);
-      if (!guia) return true;
-      if (guia.status_guia === 'ABERTA') return true;
-      if (guia.status_guia === 'EM_ANDAMENTO' && allLaudos.some(l => l.item_id === i.id && l.status_servico === 'FINALIZADO')) return true;
+      const temLaudoFinalizado = allLaudos.some(l => l.item_id === i.id && l.status_servico === 'FINALIZADO');
+
+      // Item em manutenção normal
+      if (i.status === 'EM_MANUTENCAO') return true;
+
+      // Item fisicamente no LABIN aguardando saída ou retirada
+      if (i.localizacao_atual?.includes('Laboratório') || i.localizacao_atual?.includes('LABIN')) {
+        if (guia && (guia.status_guia === 'ABERTA' || guia.status_guia === 'EM_ANDAMENTO')) return true;
+        if (temLaudoFinalizado && guia?.status_guia !== 'AGUARDANDO_RETIRADA') return true;
+      }
       return false;
     }));
+
     setAwaitingDecommissionItens(allItens.filter(i => i.status === 'AGUARDANDO_BAIXA'));
     setActiveItens(allItens.filter(i => {
       if (i.status !== 'EM_MANUTENCAO') return false;
       const guia = guias.find(m => m.item_id === i.id && m.tipo === 'ENVIAR_LAB');
       return guia && guia.status_guia === 'EM_ANDAMENTO';
     }));
-    setGuiasLab(allMovs.filter(m => m.tipo === 'ENVIAR_LAB'));
+    setGuiasLab(guias);
     setLaudosList(allLaudos);
     setLoading(false);
   };
@@ -67,9 +74,9 @@ const Manutencao: React.FC = () => {
   useEffect(() => { setPaginaManutencao(1); }, [maintenanceItens.length]);
 
   const canModify = hasPermission('TECNICO');
-  const isSupervisorOrAdmin = hasPermission('SUPERVISOR');
-  const isLab = user?.polo === 'Laboratório';
-  const canInteract = isLab && hasPermission('TECNICO');
+  const isSupervisorOrAdmin = hasPermission('SUPERVISOR') || user?.perfil === 'ADMIN';
+  const isLab = user?.polo === 'Laboratório' || isSupervisorOrAdmin;
+  const canInteract = hasPermission('TECNICO') || isSupervisorOrAdmin;
 
   if (!isLab && !isSupervisorOrAdmin) return <Navigate to="/" replace />;
 
@@ -86,7 +93,7 @@ const Manutencao: React.FC = () => {
     laudosList.some(l => l.item_id === itemId && l.status_servico === 'FINALIZADO');
 
   const handleApproveEntry = async () => {
-    if (!approveEntryTarget || !isLab) return;
+    if (!approveEntryTarget) return;
     if (!assinaturaEntrada) { toast("error", "Realize a assinatura no canvas."); return; }
     const item = approveEntryTarget;
     const guia = getGuiaLab(item.id);
@@ -99,6 +106,10 @@ const Manutencao: React.FC = () => {
         patrimonio: item.numero_patrimonio, numero_serie: item.numero_serie, chamado: guia.chamado,
       });
       if (!sig) { toast("error", "Erro ao criar assinatura. Verifique a conexão."); return; }
+      
+      // Atualiza status da guia para EM_ANDAMENTO
+      await updateMovimentacao(guia.id, { status_guia: 'EM_ANDAMENTO' });
+
       setApproveEntryTarget(null); setAssinaturaEntrada("");
       toast("success", "Entrada aprovada! Inicie o laudo técnico no LABIN.");
       await loadData();
@@ -106,7 +117,7 @@ const Manutencao: React.FC = () => {
   };
 
   const handleApproveExit = async () => {
-    if (!approveExitTarget || !isLab) return;
+    if (!approveExitTarget) return;
     if (!assinaturaSaida) { toast("error", "Realize a assinatura no canvas."); return; }
     const item = approveExitTarget;
     const guia = getGuiaLab(item.id);
@@ -119,8 +130,19 @@ const Manutencao: React.FC = () => {
         patrimonio: item.numero_patrimonio, numero_serie: item.numero_serie, chamado: guia.chamado,
       });
       if (!sig) { toast("error", "Erro ao criar assinatura. Verifique a conexão."); return; }
+
+      // Atualiza status da guia para AGUARDANDO_RETIRADA
+      await updateMovimentacao(guia.id, { status_guia: 'AGUARDANDO_RETIRADA' });
+
+      // Atualiza o item para EM_ESTOQUE mantendo no LABIN para retirada
+      await updateItem(item.id, {
+        status: 'EM_ESTOQUE',
+        localizacao_atual: 'Laboratório (LABIN)',
+        updated_at: new Date().toISOString()
+      });
+
       setApproveExitTarget(null); setAssinaturaSaida("");
-      toast("success", "Saída aprovada! Item disponível para retirada.");
+      toast("success", "Saída aprovada! Item liberado no LABIN para retirada.");
       await loadData();
     } catch { toast("error", "Erro ao aprovar saída."); }
   };
@@ -224,12 +246,17 @@ const Manutencao: React.FC = () => {
                             <LogIn size={10} />Aprovar Entrada
                           </button>
                         )}
-                        {canInteract && laudoOk && (
+                        {canInteract && laudoOk && (!guia || guia.status_guia !== 'AGUARDANDO_RETIRADA') && (
                           <button onClick={() => { setApproveExitTarget(item); setAssinaturaSaida(""); }} className={btnSm + ' bg-violet-50 hover:bg-violet-100 border border-violet-200 text-violet-700'}>
                             <LogOut size={10} />Aprovar Saída
                           </button>
                         )}
-                        {!canInteract && !guiaAberta && !laudoOk && isLab && (
+                        {guia && guia.status_guia === 'AGUARDANDO_RETIRADA' && (
+                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-1 rounded-lg shrink-0">
+                            Aguardando Retirada
+                          </span>
+                        )}
+                        {!guiaAberta && !laudoOk && (
                           <span className="text-[10px] font-bold text-primary bg-primary/5 border border-primary/10 px-2 py-1 rounded-lg shrink-0">Em Reparo — LABIN</span>
                         )}
                       </div>
