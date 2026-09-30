@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/ContextoAutenticacao";
 import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao, AssinaturaGuia } from "../services/types";
 import { fetchAllItens, updateItem } from "../services/itensService";
 import { createMovimentacao, fetchMovimentacoesByItemId } from "../services/movimentacoesService";
-import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X, Clock, MapPin, ArrowRight, Monitor } from "lucide-react";
+import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X, Clock, MapPin, ArrowRight, Monitor, ChevronDown, ChevronUp } from "lucide-react";
 import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
@@ -41,6 +41,8 @@ const Movimentacoes: React.FC = () => {
   const [itemSelecionado, setItemSelecionado] = useState<Item | null>(null);
   const [historicoMovs, setHistoricoMovs] = useState<Movimentacao[]>([]);
   const [assinaturasPorMov, setAssinaturasPorMov] = useState<Record<string, AssinaturaGuia[]>>({});
+  const [expandedMovId, setExpandedMovId] = useState<string | null>(null);
+  const [hoveredMovId, setHoveredMovId] = useState<string | null>(null);
 
   const [formTipo, setFormTipo] = useState<TipoMovimentacao>("MANUTENCAO");
   const [formChamado, setFormChamado] = useState("");
@@ -60,7 +62,6 @@ const Movimentacoes: React.FC = () => {
   const [signingAssinatura, setSigningAssinatura] = useState("");
   const [signingObservacao, setSigningObservacao] = useState("");
 
-
   const isTecnicoOrHigher = hasPermission("TECNICO");
 
   const loadItens = async () => {
@@ -73,9 +74,22 @@ const Movimentacoes: React.FC = () => {
   const carregarHistorico = async (item: Item) => {
     setItemSelecionado(item);
     const movs = await fetchMovimentacoesByItemId(item.id);
-    setHistoricoMovs(movs);
+    
+    // Deduplica registros idênticos por ID ou por (tipo + data truncada + observacao + origem + destino)
+    const uniqueMovs = movs.filter((m, index, self) => 
+      index === self.findIndex(t => 
+        t.id === m.id || 
+        (t.tipo === m.tipo && 
+         t.origem === m.origem && 
+         t.destino === m.destino && 
+         t.observacao === m.observacao && 
+         Math.abs(new Date(t.data_movimentacao).getTime() - new Date(m.data_movimentacao).getTime()) < 120000)
+      )
+    );
+
+    setHistoricoMovs(uniqueMovs);
     const sigsMap: Record<string, AssinaturaGuia[]> = {};
-    for (const m of movs) {
+    for (const m of uniqueMovs) {
       sigsMap[m.id] = await fetchAssinaturasGuia(m.id);
     }
     setAssinaturasPorMov(sigsMap);
@@ -331,17 +345,28 @@ const Movimentacoes: React.FC = () => {
                     <p className="text-xs">Nenhuma movimentação registrada para este equipamento.</p>
                   </div>
                 ) : (
-                  <div className="relative pl-5 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-outline-variant/30">
+                  <div className="relative pl-5 space-y-3 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-outline-variant/30">
                     {historicoMovs.map((mov) => {
                       const sigs = assinaturasPorMov[mov.id] || [];
+                      const isExpanded = expandedMovId === mov.id || hoveredMovId === mov.id;
 
                       return (
-                        <div key={mov.id} className="relative group">
+                        <div
+                          key={mov.id}
+                          className="relative group cursor-pointer"
+                          onMouseEnter={() => setHoveredMovId(mov.id)}
+                          onMouseLeave={() => setHoveredMovId(null)}
+                          onClick={() => setExpandedMovId(prev => prev === mov.id ? null : mov.id)}
+                        >
                           {/* Ponto sutil da timeline */}
-                          <div className="absolute -left-5 top-4 w-2.5 h-2.5 rounded-full bg-white border-2 border-primary group-hover:scale-125 transition-transform" />
+                          <div className={`absolute -left-5 top-3.5 w-2.5 h-2.5 rounded-full border-2 transition-all ${
+                            isExpanded ? "bg-primary border-primary scale-125" : "bg-white border-primary"
+                          }`} />
 
-                          <div className="bg-surface rounded-xl border border-outline-variant/15 p-4 sm:p-5 hover:border-outline-variant/40 transition-colors space-y-3">
-                            {/* Linha 1: Metadados e Ação */}
+                          <div className={`bg-surface rounded-xl border p-3.5 sm:p-4 transition-all duration-200 ${
+                            isExpanded ? "border-primary/40 shadow-xs" : "border-outline-variant/15 hover:border-outline-variant/40"
+                          }`}>
+                            {/* Linha Principal Resumida (Sempre Visível) */}
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
                               <div className="flex items-center gap-2 flex-wrap">
                                 <span className="font-bold text-on-surface">
@@ -355,56 +380,70 @@ const Movimentacoes: React.FC = () => {
                                     #{mov.chamado}
                                   </span>
                                 )}
+                                <span className="text-[11px] text-outline font-medium">
+                                  {mov.origem} → <strong className="text-slate-900">{mov.destino}</strong>
+                                </span>
                                 <span className="text-[10px] text-outline uppercase font-semibold">
                                   • {mov.status_guia || "ABERTA"}
                                 </span>
                               </div>
 
-                              <button
-                                type="button"
-                                onClick={() => abrirModalImpressao(mov)}
-                                className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary-container font-semibold transition-colors cursor-pointer self-start sm:self-auto"
-                              >
-                                <Printer size={13} />
-                                <span>Imprimir Guia</span>
-                              </button>
-                            </div>
-
-                            {/* Linha 2: Trajeto limpo */}
-                            <div className="text-xs text-on-surface flex items-center gap-1.5 flex-wrap">
-                              <span className="text-outline">De:</span>
-                              <span className="font-medium text-slate-800">{mov.origem}</span>
-                              <span className="text-outline font-bold">→</span>
-                              <span className="text-outline">Para:</span>
-                              <span className="font-medium text-slate-800">{mov.destino}</span>
-                              <span className="text-outline ml-2 text-[11px]">(Emitente: {mov.solicitante_nome})</span>
-                            </div>
-
-                            {/* Linha 3: Observação se houver */}
-                            {mov.observacao && (
-                              <p className="text-xs text-outline italic">
-                                "{mov.observacao}"
-                              </p>
-                            )}
-
-                            {/* Linha 4: Assinaturas em formato minimalista */}
-                            {sigs.length > 0 && (
-                              <div className="pt-2 border-t border-outline-variant/10 flex flex-wrap gap-2 text-[11px]">
-                                {sigs.map((a) => (
-                                  <div
-                                    key={a.id}
-                                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container rounded-lg text-outline"
-                                  >
-                                    <span className="text-emerald-700 font-bold">✓</span>
-                                    <span className="font-semibold text-on-surface">{ASSINATURA_LABEL[a.tipo_assinatura] || a.tipo_assinatura}:</span>
-                                    <span>{a.assinante_nome}</span>
-                                    <span className="text-slate-400 text-[10px]">
-                                      ({new Date(a.data_assinatura).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})
-                                    </span>
-                                  </div>
-                                ))}
+                              <div className="flex items-center gap-3 self-start sm:self-auto shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={(e) => { e.stopPropagation(); abrirModalImpressao(mov); }}
+                                  className="inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary-container font-semibold transition-colors cursor-pointer"
+                                  title="Imprimir Guia Oficial"
+                                >
+                                  <Printer size={13} />
+                                  <span>Imprimir Guia</span>
+                                </button>
+                                <span className="text-outline transition-transform duration-200">
+                                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                                </span>
                               </div>
-                            )}
+                            </div>
+
+                            {/* Detalhes Expandidos (Revelam no Hover ou Clique) */}
+                            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${
+                              isExpanded ? "max-h-60 opacity-100 mt-3 pt-3 border-t border-outline-variant/10 space-y-2.5" : "max-h-0 opacity-0"
+                            }`}>
+                              <div className="text-xs text-outline flex items-center justify-between gap-2 flex-wrap">
+                                <span>Emitente da Guia: <strong className="text-on-surface font-semibold">{mov.solicitante_nome}</strong></span>
+                                {mov.aprovador_nome && (
+                                  <span>Aprovador: <strong className="text-on-surface font-semibold">{mov.aprovador_nome}</strong></span>
+                                )}
+                              </div>
+
+                              {mov.observacao && (
+                                <p className="text-xs text-outline italic bg-surface-container-low p-2 rounded-lg">
+                                  "{mov.observacao}"
+                                </p>
+                              )}
+
+                              {sigs.length > 0 && (
+                                <div className="space-y-1.5 pt-1">
+                                  <span className="text-[10px] font-bold text-outline uppercase tracking-wider block">
+                                    Assinaturas Registradas:
+                                  </span>
+                                  <div className="flex flex-wrap gap-2 text-[11px]">
+                                    {sigs.map((a) => (
+                                      <div
+                                        key={a.id}
+                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container rounded-lg text-outline"
+                                      >
+                                        <span className="text-emerald-700 font-bold">✓</span>
+                                        <span className="font-semibold text-on-surface">{ASSINATURA_LABEL[a.tipo_assinatura] || a.tipo_assinatura}:</span>
+                                        <span>{a.assinante_nome}</span>
+                                        <span className="text-slate-400 text-[10px]">
+                                          ({new Date(a.data_assinatura).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );
