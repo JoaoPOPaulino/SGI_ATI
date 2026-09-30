@@ -24,7 +24,8 @@ export type StatusGuia =
   | "ABERTA"
   | "EM_ANDAMENTO"
   | "AGUARDANDO_RETIRADA"
-  | "ENCERRADA";
+  | "ENCERRADA"
+  | "FINALIZADA";
 
 export interface Usuario {
   id: string;

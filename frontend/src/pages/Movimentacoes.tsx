@@ -2,8 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useAuth } from "../contexts/ContextoAutenticacao";
 import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao, AssinaturaGuia } from "../services/types";
 import { fetchAllItens, updateItem } from "../services/itensService";
-import { createMovimentacao, fetchMovimentacoesByItemId } from "../services/movimentacoesService";
-import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X, Clock, MapPin, ArrowRight, Monitor, ChevronDown, ChevronUp } from "lucide-react";
+import { createMovimentacao, updateMovimentacao, fetchMovimentacoesByItemId } from "../services/movimentacoesService";
+import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X, Clock, MapPin, ArrowRight, Monitor, ChevronDown, ChevronUp, PenTool, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
@@ -185,13 +185,16 @@ const Movimentacoes: React.FC = () => {
       patrimonio: signingMov.item_patrimonio, numero_serie: signingMov.item_numero_serie,
       chamado: signingMov.chamado, observacao: signingObservacao.trim() || undefined,
     });
-    if (!saved) { toast("error", "Erro ao salvar assinatura."); return; }
+    // Se for assinatura de recebimento, a movimentação foi concluída com sucesso
+    const novoStatusGuia = signingTipo === "RECEBIMENTO" ? "FINALIZADA" : (signingMov.status_guia || "EM_ANDAMENTO");
+    await updateMovimentacao(signingMov.id, { status_guia: novoStatusGuia });
 
-    // Atualiza cache de assinaturas local
+    // Atualiza cache de assinaturas e lista local
     const sigsAtualizadas = await fetchAssinaturasGuia(signingMov.id);
     setAssinaturasPorMov(prev => ({ ...prev, [signingMov.id]: sigsAtualizadas }));
+    setHistoricoMovs(prev => prev.map(m => m.id === signingMov.id ? { ...m, status_guia: novoStatusGuia } : m));
 
-    toast("success", "Assinatura registrada!");
+    toast("success", "Assinatura registrada com sucesso!");
     setSigningMov(null);
     await loadItens();
   };
@@ -383,9 +386,27 @@ const Movimentacoes: React.FC = () => {
                                 <span className="text-[11px] text-outline font-medium">
                                   {mov.origem} → <strong className="text-slate-900">{mov.destino}</strong>
                                 </span>
-                                <span className="text-[10px] text-outline uppercase font-semibold">
-                                  • {mov.status_guia || "ABERTA"}
-                                </span>
+                                {(() => {
+                                  const hasRecebimento = sigs.some(s => s.tipo_assinatura === "RECEBIMENTO");
+                                  const statusExibicao = (hasRecebimento || mov.status_guia === "FINALIZADA" || mov.status_guia === "ENCERRADA")
+                                    ? "FINALIZADA"
+                                    : (mov.status_guia || "ABERTA");
+
+                                  const statusBadgeClass = 
+                                    statusExibicao === "FINALIZADA" 
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                                      : statusExibicao === "AGUARDANDO_RETIRADA"
+                                      ? "bg-purple-50 text-purple-700 border-purple-200"
+                                      : statusExibicao === "EM_ANDAMENTO"
+                                      ? "bg-blue-50 text-blue-700 border-blue-200"
+                                      : "bg-slate-100 text-slate-700 border-slate-200";
+
+                                  return (
+                                    <span className={`text-[9px] px-2 py-0.5 rounded-full border uppercase font-bold tracking-wider ${statusBadgeClass}`}>
+                                      {statusExibicao.replace("_", " ")}
+                                    </span>
+                                  );
+                                })()}
                               </div>
 
                               <div className="flex items-center gap-3 self-start sm:self-auto shrink-0">
@@ -405,39 +426,79 @@ const Movimentacoes: React.FC = () => {
                             </div>
 
                             {/* Detalhes Expandidos (Revelam no Hover ou Clique) */}
-                            <div className={`overflow-hidden transition-all duration-200 ease-in-out ${
-                              isExpanded ? "max-h-60 opacity-100 mt-3 pt-3 border-t border-outline-variant/10 space-y-2.5" : "max-h-0 opacity-0"
+                            <div className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                              isExpanded ? "max-h-[800px] opacity-100 mt-3 pt-3 border-t border-outline-variant/10 space-y-3" : "max-h-0 opacity-0 pointer-events-none"
                             }`}>
                               <div className="text-xs text-outline flex items-center justify-between gap-2 flex-wrap">
                                 <span>Emitente da Guia: <strong className="text-on-surface font-semibold">{mov.solicitante_nome}</strong></span>
                                 {mov.aprovador_nome && (
                                   <span>Aprovador: <strong className="text-on-surface font-semibold">{mov.aprovador_nome}</strong></span>
                                 )}
+                                {!sigs.some(s => s.tipo_assinatura === "RECEBIMENTO") && mov.tipo !== "BAIXA" && (
+                                  <button
+                                    type="button"
+                                    onClick={(e) => { e.stopPropagation(); abrirAssinatura(mov, "RECEBIMENTO"); }}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-2xs transition-colors cursor-pointer ml-auto"
+                                  >
+                                    <PenTool size={12} />
+                                    <span>Assinar Recebimento</span>
+                                  </button>
+                                )}
                               </div>
 
                               {mov.observacao && (
-                                <p className="text-xs text-outline italic bg-surface-container-low p-2 rounded-lg">
+                                <p className="text-xs text-outline italic bg-surface-container-low p-2.5 rounded-lg border border-outline-variant/10">
                                   "{mov.observacao}"
                                 </p>
                               )}
 
                               {sigs.length > 0 && (
-                                <div className="space-y-1.5 pt-1">
-                                  <span className="text-[10px] font-bold text-outline uppercase tracking-wider block">
+                                <div className="space-y-2 pt-1">
+                                  <span className="text-[10px] font-black text-outline uppercase tracking-wider block">
                                     Assinaturas Registradas:
                                   </span>
-                                  <div className="flex flex-wrap gap-2 text-[11px]">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
                                     {sigs.map((a) => (
                                       <div
                                         key={a.id}
-                                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-surface-container rounded-lg text-outline"
+                                        className="p-3 bg-surface-container-lowest border border-outline-variant/20 rounded-xl space-y-2 shadow-2xs"
                                       >
-                                        <span className="text-emerald-700 font-bold">✓</span>
-                                        <span className="font-semibold text-on-surface">{ASSINATURA_LABEL[a.tipo_assinatura] || a.tipo_assinatura}:</span>
-                                        <span>{a.assinante_nome}</span>
-                                        <span className="text-slate-400 text-[10px]">
-                                          ({new Date(a.data_assinatura).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })})
-                                        </span>
+                                        <div className="flex items-center justify-between gap-1 border-b border-outline-variant/10 pb-1.5">
+                                          <span className="text-[10px] font-bold text-primary flex items-center gap-1">
+                                            <CheckCircle2 size={12} className="text-emerald-600" />
+                                            {ASSINATURA_LABEL[a.tipo_assinatura] || a.tipo_assinatura}
+                                          </span>
+                                          <span className="text-[9px] text-slate-400 font-mono">
+                                            {new Date(a.data_assinatura).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
+                                          </span>
+                                        </div>
+
+                                        <div>
+                                          <p className="text-xs font-bold text-on-surface truncate">{a.assinante_nome}</p>
+                                          {a.assinante_cpf && (
+                                            <p className="text-[10px] text-outline">CPF: {a.assinante_cpf}</p>
+                                          )}
+                                        </div>
+
+                                        {/* Imagem da Assinatura / Rubrica Digital */}
+                                        {a.assinatura_base64 ? (
+                                          <div className="bg-white border border-slate-200/80 rounded-lg p-1.5 flex flex-col items-center justify-center">
+                                            <img
+                                              src={a.assinatura_base64}
+                                              alt={`Assinatura ${a.assinante_nome}`}
+                                              className="h-12 max-w-full object-contain filter contrast-125"
+                                            />
+                                            <span className="text-[8px] font-semibold text-slate-400 uppercase tracking-wider mt-0.5">
+                                              Rubrica Digital
+                                            </span>
+                                          </div>
+                                        ) : (
+                                          <div className="bg-surface-container-low border border-outline-variant/10 rounded-lg p-2 text-center">
+                                            <span className="text-[9px] text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                                              Autenticado no Sistema
+                                            </span>
+                                          </div>
+                                        )}
                                       </div>
                                     ))}
                                   </div>
