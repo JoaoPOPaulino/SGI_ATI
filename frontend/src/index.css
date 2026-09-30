@@ -205,8 +205,20 @@
     padding: 0 !important;
     width: 100% !important;
     height: auto !important;
-    overflow: visible !important;
     font-size: 10pt;
+  }
+
+  /* Oculta TODA a aplicação e páginas web comuns */
+  #root {
+    display: none !important;
+  }
+
+  /* Exibe exclusivamente a folha do portal de impressão oficial */
+  #print-root {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   /* Oculta botões, barras de navegação e cabeçalhos web */

@@ -225,7 +225,7 @@ const Movimentacoes: React.FC = () => {
   };
 
   return (
-    <div className={`space-y-6 animate-fade-in text-on-surface font-body ${guiaParaImpressao ? "print:hidden" : ""}`}>
+    <div className="space-y-6 animate-fade-in text-on-surface font-body">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-primary">Movimentações e Guias</h1>
