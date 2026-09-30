@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/ContextoAutenticacao";
 import type { Item, Movimentacao, TipoAssinaturaGuia, TipoMovimentacao, AssinaturaGuia } from "../services/types";
 import { fetchAllItens, updateItem } from "../services/itensService";
 import { createMovimentacao, fetchMovimentacoesByItemId } from "../services/movimentacoesService";
-import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X } from "lucide-react";
+import { ArrowLeftRight, Download, FileText, Printer, Search, Wrench, X, Clock, MapPin, ArrowRight, Monitor } from "lucide-react";
 import { exportToExcel } from "../services/utilidades";
 import Paginacao from "../components/Paginacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
@@ -281,9 +281,14 @@ const Movimentacoes: React.FC = () => {
         <div className="space-y-6">
           <div className="bg-surface-container-lowest rounded-2xl border border-outline-variant/10 p-6 shadow-sm">
             <div className="flex items-center justify-between mb-5 border-b border-outline-variant/10 pb-3">
-              <h2 className="text-sm font-bold text-primary flex items-center gap-2"><Search size={18}/>Consultar Histórico do Equipamento</h2>
+              <div>
+                <h2 className="text-sm font-bold text-primary flex items-center gap-2"><Search size={18}/>Consultar Histórico do Equipamento</h2>
+                <p className="text-[11px] text-outline mt-0.5">Visualize a trajetória cronológica completa e os termos deste equipamento.</p>
+              </div>
               {itemSelecionado && (
-                <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline text-primary font-bold text-[10px] rounded-lg cursor-pointer"><Download size={12}/>Exportar Excel</button>
+                <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline text-primary font-bold text-[10px] rounded-lg cursor-pointer hover:bg-surface-container transition-all">
+                  <Download size={12}/>Exportar Excel
+                </button>
               )}
             </div>
 
@@ -292,77 +297,183 @@ const Movimentacoes: React.FC = () => {
             </div>
 
             {itemSelecionado ? (
-              <div className="space-y-4">
-                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl flex items-center justify-between flex-wrap gap-2">
-                  <div>
-                    <p className="text-xs font-bold text-on-surface">{itemSelecionado.nome}</p>
-                    <p className="text-[10px] text-outline mt-0.5">Pat: {itemSelecionado.numero_patrimonio || "N/A"} | S/N: {itemSelecionado.numero_serie || "N/A"} | Status: {itemSelecionado.status}</p>
+              <div className="space-y-6">
+                {/* HERO CARD DO EQUIPAMENTO */}
+                <div className="bg-gradient-to-br from-surface-container to-surface-container-low border border-outline-variant/30 rounded-2xl p-5 shadow-sm">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-3 bg-primary/10 text-primary rounded-xl">
+                        <Monitor size={28} />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="text-base font-black text-on-surface">{itemSelecionado.nome}</h3>
+                          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+                            itemSelecionado.status === "ATIVO" || itemSelecionado.status === "EM_ESTOQUE"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : itemSelecionado.status === "EM_MANUTENCAO"
+                              ? "bg-amber-50 text-amber-700 border border-amber-200"
+                              : "bg-slate-100 text-slate-700 border border-slate-200"
+                          }`}>
+                            {itemSelecionado.status.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-outline font-semibold mt-1 flex-wrap">
+                          <span>Patrimônio: <strong className="text-on-surface font-mono bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">{itemSelecionado.numero_patrimonio || "NÃO PATRIMONIADO"}</strong></span>
+                          <span>S/N: <strong className="text-on-surface font-mono">{itemSelecionado.numero_serie || "N/A"}</strong></span>
+                          {itemSelecionado.categoria && <span>Categoria: <strong className="text-on-surface uppercase">{itemSelecionado.categoria}</strong></span>}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-surface border border-outline-variant/30 rounded-xl p-3 flex items-center gap-3 shadow-xs">
+                      <div className="p-2 bg-blue-50 text-blue-800 rounded-lg">
+                        <MapPin size={18} />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-black uppercase text-outline block">Localização Atual</span>
+                        <span className="font-extrabold text-xs text-primary">{itemSelecionado.localizacao_atual}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
+                {/* TIMELINE DE MOVIMENTAÇÕES */}
                 {historicoMovs.length === 0 ? (
-                  <p className="text-xs text-outline text-center py-8">Nenhuma movimentação registrada para este equipamento.</p>
+                  <div className="text-center py-10 bg-surface rounded-2xl border border-dashed border-outline-variant/30">
+                    <p className="text-xs text-outline font-bold">Nenhuma movimentação registrada para este equipamento.</p>
+                  </div>
                 ) : (
-                  <div className="space-y-3">
-                    {historicoMovs.map((mov) => {
-                      const sigs = assinaturasPorMov[mov.id] || [];
-                      return (
-                        <div key={mov.id} className="bg-surface border border-outline-variant/10 rounded-xl p-4 transition-all hover:border-primary/20">
-                          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[10px] font-bold text-outline">{new Date(mov.data_movimentacao).toLocaleDateString("pt-BR")}</span>
-                              <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">{TIPO_MOV_LABEL[mov.tipo] || mov.tipo}</span>
-                              <span className="text-[10px] font-semibold text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">{mov.status_guia || "ABERTA"}</span>
-                              {mov.chamado && <span className="text-[10px] text-outline">Chamado: {mov.chamado}</span>}
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => abrirModalImpressao(mov)}
-                                className="flex items-center gap-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg shadow-sm transition-all cursor-pointer"
-                                title="Visualizar e Imprimir Documento Formal"
-                              >
-                                <Printer size={12} />
-                                Imprimir Guia Oficial
-                              </button>
-                            </div>
-                          </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="text-xs font-black uppercase tracking-wider text-outline flex items-center gap-1.5">
+                        <Clock size={14} />
+                        Linha do Tempo de Movimentações ({historicoMovs.length})
+                      </h4>
+                    </div>
 
-                          <div className="flex items-center gap-1.5 text-[10px] font-semibold text-on-surface-variant mb-2">
-                            <ArrowLeftRight size={10} className="text-outline" />
-                            <span className="truncate">{mov.origem} → {mov.destino}</span>
-                          </div>
-                          {mov.observacao && <p className="text-[9px] text-outline mb-2">{mov.observacao}</p>}
+                    <div className="relative pl-6 sm:pl-8 space-y-6 before:absolute before:left-3 sm:before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+                      {historicoMovs.map((mov, idx) => {
+                        const sigs = assinaturasPorMov[mov.id] || [];
+                        const isLab = mov.tipo === "ENVIAR_LAB" || mov.destino.includes("Laboratório") || mov.destino.includes("LABIN");
+                        const isUltimo = idx === 0;
 
-                          {sigs.length > 0 && (
-                            <div className="border-t border-outline-variant/10 pt-3 mt-2">
-                              <p className="text-[9px] font-black text-outline uppercase mb-2">Assinaturas Registradas</p>
-                              <div className="space-y-1.5">
-                                {sigs.map((a, i) => (
-                                  <div key={a.id} className="flex items-start gap-2 text-[9px]">
-                                    <span className="font-black text-primary">{i + 1}.</span>
-                                    <div>
-                                      <span className="font-bold text-on-surface">{ASSINATURA_LABEL[a.tipo_assinatura]}</span>
-                                      <span className="text-outline"> — {a.assinante_nome}</span>
-                                      <span className="text-outline ml-1">{new Date(a.data_assinatura).toLocaleString("pt-BR")}</span>
-                                      {a.observacao && <p className="text-outline mt-0.5">{a.observacao}</p>}
-                                      {a.assinatura_base64 && a.assinatura_base64.length > 20 && (
-                                        <img src={a.assinatura_base64} alt="Assinatura" className="mt-1 h-10 object-contain bg-white border border-outline-variant/20 rounded" />
-                                      )}
-                                    </div>
-                                  </div>
-                                ))}
+                        return (
+                          <div key={mov.id} className="relative group">
+                            {/* Marcador no nó da linha do tempo */}
+                            <div className={`absolute -left-6 sm:-left-8 top-3.5 w-6 h-6 sm:w-8 sm:h-8 rounded-full border-2 bg-white flex items-center justify-center shadow-xs transition-all ${
+                              isUltimo
+                                ? "border-primary bg-primary text-white ring-4 ring-primary/10"
+                                : isLab
+                                ? "border-amber-500 text-amber-600 bg-amber-50"
+                                : "border-slate-300 text-slate-500 bg-slate-50"
+                            }`}>
+                              {isLab ? <Wrench size={14} /> : <ArrowLeftRight size={14} />}
+                            </div>
+
+                            {/* Card da Movimentação */}
+                            <div className="bg-surface rounded-2xl border border-outline-variant/20 p-5 shadow-xs transition-all hover:border-primary/30 hover:shadow-md">
+                              {/* Header do Card */}
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-outline-variant/10">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="text-xs font-black text-on-surface flex items-center gap-1.5">
+                                    <Clock size={13} className="text-outline" />
+                                    {new Date(mov.data_movimentacao).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                                  </span>
+                                  <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                                    isLab ? "bg-amber-100 text-amber-900 border border-amber-300" : "bg-primary/10 text-primary border border-primary/20"
+                                  }`}>
+                                    {TIPO_MOV_LABEL[mov.tipo] || mov.tipo}
+                                  </span>
+                                  {mov.chamado && (
+                                    <span className="px-2 py-0.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-md text-[10px] font-bold font-mono">
+                                      Chamado #{mov.chamado}
+                                    </span>
+                                  )}
+                                  <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-[10px] font-bold uppercase">
+                                    {mov.status_guia || "ABERTA"}
+                                  </span>
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => abrirModalImpressao(mov)}
+                                  className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-[11px] font-bold rounded-xl flex items-center gap-1.5 shadow-sm transition-all cursor-pointer self-start sm:self-auto"
+                                  title="Visualizar e Imprimir Guia Oficial"
+                                >
+                                  <Printer size={13} />
+                                  Imprimir Guia Oficial
+                                </button>
                               </div>
+
+                              {/* Trajeto Rota Origem ──➔ Destino */}
+                              <div className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-surface-container-low/50 rounded-xl px-4 my-3 border border-outline-variant/10">
+                                <div className="flex items-center gap-2 text-xs flex-wrap">
+                                  <div className="flex items-center gap-1.5 font-bold text-slate-700">
+                                    <MapPin size={14} className="text-red-500 shrink-0" />
+                                    <span>{mov.origem}</span>
+                                  </div>
+                                  <ArrowRight size={14} className="text-primary font-bold shrink-0 mx-1" />
+                                  <div className="flex items-center gap-1.5 font-bold text-primary">
+                                    <MapPin size={14} className="text-emerald-600 shrink-0" />
+                                    <span>{mov.destino}</span>
+                                  </div>
+                                </div>
+                                <div className="text-[11px] text-outline font-semibold">
+                                  Emitente: <strong className="text-on-surface">{mov.solicitante_nome}</strong>
+                                </div>
+                              </div>
+
+                              {/* Observação / Motivo */}
+                              {mov.observacao && (
+                                <div className="mb-3 p-3 bg-surface-container rounded-xl text-xs text-on-surface-variant italic border-l-3 border-primary/40">
+                                  "{mov.observacao}"
+                                </div>
+                              )}
+
+                              {/* Esteira de Assinaturas Registradas */}
+                              {sigs.length > 0 && (
+                                <div className="pt-3 border-t border-outline-variant/10">
+                                  <span className="text-[10px] font-black text-outline uppercase tracking-wider block mb-2">
+                                    Assinaturas e Protocolos ({sigs.length})
+                                  </span>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                                    {sigs.map((a, i) => (
+                                      <div key={a.id} className="bg-surface border border-outline-variant/20 rounded-xl p-2.5 flex items-start gap-2 text-xs shadow-2xs">
+                                        <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-black text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                                          {i + 1}
+                                        </span>
+                                        <div className="min-w-0 flex-1">
+                                          <span className="font-black text-on-surface block text-[11px]">
+                                            {ASSINATURA_LABEL[a.tipo_assinatura] || a.tipo_assinatura}
+                                          </span>
+                                          <span className="text-[10px] text-outline block truncate">
+                                            {a.assinante_nome} {a.assinante_cpf ? `(${a.assinante_cpf})` : ""}
+                                          </span>
+                                          <span className="text-[9px] text-slate-400 block font-mono">
+                                            {new Date(a.data_assinatura).toLocaleString("pt-BR")}
+                                          </span>
+                                          {a.assinatura_base64 && a.assinatura_base64.length > 20 && (
+                                            <div className="mt-1.5 p-1 bg-white border border-slate-200 rounded">
+                                              <img src={a.assinatura_base64} alt="Assinatura" className="h-8 max-w-full object-contain" />
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="text-center text-outline py-12"><FileText size={36} className="mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Busque um equipamento para ver seu histórico de movimentações.</p></div>
+              <div className="text-center text-outline py-12"><FileText size={36} className="mx-auto mb-2 opacity-50"/><p className="text-xs font-bold">Busque um equipamento para ver sua linha do tempo de movimentações.</p></div>
             )}
           </div>
         </div>

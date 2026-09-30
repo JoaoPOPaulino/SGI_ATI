@@ -153,25 +153,13 @@ const Labin: React.FC = () => {
           return;
         }
 
+        // O equipamento foi reparado com sucesso. Ele agora está liberado para uso,
+        // mas permanece fisicamente no LABIN até que alguém emita a guia de retirada/devolução para o destino.
         await updateItem(item.id, {
+          status: 'EM_ESTOQUE',
           condicao: formCondicaoLaudo || 'USADO',
+          localizacao_atual: 'Laboratório (LABIN)',
           updated_at: now
-        });
-
-        await createMovimentacao({
-          id: crypto.randomUUID(),
-          item_id: item.id,
-          item_nome: item.nome,
-          tipo: 'CHECK_IN',
-          origem: item.localizacao_atual,
-          destino: 'LABIN',
-          solicitante_id: user?.id || 'usr-anon',
-          solicitante_nome: user?.nome || 'Anônimo',
-          status_aprovacao: 'APROVADO',
-          data_movimentacao: now,
-          observacao: `Retorno pós-reparo concluído no LABIN. Laudo: ${laudoId}`,
-          tipo_documento: 'LAUDO_TECNICO',
-          signature_token: crypto.randomUUID()
         });
       }
 
