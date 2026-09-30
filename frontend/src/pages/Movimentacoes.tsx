@@ -13,6 +13,7 @@ import {
   createAssinaturaGuia,
 } from "../services/assinaturasService";
 import CaixaAssinatura from "../components/CaixaAssinatura";
+import ModalGuiaImpressao from "../components/ModalGuiaImpressao";
 
 const TIPO_MOV_LABEL: Record<string, string> = {
   CHECK_OUT: "Saída",
@@ -49,6 +50,8 @@ const Movimentacoes: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [formError, setFormError] = useState("");
   const [formSuccess, setFormSuccess] = useState("");
+  const [ultimaGuiaEmitida, setUltimaGuiaEmitida] = useState<Movimentacao | null>(null);
+  const [guiaParaImpressao, setGuiaParaImpressao] = useState<Movimentacao | null>(null);
 
   const [signingMov, setSigningMov] = useState<Movimentacao | null>(null);
   const [signingTipo, setSigningTipo] = useState<TipoAssinaturaGuia>("RECEBIMENTO");
@@ -56,6 +59,7 @@ const Movimentacoes: React.FC = () => {
   const [signingCpf, setSigningCpf] = useState("");
   const [signingAssinatura, setSigningAssinatura] = useState("");
   const [signingObservacao, setSigningObservacao] = useState("");
+
 
   const isTecnicoOrHigher = hasPermission("TECNICO");
 
@@ -128,7 +132,8 @@ const Movimentacoes: React.FC = () => {
       });
 
       setSelectedItemId(""); setFormChamado(""); setFormDestino(""); setFormObs("");
-      setFormSuccess("Guia emitida!");
+      setUltimaGuiaEmitida(saved);
+      setFormSuccess("Guia emitida com sucesso!");
 
       if (formTipo === "MANUTENCAO") {
         setSigningMov(saved);
@@ -139,6 +144,15 @@ const Movimentacoes: React.FC = () => {
       await loadItens();
     } catch { setFormError("Erro ao emitir guia."); }
     finally { setIsSaving(false); }
+  };
+
+  // ----- Impressão de Guia -----
+  const abrirModalImpressao = async (mov: Movimentacao) => {
+    if (!assinaturasPorMov[mov.id]) {
+      const sigs = await fetchAssinaturasGuia(mov.id);
+      setAssinaturasPorMov(prev => ({ ...prev, [mov.id]: sigs }));
+    }
+    setGuiaParaImpressao(mov);
   };
 
   // ----- Assinatura -----
@@ -158,6 +172,10 @@ const Movimentacoes: React.FC = () => {
       chamado: signingMov.chamado, observacao: signingObservacao.trim() || undefined,
     });
     if (!saved) { toast("error", "Erro ao salvar assinatura."); return; }
+
+    // Atualiza cache de assinaturas local
+    const sigsAtualizadas = await fetchAssinaturasGuia(signingMov.id);
+    setAssinaturasPorMov(prev => ({ ...prev, [signingMov.id]: sigsAtualizadas }));
 
     toast("success", "Assinatura registrada!");
     setSigningMov(null);
@@ -236,9 +254,23 @@ const Movimentacoes: React.FC = () => {
               <div className="p-3 bg-surface-container border border-outline-variant/20 rounded-xl">
                 <p className="text-[10px] font-bold text-outline">Emitente: <span className="text-on-surface font-black">{user?.nome}</span></p>
               </div>
-              {formError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">{formError}</div>}
-              {formSuccess && <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700">{formSuccess}</div>}
-              <button type="submit" disabled={isSaving} className="w-full py-3 custom-gradient-btn text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 disabled:opacity-60">{isSaving ? "Emitindo..." : "Emitir Guia"}</button>
+              {formError && <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 font-semibold">{formError}</div>}
+              {formSuccess && (
+                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <span className="font-bold">{formSuccess}</span>
+                  {ultimaGuiaEmitida && (
+                    <button
+                      type="button"
+                      onClick={() => abrirModalImpressao(ultimaGuiaEmitida)}
+                      className="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg font-bold text-[11px] flex items-center gap-1.5 transition-all shadow-sm cursor-pointer"
+                    >
+                      <Printer size={13} />
+                      Imprimir Guia Oficial
+                    </button>
+                  )}
+                </div>
+              )}
+              <button type="submit" disabled={isSaving} className="w-full py-3 custom-gradient-btn text-white font-bold rounded-xl text-xs flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer">{isSaving ? "Emitindo..." : "Emitir Guia"}</button>
             </form>
           </div>
         </div>
@@ -251,7 +283,7 @@ const Movimentacoes: React.FC = () => {
             <div className="flex items-center justify-between mb-5 border-b border-outline-variant/10 pb-3">
               <h2 className="text-sm font-bold text-primary flex items-center gap-2"><Search size={18}/>Consultar Histórico do Equipamento</h2>
               {itemSelecionado && (
-                <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline text-primary font-bold text-[10px] rounded-lg"><Download size={12}/>Exportar Excel</button>
+                <button onClick={handleExport} className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline text-primary font-bold text-[10px] rounded-lg cursor-pointer"><Download size={12}/>Exportar Excel</button>
               )}
             </div>
 
@@ -261,9 +293,11 @@ const Movimentacoes: React.FC = () => {
 
             {itemSelecionado ? (
               <div className="space-y-4">
-                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl">
-                  <p className="text-xs font-bold text-on-surface">{itemSelecionado.nome}</p>
-                  <p className="text-[10px] text-outline mt-0.5">Pat: {itemSelecionado.numero_patrimonio || "N/A"} | S/N: {itemSelecionado.numero_serie || "N/A"} | Status: {itemSelecionado.status}</p>
+                <div className="p-4 bg-primary/5 border border-primary/10 rounded-xl flex items-center justify-between flex-wrap gap-2">
+                  <div>
+                    <p className="text-xs font-bold text-on-surface">{itemSelecionado.nome}</p>
+                    <p className="text-[10px] text-outline mt-0.5">Pat: {itemSelecionado.numero_patrimonio || "N/A"} | S/N: {itemSelecionado.numero_serie || "N/A"} | Status: {itemSelecionado.status}</p>
+                  </div>
                 </div>
 
                 {historicoMovs.length === 0 ? (
@@ -273,13 +307,27 @@ const Movimentacoes: React.FC = () => {
                     {historicoMovs.map((mov) => {
                       const sigs = assinaturasPorMov[mov.id] || [];
                       return (
-                        <div key={mov.id} className="bg-surface border border-outline-variant/10 rounded-xl p-4">
-                          <div className="flex items-center gap-2 mb-2 flex-wrap">
-                            <span className="text-[10px] font-bold text-outline">{new Date(mov.data_movimentacao).toLocaleDateString("pt-BR")}</span>
-                            <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">{TIPO_MOV_LABEL[mov.tipo] || mov.tipo}</span>
-                            <span className="text-[10px] font-semibold text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">{mov.status_guia || "ABERTA"}</span>
-                            {mov.chamado && <span className="text-[10px] text-outline">Chamado: {mov.chamado}</span>}
+                        <div key={mov.id} className="bg-surface border border-outline-variant/10 rounded-xl p-4 transition-all hover:border-primary/20">
+                          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[10px] font-bold text-outline">{new Date(mov.data_movimentacao).toLocaleDateString("pt-BR")}</span>
+                              <span className="text-[10px] font-semibold text-primary bg-primary/5 px-2 py-0.5 rounded">{TIPO_MOV_LABEL[mov.tipo] || mov.tipo}</span>
+                              <span className="text-[10px] font-semibold text-on-surface-variant bg-surface-container-high px-2 py-0.5 rounded">{mov.status_guia || "ABERTA"}</span>
+                              {mov.chamado && <span className="text-[10px] text-outline">Chamado: {mov.chamado}</span>}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => abrirModalImpressao(mov)}
+                                className="flex items-center gap-1.5 px-3 py-1 bg-slate-900 hover:bg-slate-800 text-white text-[10px] font-bold rounded-lg shadow-sm transition-all cursor-pointer"
+                                title="Visualizar e Imprimir Documento Formal"
+                              >
+                                <Printer size={12} />
+                                Imprimir Guia Oficial
+                              </button>
+                            </div>
                           </div>
+
                           <div className="flex items-center gap-1.5 text-[10px] font-semibold text-on-surface-variant mb-2">
                             <ArrowLeftRight size={10} className="text-outline" />
                             <span className="truncate">{mov.origem} → {mov.destino}</span>
@@ -288,7 +336,7 @@ const Movimentacoes: React.FC = () => {
 
                           {sigs.length > 0 && (
                             <div className="border-t border-outline-variant/10 pt-3 mt-2">
-                              <p className="text-[9px] font-black text-outline uppercase mb-2">Assinaturas</p>
+                              <p className="text-[9px] font-black text-outline uppercase mb-2">Assinaturas Registradas</p>
                               <div className="space-y-1.5">
                                 {sigs.map((a, i) => (
                                   <div key={a.id} className="flex items-start gap-2 text-[9px]">
@@ -326,7 +374,7 @@ const Movimentacoes: React.FC = () => {
           <div className="bg-surface-container-lowest w-full max-w-md rounded-2xl p-6 shadow-2xl border border-outline-variant/10 animate-slide-up max-h-[90vh] overflow-y-auto">
             <div className="flex items-start justify-between gap-4 mb-5">
               <div><h2 className="text-lg font-black text-primary">{ASSINATURA_LABEL[signingTipo]}</h2><p className="text-xs text-outline mt-1">{signingMov.item_nome}</p></div>
-              <button onClick={() => setSigningMov(null)} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline"><X size={18}/></button>
+              <button onClick={() => setSigningMov(null)} className="p-1.5 hover:bg-surface-container-high rounded-full text-outline cursor-pointer"><X size={18}/></button>
             </div>
             <div className="space-y-4">
               {(signingTipo === "APROVACAO_SAIDA" || (signingTipo === "RECEBIMENTO" && signingMov.tipo === "ENVIAR_LAB")) && (
@@ -352,14 +400,25 @@ const Movimentacoes: React.FC = () => {
               </div>
             </div>
             <div className="flex justify-end gap-3 mt-5 pt-4 border-t border-outline-variant/10">
-              <button onClick={() => setSigningMov(null)} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs">Cancelar</button>
-              <button onClick={saveAssinatura} disabled={!signingNome.trim()} className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50">Salvar Assinatura</button>
+              <button onClick={() => setSigningMov(null)} className="px-4 py-2.5 hover:bg-surface-container-high rounded-xl text-outline font-bold text-xs cursor-pointer">Cancelar</button>
+              <button onClick={saveAssinatura} disabled={!signingNome.trim()} className="px-5 py-2.5 custom-gradient-btn text-white rounded-xl font-bold text-xs active:scale-95 disabled:opacity-50 cursor-pointer">Salvar Assinatura</button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* MODAL IMPRESSÃO DE GUIA OFICIAL */}
+      {guiaParaImpressao && (
+        <ModalGuiaImpressao
+          movimentacao={guiaParaImpressao}
+          item={itemSelecionado || itens.find(i => i.id === guiaParaImpressao.item_id)}
+          assinaturas={assinaturasPorMov[guiaParaImpressao.id] || []}
+          onClose={() => setGuiaParaImpressao(null)}
+        />
       )}
     </div>
   );
 };
 
 export default Movimentacoes;
+

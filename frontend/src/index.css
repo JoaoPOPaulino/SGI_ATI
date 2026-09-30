@@ -189,3 +189,66 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #a5a8b0;
 }
+
+/* Regras de Impressão Formal (A4 / Documentos Oficiais) */
+@media print {
+  @page {
+    size: A4;
+    margin: 12mm 15mm 12mm 15mm;
+  }
+
+  /* Oculta tudo que não for o documento de impressão */
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  header,
+  nav,
+  aside,
+  button,
+  .no-print {
+    display: none !important;
+  }
+
+  /* Container do documento impresso */
+  .documento-oficial-print {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    display: block !important;
+  }
+
+  .documento-oficial-print * {
+    color: #000000 !important;
+  }
+
+  /* Forçar quebras limpas */
+  .page-break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Borda e fundos para impressão */
+  .print-border {
+    border: 1px solid #1e293b !important;
+  }
+  .print-border-b {
+    border-bottom: 1px solid #1e293b !important;
+  }
+  .print-bg-slate {
+    background-color: #f1f5f9 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+

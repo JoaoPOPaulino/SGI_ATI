@@ -454,102 +454,165 @@ const Labin: React.FC = () => {
         </div>
       )}
 
-      {/* Modal Visualizador/Impressão do Laudo Técnico (Issue #14) */}
+      {/* Modal Visualizador/Impressão do Laudo Técnico (Oficial A4) */}
       {activeLaudoPrint && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white text-slate-950 w-full max-w-2xl rounded-2xl p-8 shadow-2xl animate-slide-up flex flex-col max-h-[90vh] overflow-y-auto">
-            {/* Header Documento */}
-            <div className="flex justify-between items-start border-b-2 border-slate-900 pb-4 mb-6">
-              <div>
-                <h1 className="text-xl font-extrabold uppercase leading-none tracking-tight text-slate-900">Laudo Técnico Corretivo</h1>
-                <span className="text-[9px] font-black text-outline uppercase tracking-widest block mt-1">SGI-ATI / Laboratório (LABIN)</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto animate-fade-in print:p-0 print:bg-white print:static">
+          <div className="bg-white text-slate-900 w-full max-w-3xl rounded-2xl p-6 sm:p-8 shadow-2xl border border-slate-200 my-auto flex flex-col max-h-[92vh] overflow-y-auto print:max-h-none print:h-auto print:overflow-visible print:shadow-none print:border-none print:rounded-none documento-oficial-print">
+            
+            {/* Barra de Ações Superior (Oculta na Impressão) */}
+            <div className="flex justify-between items-center pb-4 mb-4 border-b border-slate-200 print:hidden">
+              <div className="flex items-center gap-2">
+                <span className="p-2 bg-blue-50 text-blue-800 rounded-xl">
+                  <Printer size={18} />
+                </span>
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">Laudo Técnico Oficial — LABIN</h2>
+                  <p className="text-[11px] text-slate-500">Documento técnico oficial para homologação de reparo ou descarte.</p>
+                </div>
               </div>
-              <button
-                onClick={() => setActiveLaudoPrint(null)}
-                className="p-1.5 hover:bg-slate-100 rounded-full text-slate-500 hover:text-slate-700 transition-colors print:hidden"
-                title="Fechar"
-              >
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition-all cursor-pointer"
+                >
+                  <Printer size={14} />
+                  Imprimir / Salvar PDF
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveLaudoPrint(null)}
+                  className="p-2 hover:bg-slate-100 rounded-xl text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+                  title="Fechar"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Cabeçalho Oficial do Documento */}
+            <div className="border-b-2 border-slate-900 pb-4 text-center relative mb-5">
+              <div className="space-y-0.5">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">Estado do Tocantins</p>
+                <h1 className="text-base sm:text-lg font-black uppercase tracking-tight text-slate-950">
+                  Agência de Tecnologia da Informação — ATI
+                </h1>
+                <p className="text-xs font-bold text-slate-700">
+                  Laboratório de Informática (LABIN) • SGI-ATI
+                </p>
+              </div>
+              <div className="mt-3 inline-block bg-slate-100 border border-slate-300 px-4 py-1 rounded-md">
+                <span className="font-black text-xs uppercase tracking-wider text-slate-900">
+                  Laudo Técnico Pericial de Manutenção
+                </span>
+              </div>
             </div>
 
             {/* Corpo Oficial */}
-            <div className="space-y-6 text-xs leading-relaxed text-slate-800">
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 p-4 border border-slate-200 rounded-xl">
+            <div className="space-y-4 text-xs leading-relaxed text-slate-800 print:text-[10pt]">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-slate-50 p-3 border border-slate-300 rounded-lg">
                 <div>
-                  <span className="text-[9px] font-black text-on-surface-variant uppercase block mb-0.5">Código do Laudo</span>
-                  <span className="font-mono font-bold text-slate-800">{activeLaudoPrint.id.toUpperCase()}</span>
+                  <span className="text-[9px] font-black text-slate-500 uppercase block">Código do Laudo</span>
+                  <span className="font-mono font-bold text-slate-900 text-[11px]">{activeLaudoPrint.id.slice(0, 13).toUpperCase()}</span>
                 </div>
                 <div>
-                  <span className="text-[9px] font-black text-on-surface-variant uppercase block mb-0.5">Data de Emissão</span>
-                  <span className="font-bold text-slate-800">{new Date(activeLaudoPrint.created_at).toLocaleString()}</span>
+                  <span className="text-[9px] font-black text-slate-500 uppercase block">Data de Emissão</span>
+                  <span className="font-bold text-slate-900 text-[11px]">{new Date(activeLaudoPrint.created_at).toLocaleString("pt-BR")}</span>
+                </div>
+                <div>
+                  <span className="text-[9px] font-black text-slate-500 uppercase block">Status do Serviço</span>
+                  <span className="font-bold text-emerald-800 text-[11px] uppercase bg-emerald-50 px-2 py-0.5 border border-emerald-200 rounded inline-block">
+                    {activeLaudoPrint.status_servico}
+                  </span>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">Identificação do Ativo</h3>
-                <div className="grid grid-cols-1 gap-4">
+              {/* Identificação do Ativo */}
+              <div className="border border-slate-300 rounded-lg overflow-hidden">
+                <div className="bg-slate-200/80 px-3 py-1.5 border-b border-slate-300">
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-800">1. Identificação do Ativo / Equipamento</h3>
+                </div>
+                <div className="p-3">
+                  <span className="text-[9px] text-slate-500 block font-semibold">Equipamento:</span>
+                  <span className="font-bold text-slate-950 text-xs">{activeLaudoPrint.item_nome}</span>
+                </div>
+              </div>
+
+              {/* Relato do Problema & Diagnóstico */}
+              <div className="border border-slate-300 rounded-lg overflow-hidden">
+                <div className="bg-slate-200/80 px-3 py-1.5 border-b border-slate-300">
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-800">2. Relato da Falha e Diagnóstico Técnico</h3>
+                </div>
+                <div className="p-3 space-y-3">
                   <div>
-                    <span className="text-[10px] text-outline block">Equipamento:</span>
-                    <span className="font-bold text-slate-900">{activeLaudoPrint.item_nome}</span>
+                    <span className="text-[9px] text-slate-500 font-semibold block mb-1">Defeito Reclamado / Problema Apresentado:</span>
+                    <p className="bg-slate-50 p-2.5 border border-slate-200 rounded text-slate-800 italic font-medium">"{activeLaudoPrint.descricao_problema}"</p>
+                  </div>
+                  {activeLaudoPrint.diagnostico && (
+                    <div>
+                      <span className="text-[9px] text-slate-500 font-semibold block mb-1">Diagnóstico Pericial do LABIN:</span>
+                      <p className="bg-slate-50 p-2.5 border border-slate-200 rounded text-slate-800 font-medium">{activeLaudoPrint.diagnostico}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Intervenções e Peças */}
+              <div className="border border-slate-300 rounded-lg overflow-hidden">
+                <div className="bg-slate-200/80 px-3 py-1.5 border-b border-slate-300">
+                  <h3 className="text-[10px] font-black uppercase tracking-wider text-slate-800">3. Intervenções Realizadas e Componentes</h3>
+                </div>
+                <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <span className="text-[9px] text-slate-500 block font-semibold">Ações Executadas:</span>
+                    <span className="font-semibold text-slate-900">{activeLaudoPrint.acao_realizada || "Nenhuma intervenção registrada."}</span>
+                  </div>
+                  <div>
+                    <span className="text-[9px] text-slate-500 block font-semibold">Peças / Insumos Utilizados:</span>
+                    <span className="font-bold text-slate-900">{activeLaudoPrint.pecas_utilizadas || "Sem troca de peças."}</span>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">Relato do Problema</h3>
-                <div className="space-y-3">
+              {/* Assinatura Técnica */}
+              <div className="border border-slate-300 rounded-lg p-3 bg-slate-50 page-break-inside-avoid">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                   <div>
-                    <span className="text-[10px] text-outline font-semibold block mb-0.5">Descrição Técnica da Falha:</span>
-                    <p className="bg-slate-50 p-2.5 border rounded-lg italic font-medium wrap-break-words">"{activeLaudoPrint.descricao_problema}"</p>
+                    <span className="text-[9px] text-slate-500 block font-semibold">Responsável Técnico / LABIN:</span>
+                    <span className="font-bold text-slate-950 text-xs">{activeLaudoPrint.tecnico_nome}</span>
+                    <span className="text-[9px] text-slate-500 block">Agência de Tecnologia da Informação do Tocantins</span>
                   </div>
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-[9px] font-black text-on-surface-variant uppercase tracking-wider mb-2 border-b border-slate-200 pb-1">Intervenções e Insumos</h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-[10px] text-outline block">Ações Executadas:</span>
-                    <span className="font-semibold text-slate-800">{activeLaudoPrint.acao_realizada || 'Nenhuma ação declarada.'}</span>
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-outline block">Peças / Componentes Trocados:</span>
-                    <span className="font-bold text-slate-900">{activeLaudoPrint.pecas_utilizadas || 'Sem troca de componentes.'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-6 border-t border-slate-200">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <span className="text-[10px] text-outline block">Responsável Técnico:</span>
-                    <span className="font-bold text-slate-900">{activeLaudoPrint.tecnico_nome}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-3 py-1 rounded-full uppercase tracking-wider">
-                      Assinado Digitalmente
+                  <div className="text-left sm:text-right">
+                    <span className="text-[9px] font-black text-emerald-800 bg-emerald-50 border border-emerald-300 px-3 py-1 rounded-full uppercase tracking-wider inline-block">
+                      ✓ Autenticado Digitalmente
                     </span>
-                    <span className="block font-mono text-[9px] text-on-surface-variant mt-1 break-all">Token: sha256-{activeLaudoPrint.id.substring(6, 12)}...</span>
+                    <span className="block font-mono text-[8px] text-slate-500 mt-1">Hash: sha256-{activeLaudoPrint.id.slice(0, 12)}...</span>
                   </div>
                 </div>
+              </div>
+
+              {/* Rodapé Oficial */}
+              <div className="pt-2 text-center text-[8px] text-slate-400">
+                <span>Agência de Tecnologia da Informação do Tocantins (ATI) • SGI-ATI LABIN</span>
               </div>
             </div>
 
-            {/* Ações de Impressão */}
-            <div className="pt-6 border-t border-slate-200 flex items-center justify-end gap-3 mt-6">
+            {/* Ações de Impressão Inferiores */}
+            <div className="pt-4 border-t border-slate-200 flex items-center justify-end gap-3 mt-4 print:hidden">
               <button
-                onClick={() => window.print()}
-                className="px-4 py-2.5 bg-slate-900 text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:bg-surface-container-high transition-all flex items-center gap-1.5 shadow"
-              >
-                <Printer size={12} />
-                Imprimir Laudo
-              </button>
-              <button
+                type="button"
                 onClick={() => setActiveLaudoPrint(null)}
-                className="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-xl transition-all"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition-all cursor-pointer"
               >
                 Voltar
+              </button>
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="px-5 py-2 bg-blue-900 hover:bg-blue-800 text-white text-xs font-bold rounded-xl shadow transition-all flex items-center gap-1.5 cursor-pointer"
+              >
+                <Printer size={14} />
+                Imprimir Laudo
               </button>
             </div>
           </div>
