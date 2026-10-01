@@ -36,7 +36,13 @@ import {
   Users,
   Download,
   Search,
+  Printer,
+  FileText,
+  PenTool,
+  ShieldCheck,
 } from "lucide-react";
+import CaixaAssinatura from "../components/CaixaAssinatura";
+import ModalTermoCautela from "../components/ModalTermoCautela";
 import ConfirmDialog from "../components/DialogoConfirmacao";
 import BuscaEquipamento from "../components/BuscaEquipamento";
 import Paginacao from "../components/Paginacao";
@@ -60,6 +66,16 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
   const [formDataRetorno, setFormDataRetorno] = useState("");
   const [formLoanError, setFormLoanError] = useState("");
   const [formLoanSuccess, setFormLoanSuccess] = useState("");
+  const [formResponsavelCpf, setFormResponsavelCpf] = useState("");
+  const [formResponsavelCargo, setFormResponsavelCargo] = useState("");
+  const [formResponsavelSetor, setFormResponsavelSetor] = useState("");
+  const [formResponsavelTelefone, setFormResponsavelTelefone] = useState("");
+  const [formFinalidade, setFormFinalidade] = useState("");
+  const [formAcessorios, setFormAcessorios] = useState("");
+  const [formAssinaturaResponsavel, setFormAssinaturaResponsavel] = useState("");
+  const [termoParaImpressao, setTermoParaImpressao] = useState<Loan | null>(null);
+  const [returnObservacoes, setReturnObservacoes] = useState("");
+  const [abaEmprestimosFiltro, setAbaEmprestimosFiltro] = useState<"ativos" | "todos">("ativos");
 
   const [formNomeEvento, setFormNomeEvento] = useState("");
   const [formDataInicio, setFormDataInicio] = useState("");
@@ -218,7 +234,20 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
         id: crypto.randomUUID(),
         item_id: item.id,
         item_nome: item.nome,
-        responsavel: formResponsavel,
+        item_patrimonio: item.numero_patrimonio,
+        item_numero_serie: item.numero_serie,
+        item_modelo: item.modelo,
+        responsavel: formResponsavel.trim(),
+        responsavel_cpf: formResponsavelCpf.trim() || undefined,
+        responsavel_cargo: formResponsavelCargo.trim() || undefined,
+        responsavel_setor: formResponsavelSetor.trim() || undefined,
+        responsavel_telefone: formResponsavelTelefone.trim() || undefined,
+        finalidade: formFinalidade.trim() || undefined,
+        acessorios: formAcessorios.trim() || undefined,
+        data_emprestimo: new Date().toISOString(),
+        assinatura_responsavel_base64: formAssinaturaResponsavel || undefined,
+        emitente_id: user?.id,
+        emitente_nome: user?.nome,
         data_retorno_prevista: formDataRetorno,
         status: "ATIVO",
       };
@@ -248,10 +277,21 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       setSelectedItemId("");
       setFormResponsavel("");
       setFormDataRetorno("");
-      setFormLoanSuccess("Empréstimo registrado com sucesso!");
+      setFormResponsavelCpf("");
+      setFormResponsavelCargo("");
+      setFormResponsavelSetor("");
+      setFormResponsavelTelefone("");
+      setFormFinalidade("");
+      setFormAcessorios("");
+      setFormAssinaturaResponsavel("");
+      setFormLoanSuccess("Empréstimo e Termo de Cautela registrados com sucesso!");
+      setTermoParaImpressao(newLoan);
+      setFormResponsavel("");
+      setFormDataRetorno("");
+
       await loadData();
     } catch {
-      setFormLoanError("Erro ao registrar empréstimo. Verifique a conexão.");
+      setFormLoanError("Erro ao registrar empréstimo. Verifique os dados.");
     } finally {
       setIsSaving(false);
     }
@@ -436,10 +476,16 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       condicao: returnCondicao,
       status: "EM_ESTOQUE",
       localizacao_atual: "Almoxarifado Central",
+      atribuido_a_nome: undefined,
       updated_at: new Date().toISOString(),
     });
 
-    await updateLoan(activeReturnLoan.id, { status: "DEVOLVIDO" });
+    await updateLoan(activeReturnLoan.id, {
+      status: "DEVOLVIDO",
+      data_devolucao_real: new Date().toISOString(),
+      condicao_devolucao: returnCondicao,
+      observacoes_devolucao: returnObservacoes.trim() || undefined,
+    });
 
     await createMovimentacao({
       id: crypto.randomUUID(),
@@ -452,10 +498,12 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       solicitante_nome: user?.nome || "",
       status_aprovacao: "APROVADO",
       data_movimentacao: new Date().toISOString(),
-      observacao: `Retorno de Empréstimo. Condição: ${returnCondicao}`,
+      observacao: `Retorno de Empréstimo. Condição: ${returnCondicao}${returnObservacoes ? `. Obs: ${returnObservacoes}` : ""}`,
     });
 
     setActiveReturnLoan(null);
+    setReturnObservacoes("");
+    setReturnCondicao("USADO");
     await loadData();
     setFormLoanSuccess("Devolução registrada com sucesso!");
   };
@@ -579,8 +627,117 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                   type="text"
                   value={formResponsavel}
                   onChange={(e) => setFormResponsavel(e.target.value)}
-                  placeholder="Nome do colaborador"
+                  placeholder="Nome completo"
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="loan-cpf"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  CPF do Responsável
+                </label>
+                <input
+                  id="loan-cpf"
+                  type="text"
+                  value={formResponsavelCpf}
+                  onChange={(e) => setFormResponsavelCpf(e.target.value)}
+                  placeholder="000.000.000-00"
+                  maxLength={14}
+                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label
+                    htmlFor="loan-setor"
+                    className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                  >
+                    Órgão / Setor
+                  </label>
+                  <input
+                    id="loan-setor"
+                    type="text"
+                    value={formResponsavelSetor}
+                    onChange={(e) => setFormResponsavelSetor(e.target.value)}
+                    placeholder="Ex: Sec. de Planejamento"
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="loan-telefone"
+                    className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                  >
+                    Telefone / Contato
+                  </label>
+                  <input
+                    id="loan-telefone"
+                    type="text"
+                    value={formResponsavelTelefone}
+                    onChange={(e) => setFormResponsavelTelefone(e.target.value)}
+                    placeholder="(63) 99999-9999"
+                    className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                  />
+                </div>
+              </div>
+              <div>
+                <label
+                  htmlFor="loan-cargo"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  Cargo / Função
+                </label>
+                <input
+                  id="loan-cargo"
+                  type="text"
+                  value={formResponsavelCargo}
+                  onChange={(e) => setFormResponsavelCargo(e.target.value)}
+                  placeholder="Ex: Assessor Técnico"
+                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="loan-acessorios"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  Acessórios e Itens Entregues
+                </label>
+                <input
+                  id="loan-acessorios"
+                  type="text"
+                  value={formAcessorios}
+                  onChange={(e) => setFormAcessorios(e.target.value)}
+                  placeholder="Ex: Fonte original, mouse USB, cabo de força, mochila"
+                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
+              <div>
+                <label
+                  htmlFor="loan-finalidade"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  Finalidade / Justificativa
+                </label>
+                <textarea
+                  id="loan-finalidade"
+                  rows={2}
+                  value={formFinalidade}
+                  onChange={(e) => setFormFinalidade(e.target.value)}
+                  placeholder="Motivo do empréstimo (ex: Atendimento emergencial, evento oficial, home office)"
+                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>Assinatura Digital do Responsável</span>
+                  <span className="text-slate-400 text-[9px] font-normal">Opcional</span>
+                </label>
+                <CaixaAssinatura
+                  value={formAssinaturaResponsavel}
+                  onChange={setFormAssinaturaResponsavel}
                 />
               </div>
               <div>
@@ -672,10 +829,19 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                           </span>
                         )}
                       </p>
-                      <div className="mt-4 pt-3 border-t border-outline-variant/20 flex justify-end">
+                      <div className="mt-4 pt-3 border-t border-outline-variant/20 flex items-center justify-end gap-2 flex-wrap">
                         <button
+                          type="button"
+                          onClick={() => setTermoParaImpressao(l)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-surface border border-outline hover:border-primary/50 text-on-surface font-bold text-[10px] rounded-lg transition-all cursor-pointer shadow-xs"
+                          title="Imprimir Termo de Cautela e Responsabilidade A4"
+                        >
+                          <Printer size={12} className="text-primary" /> Termo de Cautela
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => setActiveReturnLoan(l)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/5 border border-primary/20 hover:border-primary/50 text-primary font-bold text-[10px] rounded-lg transition-all"
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 border border-primary/20 hover:bg-primary/20 text-primary font-bold text-[10px] rounded-lg transition-all cursor-pointer shadow-xs"
                         >
                           <RotateCcw size={10} /> Registrar Devolução
                         </button>
@@ -1037,7 +1203,7 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
       {/* Modal de Devolução */}
       {activeReturnLoan && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-devolucao-titulo"
@@ -1048,40 +1214,41 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                 id="modal-devolucao-titulo"
                 className="text-sm font-bold text-on-surface flex items-center gap-2"
               >
-                <RotateCcw size={18} className="text-primary" /> Registrar
-                Devolução
+                <RotateCcw size={18} className="text-primary" /> Registrar Devolução
               </h2>
               <button
-                onClick={() => setActiveReturnLoan(null)}
+                onClick={() => {
+                  setActiveReturnLoan(null);
+                  setReturnObservacoes("");
+                }}
                 className="p-1 hover:bg-surface-container-high text-outline rounded-xl"
                 aria-label="Fechar modal de devolução"
               >
                 <X size={16} />
               </button>
             </div>
-            <form onSubmit={handleReturnItem} className="space-y-5">
-              <div>
-                <span className="text-[10px] font-black text-outline block mb-1">
-                  Equipamento
-                </span>
-                <span className="text-sm font-bold text-on-surface">
-                  {activeReturnLoan.item_nome}
-                </span>
+            <form onSubmit={handleReturnItem} className="space-y-4">
+              <div className="p-3 bg-surface border border-outline-variant/20 rounded-xl space-y-1">
+                <div>
+                  <span className="text-[9px] font-black text-outline uppercase block">
+                    Equipamento
+                  </span>
+                  <span className="text-xs font-bold text-on-surface block">
+                    {activeReturnLoan.item_nome}
+                  </span>
+                </div>
+                <div className="pt-1.5 border-t border-outline-variant/10 flex justify-between text-[10px]">
+                  <span className="text-outline">Responsável:</span>
+                  <strong className="text-on-surface font-semibold">{activeReturnLoan.responsavel}</strong>
+                </div>
               </div>
-              <div>
-                <span className="text-[10px] font-black text-outline block mb-1">
-                  Responsável
-                </span>
-                <span className="text-xs text-on-surface-variant font-semibold">
-                  {activeReturnLoan.responsavel}
-                </span>
-              </div>
+
               <div>
                 <label
                   htmlFor="return-condicao"
-                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-2"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
                 >
-                  Condição do Equipamento
+                  Condição no Recebimento
                 </label>
                 <select
                   id="return-condicao"
@@ -1091,14 +1258,37 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
                   }
                   className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
                 >
-                  <option value="NOVO">Novo</option>
-                  <option value="USADO">Usado</option>
+                  <option value="USADO">Usado (Em boas condições operacionais)</option>
+                  <option value="NOVO">Novo / Sem marcas de uso</option>
+                  <option value="DANIFICADO">Danificado / Com avarias físicas</option>
+                  <option value="COM_DEFEITO">Com Defeito / Inoperante</option>
                 </select>
               </div>
-              <div className="pt-4 border-t border-outline-variant/20 flex justify-end gap-3">
+
+              <div>
+                <label
+                  htmlFor="return-observacoes"
+                  className="block text-[10px] font-black text-outline uppercase tracking-wider mb-1.5"
+                >
+                  Observações da Devolução (Opcional)
+                </label>
+                <textarea
+                  id="return-observacoes"
+                  rows={2}
+                  value={returnObservacoes}
+                  onChange={(e) => setReturnObservacoes(e.target.value)}
+                  placeholder="Ex: Devolvido com todos os acessórios originais, testado no ato."
+                  className="w-full px-3 py-2 bg-surface border border-outline rounded-xl text-xs focus:ring-1 focus:ring-primary text-on-surface"
+                />
+              </div>
+
+              <div className="pt-3 border-t border-outline-variant/20 flex justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setActiveReturnLoan(null)}
+                  onClick={() => {
+                    setActiveReturnLoan(null);
+                    setReturnObservacoes("");
+                  }}
                   className="px-4 py-2.5 text-xs font-semibold text-outline hover:text-on-surface hover:bg-surface-container rounded-xl transition-colors"
                 >
                   Cancelar
@@ -1113,6 +1303,14 @@ const Emprestimos: React.FC<EmprestimosProps> = ({ section = 'emprestimos' }) =>
             </form>
           </div>
         </div>
+      )}
+
+      {termoParaImpressao && (
+        <ModalTermoCautela
+          loan={termoParaImpressao}
+          item={itens.find((i) => i.id === termoParaImpressao.item_id)}
+          onClose={() => setTermoParaImpressao(null)}
+        />
       )}
 
       <ConfirmDialog

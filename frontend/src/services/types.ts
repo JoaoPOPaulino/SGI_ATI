@@ -134,9 +134,27 @@ export interface Loan {
   id: string;
   item_id: string;
   item_nome: string;
+  item_patrimonio?: string;
+  item_numero_serie?: string;
+  item_modelo?: string;
   responsavel: string;
+  responsavel_cpf?: string;
+  responsavel_cargo?: string;
+  responsavel_setor?: string;
+  responsavel_telefone?: string;
+  finalidade?: string;
+  acessorios?: string;
+  data_emprestimo?: string;
   data_retorno_prevista: string;
+  data_devolucao_real?: string;
   status: "ATIVO" | "DEVOLVIDO";
+  assinatura_responsavel_base64?: string;
+  assinatura_tecnico_base64?: string;
+  emitente_id?: string;
+  emitente_nome?: string;
+  observacoes?: string;
+  condicao_devolucao?: CondicaoItem;
+  observacoes_devolucao?: string;
 }
 
 export type AdminAction =
