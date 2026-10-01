@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.DEV ? "http://localhost:3001/api" : "https://sgi-ati.onrender.com/api";
+const API_URL = import.meta.env.DEV ? "http://localhost:3001/api" : "https://sgi-ati-lon5.onrender.com/api";
 
 const TOKEN_KEY = "sgi.auth.token";
 function readStoredToken(): string | null {

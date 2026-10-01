@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Ping Render backend
         run: |
-          curl -s -o /dev/null -w "Status: %{http_code}" https://sgi-ati.onrender.com/api/health || true
+          curl -s -o /dev/null -w "Status: %{http_code}" https://sgi-ati-lon5.onrender.com/api/health || true
