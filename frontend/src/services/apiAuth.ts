@@ -22,7 +22,7 @@ interface LoginParams {
   senha: string;
 }
 
-export async function loginApi({ cpf, senha }: LoginParams): Promise<{
+export async function loginApi({ cpf, senha }: LoginParams, _retry = true): Promise<{
   success: boolean;
   error?: string;
   user?: Usuario;
@@ -58,6 +58,12 @@ export async function loginApi({ cpf, senha }: LoginParams): Promise<{
       requirePasswordChange: data.user.primeiro_acesso,
     };
   } catch (err: any) {
+    // "Erro interno." = HTTP 500 do backend, provavelmente cold start do Render.
+    // Tenta novamente uma vez após 3s antes de exibir o erro ao usuário.
+    if (err.message === "Erro interno." && _retry) {
+      await new Promise((r) => setTimeout(r, 3000));
+      return loginApi({ cpf, senha }, false);
+    }
     return { success: false, error: err.message || "Serviço indisponível." };
   }
 }
