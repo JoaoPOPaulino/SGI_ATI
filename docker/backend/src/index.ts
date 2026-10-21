@@ -16,6 +16,8 @@ import { laudosRouter } from "./routes/laudos.js";
 import { locaisRouter } from "./routes/laudos.js";
 import { assinaturasRouter } from "./routes/laudos.js";
 
+import { query } from "./config/database.js";
+
 dotenv.config();
 
 const app = express();
@@ -38,8 +40,31 @@ app.use("/api/laudos", laudosRouter);
 app.use("/api/locais", locaisRouter);
 app.use("/api/assinaturas", assinaturasRouter);
 
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
+app.get("/api/health", async (_req, res) => {
+  try {
+    if (!process.env.DATABASE_URL) {
+      res.status(503).json({
+        status: "error",
+        db: "missing_env",
+        message: "DATABASE_URL não configurada no ambiente",
+        timestamp: new Date().toISOString(),
+      });
+      return;
+    }
+    await query("SELECT 1");
+    res.json({
+      status: "ok",
+      db: "connected",
+      timestamp: new Date().toISOString(),
+    });
+  } catch (err: any) {
+    res.status(503).json({
+      status: "error",
+      db: "disconnected",
+      error: err.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
 });
 
 app.listen(PORT, () => {

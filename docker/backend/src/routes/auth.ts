@@ -61,7 +61,7 @@ authRouter.post("/login", async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     console.error("Erro no login:", err.message);
-    res.status(500).json({ success: false, error: "Erro interno." });
+    res.status(500).json({ success: false, error: `Erro no servidor: ${err.message}` });
   }
 });
 

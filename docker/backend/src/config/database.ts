@@ -32,6 +32,9 @@ export async function query(text: string, params?: unknown[], retries = 3): Prom
       err.code === "ECONNREFUSED" ||
       err.code === "ENOTFOUND" ||
       err.code === "ETIMEDOUT" ||
+      err.code === "ECONNRESET" ||
+      err.code === "57P01" ||
+      err.message?.includes("read ECONNRESET") ||
       err.message?.includes("Connection terminated") ||
       err.message?.includes("connection timeout") ||
       err.message?.includes("getaddrinfo");
